@@ -18,8 +18,8 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
-import org.elasticsearch.hadoop.HdfsUtils;
-import org.elasticsearch.hadoop.LocalEs;
+import org.elasticsearch.hadoop.fs.HdfsUtils;
+import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

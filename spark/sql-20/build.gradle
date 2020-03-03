@@ -131,9 +131,9 @@ dependencies {
     }
 
     testImplementation("org.elasticsearch:securemock:1.2")
-    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.output)
 
-    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 
     testImplementation(project.ext.hadoopClient)
     testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {

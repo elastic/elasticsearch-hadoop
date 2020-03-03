@@ -28,8 +28,8 @@ import java.util.List;
 
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.mr.EsAssume;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.EsAssume;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;

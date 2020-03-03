@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.integration.mr;
+package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
 
@@ -32,7 +32,6 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.Stream;
-import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 

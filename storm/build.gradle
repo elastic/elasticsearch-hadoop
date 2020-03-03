@@ -8,8 +8,8 @@ evaluationDependsOn(':elasticsearch-hadoop-mr')
 dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
 
-    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
-    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 }
 
 jar {

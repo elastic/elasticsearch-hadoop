@@ -25,8 +25,24 @@ repositories {
 
 dependencies {
     implementation(project(':elasticsearch-hadoop-mr'))
+    
+    implementation("org.apache.hadoop:hadoop-client:${project.ext.hadoop22Version}")
+    implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoop22Version}")
+    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoop22Version}")
+
     implementation("junit:junit:${project.ext.junitVersion}")
     implementation("org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
+
+    implementation("io.netty:netty-all:4.0.29.Final") {
+        because "Needed for creating mock SSL Server to test against"
+    }
+
+    implementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+        because "Embedding KDC in tests"
+        // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
+        // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
+        exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+    }
 }
 
 java {

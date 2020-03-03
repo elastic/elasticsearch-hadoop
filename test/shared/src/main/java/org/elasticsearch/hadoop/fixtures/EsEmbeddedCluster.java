@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop;
+package org.elasticsearch.hadoop.fixtures;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 

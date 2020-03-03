@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.mr;
+package org.elasticsearch.hadoop.fs;
 
 import java.io.IOException;
 

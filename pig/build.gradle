@@ -9,8 +9,8 @@ dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
-    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 }
 
 jar {

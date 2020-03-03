@@ -45,7 +45,6 @@ import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
@@ -70,12 +69,12 @@ import org.junit.runners.MethodSorters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
-
 import org.apache.commons.logging.impl.NoOpLog
 import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.apache.spark.sql.types.DoubleType
-import org.elasticsearch.hadoop.mr.EsAssume
+import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 
 object AbstractScalaEsScalaSparkSQL {

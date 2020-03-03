@@ -26,7 +26,7 @@ import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
-import org.elasticsearch.hadoop.LocalEs;
+import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.junit.ClassRule;

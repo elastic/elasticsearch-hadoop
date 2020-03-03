@@ -17,8 +17,9 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.mr;
+package org.elasticsearch.hadoop;
 
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 import static org.junit.Assume.assumeTrue;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
+package org.elasticsearch.hadoop.security;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
