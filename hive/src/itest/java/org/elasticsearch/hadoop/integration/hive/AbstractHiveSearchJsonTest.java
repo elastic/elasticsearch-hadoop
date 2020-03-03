@@ -34,7 +34,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -54,9 +56,12 @@ public class AbstractHiveSearchJsonTest {
     private final boolean readMetadata;
     private EsMajorVersion targetVersion;
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.params();
+        return new QueryTestParams(tempFolder).params();
     }
 
     private final String query;

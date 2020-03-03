@@ -41,7 +41,9 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -51,9 +53,12 @@ import static org.elasticsearch.hadoop.util.TestUtils.resource;
 @RunWith(Parameterized.class)
 public class AbstractMRNewApiSearchTest {
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.jsonParams();
+        return new QueryTestParams(tempFolder).jsonParams();
     }
 
     private final String query;
@@ -169,7 +174,7 @@ public class AbstractMRNewApiSearchTest {
         conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(readMetadata));
         conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
 
-        QueryTestParams.provisionQueries(conf);
+        new QueryTestParams(tempFolder).provisionQueries(conf);
         job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 

@@ -28,7 +28,9 @@ import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.*;
@@ -40,9 +42,12 @@ public abstract class AbstractPigTests {
 
     static PigWrapper pig;
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new PigWrapper();
+        pig = new PigWrapper(tempFolder);
         pig.start();
     }
 

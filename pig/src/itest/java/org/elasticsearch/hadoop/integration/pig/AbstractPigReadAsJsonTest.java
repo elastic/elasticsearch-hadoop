@@ -28,7 +28,9 @@ import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -49,9 +51,12 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     private boolean readMetadata;
     private EsMajorVersion testVersion;
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.params();
+        return new QueryTestParams(tempFolder).params();
     }
 
     private final String query;
