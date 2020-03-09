@@ -71,8 +71,6 @@ class HadoopClusterFormationTasks {
      * Adds dependent tasks to the given task to start and stop a cluster with the given configuration.
      * <p>
      * Returns a list of NodeInfo objects for each node in the cluster.
-     *
-     * Based on (now removed) org.elasticsearch.gradle.test.ClusterFormationTasks
      */
     static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration clusterConfiguration) {
         String prefix = clusterConfiguration.getName()

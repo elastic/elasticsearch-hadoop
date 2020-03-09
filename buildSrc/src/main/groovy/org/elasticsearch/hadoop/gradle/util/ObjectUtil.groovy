@@ -19,11 +19,13 @@
 
 package org.elasticsearch.hadoop.gradle.util
 
+import java.util.concurrent.Callable
+
 class ObjectUtil {
     static String unapplyString(Object value) {
         if (value == null) {
             return null
-        } else if (value instanceof Closure) {
+        } else if (value instanceof Callable) {
             return ((Closure) value).call().toString()
         } else {
             return value.toString()
