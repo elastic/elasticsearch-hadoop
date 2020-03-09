@@ -89,11 +89,13 @@ import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
+import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.serialization.JsonUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.junit.Assert._
+import org.junit.ClassRule
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf()
@@ -106,6 +108,8 @@ object AbstractScalaEsScalaSparkSQL {
 
   @transient var keywordType: String = "keyword"
   @transient var textType: String = "text"
+
+  @transient @ClassRule val testData = new TestData()
 
   @BeforeClass
   def setup() {
@@ -697,7 +701,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testEsDataFrame3WriteWithRichMapping() {
-    val path = Paths.get(TestUtils.sampleArtistsDatUri())
+    val path = Paths.get(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
     // because Windows... 
     val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
 
@@ -787,7 +791,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   private def artistsAsDataFrame = {
-    val data = readAsRDD(TestUtils.sampleArtistsDatUri())
+    val data = readAsRDD(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
 
     val schema = StructType(Seq(StructField("id", IntegerType, false),
       StructField("name", StringType, false),

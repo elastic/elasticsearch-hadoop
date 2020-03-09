@@ -35,6 +35,7 @@ import org.apache.spark.sql.types.Decimal
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
+import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
@@ -58,6 +59,7 @@ import org.junit.Assert
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -82,6 +84,8 @@ object AbstractScalaEsSparkStructuredStreaming {
     .setAppName(appName)
     .set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
     .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
+
+  @transient @ClassRule val testData = new TestData()
 
   @BeforeClass
   def setup(): Unit =  {
@@ -537,7 +541,7 @@ class AbstractScalaEsSparkStructuredStreaming(prefix: String, something: Boolean
     val docPath = wrapIndex(docEndpoint("test-basic-write-rich-mapping-id", "data", version))
     val test = new StreamingQueryTestHarness[Text](spark)
 
-    Source.fromURI(TestUtils.sampleArtistsDatUri())(Codec.ISO8859).getLines().foreach(s => test.withInput(Text(s)))
+    Source.fromURI(AbstractScalaEsSparkStructuredStreaming.testData.sampleArtistsDatUri())(Codec.ISO8859).getLines().foreach(s => test.withInput(Text(s)))
 
     test
       .runTest {

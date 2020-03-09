@@ -24,9 +24,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
 
 import com.google.common.io.ByteStreams;
-
+import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
+import org.junit.rules.LazyTempFolder;
 
 /**
  * Utility for loading and unpacking test data out of jars and into a temporary folders.
@@ -35,25 +39,80 @@ import com.google.common.io.ByteStreams;
  * Since we keep our test data in the shared project, it is located within a jar file. This utility can be used
  * to unpack and make those datasets available as regular files.
  */
-public class TestData {
+public class TestData extends LazyTempFolder {
 
-    public static final String ALL_DAT = "/data/join/data/all.dat";
+    public static final String DATA_JOIN_DATA_ALL_DAT = "/data/join/data/all.dat";
     public static final String ARTISTS_DAT = "/artists.dat";
     public static final String ARTISTS_JSON = "/artists.json";
     public static final String GIBBERISH_DAT = "/gibberish.dat";
     public static final String GIBBERISH_JSON = "/gibberish.json";
-    public static final String QUERY_DSL = "/org/elasticsearch/hadoop/integration/query.dsl";
-    public static final String QUERY_URI = "/org/elasticsearch/hadoop/integration/query.uri";
 
-    public static InputStream readResource(String resource) {
-        InputStream resourceAsStream = TestData.class.getResourceAsStream(resource);
-        if (resourceAsStream == null) {
-            throw new NullPointerException("Resource [" + resource + "] not found");
+    private File dataRoot;
+
+    private File getDataRoot() throws IOException {
+        if (dataRoot == null) {
+            dataRoot = getOrCreateFolder("data");
         }
-        return resourceAsStream;
+        return dataRoot;
     }
 
-    public static synchronized File unpackResource(String resource, File stagingLocation) throws IOException {
+    public URI sampleArtistsJsonUri() throws IOException {
+        return sampleArtistsJsonFile().toURI();
+    }
+
+    public File sampleArtistsJsonFile() throws IOException {
+        return unpackResource(ARTISTS_JSON, getDataRoot());
+    }
+
+    public String sampleArtistsJson(Configuration cfg) throws IOException {
+        return (HadoopCfgUtils.isLocal(cfg) ? sampleArtistsJsonUri().toString() : ARTISTS_JSON);
+    }
+
+    public URI sampleArtistsDatUri() throws IOException {
+        return sampleArtistsDatFile().toURI();
+    }
+
+    public File sampleArtistsDatFile() throws IOException {
+        return unpackResource(ARTISTS_DAT, getDataRoot());
+    }
+
+    public String sampleArtistsDat(Configuration cfg) throws IOException {
+        return (HadoopCfgUtils.isLocal(cfg) ? sampleArtistsDatUri().toString() : ARTISTS_DAT);
+    }
+
+    public URI gibberishDatUri() throws IOException {
+        return gibberishDatFile().toURI();
+    }
+
+    public File gibberishDatFile() throws IOException {
+        return unpackResource(GIBBERISH_DAT, getDataRoot());
+    }
+
+    public String gibberishDat(Configuration cfg) throws IOException {
+        return (HadoopCfgUtils.isLocal(cfg) ? gibberishDatUri().toString() : GIBBERISH_DAT);
+    }
+
+    public URI giberrishJsonUri() throws IOException {
+        return gibberishJsonFile().toURI();
+    }
+
+    public File gibberishJsonFile() throws IOException {
+        return unpackResource(GIBBERISH_JSON, getDataRoot());
+    }
+
+    public String gibberishJson(Configuration cfg) throws IOException {
+        return (HadoopCfgUtils.isLocal(cfg) ? giberrishJsonUri().toString() : GIBBERISH_JSON);
+    }
+
+    public URI sampleJoinDatURI() throws IOException {
+        return sampleJoinDatFile().toURI();
+    }
+
+    public File sampleJoinDatFile() throws IOException {
+        return unpackResource(DATA_JOIN_DATA_ALL_DAT, getDataRoot());
+    }
+
+    public static synchronized File unpackResource(String resource, File stagingLocation) {
         if (stagingLocation.exists() == false) {
             throw new IllegalArgumentException("staging location must exist for resource to be unpacked");
         }
@@ -66,11 +125,13 @@ public class TestData {
         } else {
             resourceFile.getParentFile().mkdirs();
             if (resourceFile.getParentFile().exists() == false) {
-                throw new IOException("Resource [" + resource + "]: Could not create directory path [" +
-                        resourceFile.getParentFile().getAbsolutePath() + "]");
+                throw new UncheckedIOException(new IOException("Resource [" + resource + "]: Could not create directory path [" +
+                        resourceFile.getParentFile().getAbsolutePath() + "]"));
             }
-            try (InputStream in = readResource(resource); OutputStream out = new FileOutputStream(resourceFile)) {
+            try (InputStream in = TestData.class.getResourceAsStream(resource); OutputStream out = new FileOutputStream(resourceFile)) {
                 ByteStreams.copy(in, out);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
             return resourceFile;
         }

@@ -122,7 +122,7 @@ public class AbstractMROldApiSaveTest {
     }
 
     @Parameters
-    public static Collection<Object[]> configs() {
+    public static Collection<Object[]> configs() throws Exception {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(SplittableTextInputFormat.class);
@@ -138,13 +138,13 @@ public class AbstractMROldApiSaveTest {
         standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
         standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
-        FileInputFormat.setInputPaths(standard, new Path(TestUtils.sampleArtistsDat(conf)));
+        FileInputFormat.setInputPaths(standard, new Path(MRSuite.testData.sampleArtistsDat(conf)));
 
         JobConf json = new JobConf(conf);
         json.setMapperClass(IdentityMapper.class);
         json.setMapOutputValueClass(Text.class);
         json.set(ConfigurationOptions.ES_INPUT_JSON, "true");
-        FileInputFormat.setInputPaths(json, new Path(TestUtils.sampleArtistsJson(conf)));
+        FileInputFormat.setInputPaths(json, new Path(MRSuite.testData.sampleArtistsJson(conf)));
 
         return Arrays.asList(new Object[][] {
                 { standard, "" },

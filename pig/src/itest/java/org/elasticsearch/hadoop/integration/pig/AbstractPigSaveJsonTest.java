@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.io.IOException;
+
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -162,7 +164,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         pig.executeScript(script);
     }
 
-    private String loadSource() {
-        return "A = LOAD '" + org.elasticsearch.hadoop.util.TestUtils.sampleArtistsJson() + "' USING PigStorage() AS (json: chararray);";
+    private String loadSource() throws IOException {
+        return "A = LOAD '" + PigSuite.testData.sampleArtistsJsonUri().toString() + "' USING PigStorage() AS (json: chararray);";
     }
 }

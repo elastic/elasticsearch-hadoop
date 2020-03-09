@@ -212,7 +212,7 @@ public class AbstractMROldApiSearchTest {
         conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
 
         new QueryTestParams(tempFolder).provisionQueries(conf);
-        FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));
+        FileInputFormat.setInputPaths(conf, new Path(MRSuite.testData.sampleArtistsDatUri()));
 
         HdpBootstrap.addProperties(conf, TestSettings.TESTING_PROPS, false);
         return conf;

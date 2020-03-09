@@ -107,20 +107,20 @@ public class AbstractMRNewApiSaveTest {
 
 
         Job standard = new Job(job.getConfiguration());
-        File fl = new File(TestUtils.sampleArtistsDat());
+        File fl = MRSuite.testData.sampleArtistsDatFile();
         long splitSize = fl.length() / 3;
         TextInputFormat.setMaxInputSplitSize(standard, splitSize);
         TextInputFormat.setMinInputSplitSize(standard, 50);
 
         standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
-        TextInputFormat.addInputPath(standard, new Path(TestUtils.sampleArtistsDat(conf)));
+        TextInputFormat.addInputPath(standard, new Path(MRSuite.testData.sampleArtistsDat(conf)));
 
         Job json = new Job(job.getConfiguration());
         json.setMapperClass(Mapper.class);
         json.setMapOutputValueClass(Text.class);
         json.getConfiguration().set(ConfigurationOptions.ES_INPUT_JSON, "true");
-        TextInputFormat.addInputPath(json, new Path(TestUtils.sampleArtistsJson(conf)));
+        TextInputFormat.addInputPath(json, new Path(MRSuite.testData.sampleArtistsJson(conf)));
 
         return Arrays.asList(new Object[][] {
                 { standard, "" },

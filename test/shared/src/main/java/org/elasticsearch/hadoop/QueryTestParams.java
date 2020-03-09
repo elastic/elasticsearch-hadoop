@@ -31,6 +31,9 @@ import org.junit.rules.LazyTempFolder;
 
 public class QueryTestParams {
 
+    private static final String QUERY_DSL = "/org/elasticsearch/hadoop/integration/query.dsl";
+    private static final String QUERY_URI = "/org/elasticsearch/hadoop/integration/query.uri";
+
     private final File stagingLocation;
 
     public QueryTestParams(LazyTempFolder temporaryFolder) {
@@ -49,61 +52,61 @@ public class QueryTestParams {
                 { "", "?q=m*", false, false }, // uri
                 { "", "?q=name:m*", false, false }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, false }, // query dsl
-                { "", resource(TestData.QUERY_URI), false, false }, // nested uri
-                { "", resource(TestData.QUERY_DSL), false, false }, // nested dsl
+                { "", resource(QUERY_URI), false, false }, // nested uri
+                { "", resource(QUERY_DSL), false, false }, // nested dsl
 
                 { "", "", true, false }, // empty
                 { "", "?q=m*", true, false }, // uri
                 { "", "?q=name:m*", true, false }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, false }, // query dsl
-                { "", resource(TestData.QUERY_URI), true, false }, // nested uri
-                { "", resource(TestData.QUERY_DSL), true, false }, // nested dsl
+                { "", resource(QUERY_URI), true, false }, // nested uri
+                { "", resource(QUERY_DSL), true, false }, // nested dsl
 
                 { "", "", false, true }, // empty
                 { "", "?q=m*", false, true }, // uri
                 { "", "?q=name:m*", false, true }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, true }, // query dsl
-                { "", resource(TestData.QUERY_URI), false, true }, // nested uri
-                { "", resource(TestData.QUERY_DSL), false, true }, // nested dsl
+                { "", resource(QUERY_URI), false, true }, // nested uri
+                { "", resource(QUERY_DSL), false, true }, // nested dsl
 
                 { "", "", true, true }, // empty
                 { "", "?q=m*", true, true }, // uri
                 { "", "?q=name:m*", true, true }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, true }, // query dsl
-                { "", resource(TestData.QUERY_URI), true, true }, // nested uri
-                { "", resource(TestData.QUERY_DSL), true, true }, // nested dsl
+                { "", resource(QUERY_URI), true, true }, // nested uri
+                { "", resource(QUERY_DSL), true, true }, // nested dsl
 
                 // json
                 { "json-", "", false, false }, // empty
                 { "json-", "?q=m*", false, false }, // uri
                 { "json-", "?q=name:m*", false, false }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, false }, // query dsl
-                { "json-", resource(TestData.QUERY_URI), false, false }, // nested uri
-                { "json-", resource(TestData.QUERY_DSL), false, false }, // nested dsl
+                { "json-", resource(QUERY_URI), false, false }, // nested uri
+                { "json-", resource(QUERY_DSL), false, false }, // nested dsl
 
                 // json
                 { "json-", "", true, false }, // empty
                 { "json-", "?q=m*", true, false }, // uri
                 { "json-", "?q=name:m*", true, false }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, false }, // query dsl
-                { "json-", resource(TestData.QUERY_URI), true, false }, // nested uri
-                { "json-", resource(TestData.QUERY_DSL), true, false }, // nested dsl
+                { "json-", resource(QUERY_URI), true, false }, // nested uri
+                { "json-", resource(QUERY_DSL), true, false }, // nested dsl
 
                 // json
                 { "json-", "", false, true }, // empty
                 { "json-", "?q=m*", false, true }, // uri
                 { "json-", "?q=name:m*", false, true }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, true }, // query dsl
-                { "json-", resource(TestData.QUERY_URI), false, true }, // nested uri
-                { "json-", resource(TestData.QUERY_DSL), false, true }, // nested dsl
+                { "json-", resource(QUERY_URI), false, true }, // nested uri
+                { "json-", resource(QUERY_DSL), false, true }, // nested dsl
 
                 // json
                 { "json-", "", true, true }, // empty
                 { "json-", "?q=m*", true, true }, // uri
                 { "json-", "?q=name:m*", true, true }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, true }, // query dsl
-                { "json-", resource(TestData.QUERY_URI), true, true }, // nested uri
-                { "json-", resource(TestData.QUERY_DSL), true, true } // nested dsl
+                { "json-", resource(QUERY_URI), true, true }, // nested uri
+                { "json-", resource(QUERY_DSL), true, true } // nested dsl
 
         });
     }
@@ -114,15 +117,15 @@ public class QueryTestParams {
                 { "", "?q=m*" }, // uri
                 { "", "?q=name:m*" }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
-                { "", resource(TestData.QUERY_URI) }, // nested uri
-                { "", resource(TestData.QUERY_DSL) }, // nested dsl
+                { "", resource(QUERY_URI) }, // nested uri
+                { "", resource(QUERY_DSL) }, // nested dsl
 
                 { "json-", "" }, // empty
                 { "json-", "?q=m*" }, // uri
                 { "json-", "?q=name:m*" }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
-                { "json-", resource(TestData.QUERY_URI) }, // nested uri
-                { "json-", resource(TestData.QUERY_DSL) } // nested dsl
+                { "json-", resource(QUERY_URI) }, // nested uri
+                { "json-", resource(QUERY_DSL) } // nested dsl
                 });
     }
 
@@ -132,15 +135,15 @@ public class QueryTestParams {
                 { "?q=m*", true }, // uri
                 //{ "?q=@name:m*", true }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
-                { resource(TestData.QUERY_URI), true }, // nested uri
-                { resource(TestData.QUERY_DSL), true }, // nested dsl
+                { resource(QUERY_URI), true }, // nested uri
+                { resource(QUERY_DSL), true }, // nested dsl
 
                 { "", false }, // empty
                 { "?q=m*", false }, // uri
                 //{ "?q=name:m*", false }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
-                { resource(TestData.QUERY_URI), false }, // nested uri
-                { resource(TestData.QUERY_DSL), false } // nested dsl
+                { resource(QUERY_URI), false }, // nested uri
+                { resource(QUERY_DSL), false } // nested dsl
         });
     }
 
@@ -150,24 +153,20 @@ public class QueryTestParams {
                 { "?q=m*", true }, // uri
                 { "?q=name:m*", true }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
-                { resource(TestData.QUERY_URI), true }, // nested uri
-                { resource(TestData.QUERY_DSL), true }, // nested dsl
+                { resource(QUERY_URI), true }, // nested uri
+                { resource(QUERY_DSL), true }, // nested dsl
 
                 { "", false }, // empty
                 { "?q=m*", false }, // uri
                 { "?q=name:m*", false }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
-                { resource(TestData.QUERY_URI), false }, // nested uri
-                { resource(TestData.QUERY_DSL), false } // nested dsl
+                { resource(QUERY_URI), false }, // nested uri
+                { resource(QUERY_DSL), false } // nested dsl
                 });
     }
 
     private String resource(String resource) {
-        try {
-            return TestData.unpackResource(resource, stagingLocation).toURI().toString();
-        } catch (IOException ioe) {
-            throw new EsHadoopException("Could not load resource [" + resource + "]", ioe);
-        }
+        return TestData.unpackResource(resource, stagingLocation).toURI().toString();
     }
 
     @SuppressWarnings("deprecation")
@@ -177,8 +176,8 @@ public class QueryTestParams {
         }
 
         try {
-            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(TestData.QUERY_DSL, stagingLocation).getAbsolutePath()), cfg);
-            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(TestData.QUERY_URI, stagingLocation).getAbsolutePath()), cfg);
+            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(QUERY_DSL, stagingLocation).getAbsolutePath()), cfg);
+            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(QUERY_URI, stagingLocation).getAbsolutePath()), cfg);
         } catch (IOException ex) {
         }
         return cfg;

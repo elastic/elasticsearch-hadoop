@@ -69,13 +69,13 @@ import org.junit.runners.MethodSorters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
-import org.apache.commons.logging.impl.NoOpLog
 import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.apache.spark.sql.types.DoubleType
 import org.elasticsearch.hadoop.EsAssume
-import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
+import org.junit.ClassRule
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -88,6 +88,8 @@ object AbstractScalaEsScalaSparkSQL {
 
   @transient var keywordType: String = "keyword"
   @transient var textType: String = "text"
+
+  @transient @ClassRule val testData = new TestData()
 
   @BeforeClass
   def setup() {
@@ -200,7 +202,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
                 "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
   val version = TestUtils.getEsClusterInfo.getMajorVersion
-  val datInput = TestUtils.sampleArtistsDat()
+  val datInput = AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri().toString
   val keyword = AbstractScalaEsScalaSparkSQL.keywordType
   val text = AbstractScalaEsScalaSparkSQL.textType
 

@@ -66,7 +66,6 @@ public abstract class AbstractStormSuite {
             copyPropertiesIntoCfg(cfg);
 
             String stormMode = TestSettings.TESTING_PROPS.getProperty("storm", "local");
-
             isLocal = "local".equals(stormMode);
             //cfg.setDebug(true);
             cfg.setNumWorkers(Integer.parseInt(TestSettings.TESTING_PROPS.getProperty("storm.numworkers", "2")));
