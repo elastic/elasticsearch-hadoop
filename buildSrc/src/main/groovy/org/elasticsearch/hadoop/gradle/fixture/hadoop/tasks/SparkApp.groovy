@@ -26,6 +26,8 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
+import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
+
 class SparkApp extends AbstractClusterTask {
 
     enum Master {
@@ -40,12 +42,11 @@ class SparkApp extends AbstractClusterTask {
     File jobJar
     Master master = Master.YARN
     DeployMode deployMode = DeployMode.CLIENT
-    Map<String, String> jobSettings = [:]
+    Map<String, Object> jobSettings = [:]
     String principal
     String keytab
     List<File> libJars = []
     List<String> args = []
-    Map<String, String> env = [:]
 
     void deployMode(DeployMode mode) {
         deployMode = mode
@@ -59,12 +60,29 @@ class SparkApp extends AbstractClusterTask {
         deployMode = DeployMode.CLUSTER
     }
 
-    void jobSetting(String key, String value) {
+    void jobSetting(String key, Object value) {
         jobSettings.put(key, value)
     }
 
-    void jobSettings(Map<String, String> configs) {
+    void jobSettings(Map<String, Object> configs) {
         jobSettings.putAll(configs)
+    }
+
+    void libJars(File... files) {
+        libJars.addAll(files)
+    }
+
+    @Override
+    InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration) {
+        return clusterConfiguration
+                .service(HadoopClusterConfiguration.SPARK)
+                .role(SparkYarnServiceDescriptor.GATEWAY)
+                .instance(0)
+    }
+
+    @Override
+    Map<String, String> taskEnvironmentVariables() {
+        return [:]
     }
 
     @TaskAction
@@ -81,10 +99,7 @@ class SparkApp extends AbstractClusterTask {
         }
 
         // Gateway conf
-        InstanceConfiguration sparkGateway = clusterConfiguration
-            .service(HadoopClusterConfiguration.SPARK)
-            .role(SparkYarnServiceDescriptor.GATEWAY)
-            .instance(0)
+        InstanceConfiguration sparkGateway = getInstance()
 
         File baseDir = sparkGateway.getBaseDir()
         File homeDir = new File(baseDir, sparkGateway.getServiceDescriptor().homeDirName(sparkGateway))
@@ -113,7 +128,7 @@ class SparkApp extends AbstractClusterTask {
             commandLine.addAll(['--jars', libJars.join(',')])
         }
 
-        jobSettings.collect { k, v -> /$k=$v/ }.forEach { conf -> commandLine.add('--conf'); commandLine.add(conf) }
+        jobSettings.collect { k, v -> /$k=${unapplyString(v)}/ }.forEach { conf -> commandLine.add('--conf'); commandLine.add(conf) }
 
         if (DeployMode.CLUSTER.equals(deployMode) && (principal != null || keytab != null)) {
             if (principal == null || keytab == null) {
@@ -126,9 +141,7 @@ class SparkApp extends AbstractClusterTask {
         commandLine.addAll(args)
 
         // HADOOP_CONF_DIR=..../etc/hadoop
-        Map<String, String> finalEnv = sparkGateway.getEnvironmentVariables()
-        sparkGateway.getServiceDescriptor().finalizeEnv(finalEnv, sparkGateway)
-        finalEnv.putAll(env)
+        Map<String, String> finalEnv = collectEnvVars()
 
         // Do command
         project.logger.info("Command Env: " + finalEnv)

@@ -33,7 +33,6 @@ class DfsCopy extends AbstractClusterTask {
     File localSource
     File dfsDestination
     File localDestination
-    Map<String, String> env = [:]
 
     File getDfsSource() {
         return dfsSource
@@ -95,20 +94,17 @@ class DfsCopy extends AbstractClusterTask {
         setLocalDestination(path)
     }
 
-    Map<String, String> getEnv() {
-        return env
+    @Override
+    InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration) {
+        return clusterConfiguration
+                .service(HadoopClusterConfiguration.HADOOP)
+                .role(HadoopServiceDescriptor.GATEWAY)
+                .instance(0)
     }
 
-    void setEnv(Map<String, String> env) {
-        this.env = env
-    }
-
-    void env(String key, String val) {
-        env.put(key, val)
-    }
-
-    void env(Map<String, String> values) {
-        env.putAll(values)
+    @Override
+    Map<String, String> taskEnvironmentVariables() {
+        return [:]
     }
 
     @TaskAction
@@ -125,10 +121,7 @@ class DfsCopy extends AbstractClusterTask {
         }
 
         // Gateway conf
-        InstanceConfiguration hadoopGateway = clusterConfiguration
-                .service(HadoopClusterConfiguration.HADOOP)
-                .role(HadoopServiceDescriptor.GATEWAY)
-                .instance(0)
+        InstanceConfiguration hadoopGateway = getInstance()
 
         // Determine command
         File baseDir = hadoopGateway.getBaseDir()
@@ -153,9 +146,7 @@ class DfsCopy extends AbstractClusterTask {
         }
 
         // Combine env and sysprops
-        Map<String, String> finalEnv = hadoopGateway.getEnvironmentVariables()
-        hadoopGateway.getServiceDescriptor().finalizeEnv(finalEnv, hadoopGateway)
-        finalEnv.putAll(env)
+        Map<String, String> finalEnv = collectEnvVars()
 
         // First ensure destination directories exist
         if (dfsDestination != null) {
