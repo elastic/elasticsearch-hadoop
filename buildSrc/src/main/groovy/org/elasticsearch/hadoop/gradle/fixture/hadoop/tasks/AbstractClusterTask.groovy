@@ -19,14 +19,15 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 
+import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
-import org.gradle.api.DefaultTask
 
-abstract class AbstractClusterTask extends DefaultTask {
+abstract class AbstractClusterTask extends DefaultTestClustersTask {
 
     HadoopClusterConfiguration clusterConfiguration
     InstanceConfiguration executedOn
+    Map<String, String> environmentVariables = [:]
 
     AbstractClusterTask() {
         super()
@@ -37,4 +38,34 @@ abstract class AbstractClusterTask extends DefaultTask {
         executedOn = instance
     }
 
+    abstract InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration)
+    abstract Map<String, String> taskEnvironmentVariables()
+
+    protected getInstance() {
+        return executedOn == null ? defaultInstance(this.clusterConfiguration) : executedOn
+    }
+
+    protected Map<String, String> collectEnvVars() {
+        InstanceConfiguration instance = getInstance()
+
+        Map<String, String> finalEnv = [:]
+
+        // Set JAVA_HOME
+        finalEnv['JAVA_HOME'] = instance.javaHome
+
+        // User provided environment variables from the cluster configuration
+        finalEnv.putAll(instance.getEnvironmentVariables())
+
+        // Finalize the environment variables using the service descriptor
+        instance.getServiceDescriptor().finalizeEnv(finalEnv, instance)
+
+        // Add any environment variables that might be based on the specific
+        // task's configuration (jvm options via env, lib jars, etc...)
+        finalEnv.putAll(taskEnvironmentVariables())
+
+        // Add the explicit env variables from this task instance at the end
+        finalEnv.putAll(environmentVariables)
+
+        return finalEnv
+    }
 }

@@ -24,6 +24,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 /**
  * Describes deployment characteristics for different Hadoop ecosystem projects.
  *
@@ -100,7 +102,7 @@ interface ServiceDescriptor {
     /**
      * Collect all configuration entries, setting defaults for the service, role, and instance.
      */
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration)
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration)
 
     /**
      * Closure that formats a configuration map into a String for the config file contents.
@@ -110,7 +112,7 @@ interface ServiceDescriptor {
     /**
      * Produces the HTTP/S URI to reach the web front end for a running instance, or null if there is no web interface.
      */
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents)
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents)
 
     /**
      * The command line to use for starting the given role and instance.

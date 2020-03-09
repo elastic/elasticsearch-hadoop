@@ -29,6 +29,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.gradle.api.GradleException
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 class PigServiceDescriptor implements ServiceDescriptor {
 
     static final Map<Version, Map<String, String>> VERSION_MAP = [:]
@@ -112,7 +114,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
         return ['pig.properties' : configuration.getSettingsContainer().flattenFile('pig.properties')]
     }
 
@@ -122,7 +124,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (GATEWAY.equals(configuration.roleDescriptor)) {
             return null
         }

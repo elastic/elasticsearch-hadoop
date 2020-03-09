@@ -30,6 +30,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.gradle.api.GradleException
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 class HadoopServiceDescriptor implements ServiceDescriptor {
 
     static final Map<Version, Map<String, String>> VERSION_MAP = [:]
@@ -120,12 +122,12 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
         SettingsContainer container = configuration.getSettingsContainer()
-        Map<String, Map<String, String>> files = [:]
+        Map<String, FileSettings> files = [:]
 
         // hdfs-site.xml:
-        Map<String, String> hdfsSite = container.flattenFile('hdfs-site.xml')
+        FileSettings hdfsSite = container.flattenFile('hdfs-site.xml')
 
         // default replication should be 1
         hdfsSite.putIfAbsent('dfs.replication', '1')
@@ -152,7 +154,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         files.put('hdfs-site.xml', hdfsSite)
 
         // yarn-site.xml:
-        Map<String, String> yarnSite = container.flattenFile('yarn-site.xml')
+        FileSettings yarnSite = container.flattenFile('yarn-site.xml')
 
         // Set the shuffle options
         yarnSite.putIfAbsent("yarn.nodemanager.aux-services", "mapreduce_shuffle")
@@ -161,7 +163,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         files.put('yarn-site.xml', yarnSite)
 
         // mapred-site.xml
-        Map<String, String> mapredSite = container.flattenFile('mapred-site.xml')
+        FileSettings mapredSite = container.flattenFile('mapred-site.xml')
 
         // history server addresses
         mapredSite.putIfAbsent('mapreduce.jobhistory.address', 'localhost:10020')
@@ -170,14 +172,14 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         files.put('mapred-site.xml', mapredSite)
 
         // core-site.xml:
-        Map<String, String> coreSite = container.flattenFile('core-site.xml')
+        FileSettings coreSite = container.flattenFile('core-site.xml')
 
         // default FS settings
         coreSite.putIfAbsent('fs.defaultFS', "hdfs://${hdfsSite.get('dfs.namenode.rpc-address')}")
         files.put('core-site.xml', coreSite)
 
         // ssl server settings (for HTTPS)
-        Map<String, String> sslServer = container.flattenFile('ssl-server.xml')
+        FileSettings sslServer = container.flattenFile('ssl-server.xml')
         files.put('ssl-server.xml', sslServer)
 
         return files
@@ -189,39 +191,39 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         RoleDescriptor role = configuration.roleDescriptor
         if (NAMENODE.equals(role)) {
-            Map<String, String> hdfsSite = configFileContents.get('hdfs-site.xml')
+            FileSettings hdfsSite = configFileContents.get('hdfs-site.xml')
             if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
-                return "https://${hdfsSite.get('dfs.namenode.https-address', 'localhost:50470')}"
+                return "https://${hdfsSite.getOrDefault('dfs.namenode.https-address', 'localhost:50470')}"
             } else {
-                return "http://${hdfsSite.get('dfs.namenode.http-address', 'localhost:50070')}"
+                return "http://${hdfsSite.getOrDefault('dfs.namenode.http-address', 'localhost:50070')}"
             }
         } else if (DATANODE.equals(role)) {
-            Map<String, String> hdfsSite = configFileContents.get('hdfs-site.xml')
+            FileSettings hdfsSite = configFileContents.get('hdfs-site.xml')
             if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
-                return "https://${hdfsSite.get('dfs.datanode.https-address', 'localhost:50475')}"
+                return "https://${hdfsSite.getOrDefault('dfs.datanode.https-address', 'localhost:50475')}"
             } else {
-                return "http://${hdfsSite.get('dfs.datanode.http-address', 'localhost:50075')}"
+                return "http://${hdfsSite.getOrDefault('dfs.datanode.http-address', 'localhost:50075')}"
             }
         } else if (RESOURCEMANAGER.equals(role)) {
-            Map<String, String> yarnSite = configFileContents.get('yarn-site.xml')
+            FileSettings yarnSite = configFileContents.get('yarn-site.xml')
             if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
-                return "https://${yarnSite.get('yarn.resourcemanager.webapp.address', 'localhost:8090')}"
+                return "https://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8090')}"
             } else {
-                return "http://${yarnSite.get('yarn.resourcemanager.webapp.https.address', 'localhost:8088')}"
+                return "http://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.https.address', 'localhost:8088')}"
             }
         } else if (NODEMANAGER.equals(role)) {
-            Map<String, String> yarnSite = configFileContents.get('yarn-site.xml')
+            FileSettings yarnSite = configFileContents.get('yarn-site.xml')
             if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
-                return "https://${yarnSite.get('yarn.nodemanager.webapp.address', 'localhost:8042')}"
+                return "https://${yarnSite.getOrDefault('yarn.nodemanager.webapp.address', 'localhost:8042')}"
             } else {
-                return "http://${yarnSite.get('yarn.nodemanager.webapp.address', 'localhost:8042')}"
+                return "http://${yarnSite.getOrDefault('yarn.nodemanager.webapp.address', 'localhost:8042')}"
             }
         } else if (HISTORYSERVER.equals(role)) {
-            Map<String, String> mapredSite = configFileContents.get('mapred-site.xml')
-            return "http://${mapredSite.get('mapreduce.jobhistory.webapp.address', 'localhost:19888')}"
+            FileSettings mapredSite = configFileContents.get('mapred-site.xml')
+            return "http://${mapredSite.getOrDefault('mapreduce.jobhistory.webapp.address', 'localhost:19888')}"
         } else if (GATEWAY.equals(role)) {
             return null // No web interface for Gateway
         }

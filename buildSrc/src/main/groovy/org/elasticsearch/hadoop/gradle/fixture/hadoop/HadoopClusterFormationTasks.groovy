@@ -23,6 +23,7 @@ import org.apache.tools.ant.DefaultLogger
 import org.elasticsearch.gradle.LoggedExec
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.Fixture
+import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
@@ -41,6 +42,8 @@ import org.gradle.api.tasks.Exec
 import org.apache.tools.ant.taskdefs.condition.Os
 
 import java.nio.file.Paths
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 /**
  * A helper for creating tasks to build a cluster that is used by a task, and tear down the cluster
@@ -68,8 +71,6 @@ class HadoopClusterFormationTasks {
      * Adds dependent tasks to the given task to start and stop a cluster with the given configuration.
      * <p>
      * Returns a list of NodeInfo objects for each node in the cluster.
-     *
-     * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
      */
     static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration clusterConfiguration) {
         String prefix = clusterConfiguration.getName()
@@ -342,13 +343,16 @@ class HadoopClusterFormationTasks {
 
     static Task configureWriteConfigTask(String name, Project project, Task setup, InstanceInfo node) {
         // Add all node level configs to node Configuration
-        return project.tasks.create(name: name, type: DefaultTask, dependsOn: setup) {
+        return project.tasks.create(name: name, type: DefaultTestClustersTask, dependsOn: setup) {
             group = 'hadoopFixture'
+            if (node.elasticsearchCluster != null) {
+                useCluster(node.elasticsearchCluster)
+            }
             doFirst {
                 // Write each config file needed
                 node.configFiles.forEach { configFile ->
                     String configName = configFile.getName()
-                    Map<String, String> configFileEntries = node.configContents.get(configName)
+                    FileSettings configFileEntries = node.configContents.get(configName)
                     if (configFileEntries == null) {
                         throw new GradleException("Could not find contents of [${configFile}] settings file from deployment options.")
                     }
@@ -387,7 +391,6 @@ class HadoopClusterFormationTasks {
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: setup) { Exec exec ->
             exec.group = 'hadoopFixture'
             exec.workingDir node.cwd
-            exec.environment 'JAVA_HOME', node.getJavaHome()
             exec.environment(node.env)
 
             // Configure HADOOP_OPTS (or similar env) - adds system properties, assertion flags, remote debug etc
