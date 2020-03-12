@@ -583,15 +583,15 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureIntegrationTestTask(Project project) {
         if (project != project.rootProject) {
-            Jar itestJar = project.tasks.create('itestJar', Jar)
-            itestJar.dependsOn(project.tasks.getByName('jar'))
-            itestJar.getArchiveClassifier().set('testing')
-            project.logger.info("Created [${project.name}] Testing Jar")
+            TaskProvider<Task> itestJar = project.tasks.register('itestJar', Jar) { Jar itestJar ->
+                itestJar.dependsOn(project.tasks.getByName('jar'))
+                itestJar.getArchiveClassifier().set('testing')
 
-            // Add this project's classes to the testing uber-jar
-            itestJar.from(project.sourceSets.main.output)
-            itestJar.from(project.sourceSets.test.output)
-            itestJar.from(project.sourceSets.itest.output)
+                // Add this project's classes to the testing uber-jar
+                itestJar.from(project.sourceSets.main.output)
+                itestJar.from(project.sourceSets.test.output)
+                itestJar.from(project.sourceSets.itest.output)
+            }
 
             Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
             integrationTest.dependsOn(itestJar)
