@@ -136,4 +136,43 @@ public class InitializationUtilsTest {
         set.setProperty(ES_MAPPING_TIMESTAMP, "1000");
         validateSettingsForWriting(set);
     }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateDeleteOperationVsInputAsJson() {
+        Settings set = new TestSettings();
+        set.setProperty(ES_WRITE_OPERATION, "delete");
+        set.setProperty(ES_INPUT_JSON, "true");
+        validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateDeleteOperationVsIncludeFields() {
+        Settings set = new TestSettings();
+        set.setProperty(ES_WRITE_OPERATION, "delete");
+        set.setProperty(ES_MAPPING_INCLUDE, "field");
+        validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateDeleteOperationVsExcludeFields() {
+        Settings set = new TestSettings();
+        set.setProperty(ES_WRITE_OPERATION, "delete");
+        set.setProperty(ES_MAPPING_EXCLUDE, "field");
+        validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateDeleteOperationVsIdNotSet() {
+        Settings set = new TestSettings();
+        set.setProperty(ES_WRITE_OPERATION, "delete");
+        validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateDeleteOperationVsEmptyId() {
+        Settings set = new TestSettings();
+        set.setProperty(ES_WRITE_OPERATION, "delete");
+        set.setProperty(ES_MAPPING_ID, "");
+        validateSettings(set);
+    }
 }
