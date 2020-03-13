@@ -98,8 +98,8 @@ if (disableTests) {
     
     // Build uber storm jar for testing Storm remotely (es-hadoop + es-storm + qa tests)
     Jar qaKerberosStormJar = project.tasks.create('kerberosStormJar', Jar)
-    qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('jar'))
-    qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('hadoopTestingJar'))
+    qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('jar'))
+    qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('itestJar'))
     qaKerberosStormJar.classifier = 'storm-testing'
     
     // Add projects to the storm testing uber-jar
@@ -233,8 +233,14 @@ if (disableTests) {
     
     // Fixtures will be depending on the jar and test jar artifacts
     def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
-    def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-    
+    def kerberosItestJar = project.tasks.findByName('itestJar') as Jar
+    def mrJar = project(':elasticsearch-hadoop-mr').tasks.getByName('jar') as Jar
+    def mrItestJar = project(':elasticsearch-hadoop-mr').tasks.getByName('itestJar') as Jar
+    def hiveItestJar = project(':elasticsearch-hadoop-hive').tasks.getByName('itestJar') as Jar
+    def pigItestJar = project(':elasticsearch-hadoop-pig').tasks.getByName('itestJar') as Jar
+    def sparkItestJar = project(':elasticsearch-spark-20').tasks.getByName('itestJar') as Jar
+    def stormItestJar = project(':elasticsearch-storm').tasks.getByName('itestJar') as Jar
+
     // Need these for SSL items, test data, and scripts
     File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
     File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
@@ -330,7 +336,7 @@ if (disableTests) {
         // Add the ES-Hadoop jar to the resource manager classpath so that it can load the token renewer implementation
         // for ES tokens. Otherwise, tokens may not be cancelled at the end of the job.
         s.role('resourcemanager') { RoleConfiguration r ->
-            r.addEnvironmentVariable('YARN_USER_CLASSPATH', testingJar.archivePath.toString())
+            r.addEnvironmentVariable('YARN_USER_CLASSPATH', mrJar.archivePath.toString())
             r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
                 // Add settings specifically for ES Node to allow for cancelling the tokens
                 f.addSetting('es.nodes', esAddress)
@@ -359,7 +365,13 @@ if (disableTests) {
         s.addSetting('es.nodes', esAddress)
     }
     config.addDependency(jar)
-    config.addDependency(testingJar)
+    config.addDependency(kerberosItestJar)
+    config.addDependency(mrJar)
+    config.addDependency(mrItestJar)
+    config.addDependency(hiveItestJar)
+    config.addDependency(pigItestJar)
+    config.addDependency(sparkItestJar)
+    config.addDependency(stormItestJar)
 
     // We need to create a tmp directory in hadoop before history server does, because history server will set permissions
     // wrong.
@@ -435,7 +447,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(copyData, setupUsers)
         jobJar = jar.archivePath
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, mrItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
         jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
@@ -462,7 +474,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(mrLoadData)
         jobJar = jar.archivePath
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, mrItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
         jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
@@ -495,7 +507,7 @@ if (disableTests) {
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
         jobJar = jar.archivePath
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, sparkItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
@@ -523,7 +535,7 @@ if (disableTests) {
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
         jobJar = jar.archivePath
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, sparkItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
@@ -565,7 +577,7 @@ if (disableTests) {
         dependsOn(jar, setupUsers, copyData, patchBeeline)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/load_to_es.sql')
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, hiveItestJar.archivePath)
         environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
@@ -582,7 +594,7 @@ if (disableTests) {
         dependsOn(hiveLoadData)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/read_from_es.sql')
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, hiveItestJar.archivePath)
         environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
@@ -602,7 +614,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(jar, setupUsers, copyData)
         script = new File(resourceDir, 'pig/load_to_es.pig')
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, pigItestJar.archivePath)
         environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
@@ -614,7 +626,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(pigLoadData)
         script = new File(resourceDir, 'pig/read_from_es.pig')
-        libJars(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, pigItestJar.archivePath)
         environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
