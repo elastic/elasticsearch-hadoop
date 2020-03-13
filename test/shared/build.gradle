@@ -23,6 +23,11 @@ repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     implementation(project(':elasticsearch-hadoop-mr'))
     
@@ -43,9 +48,4 @@ dependencies {
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
     }
-}
-
-java {
-    sourceCompatibility = 'VERSION_1_8'
-    targetCompatibility = 'VERSION_1_8'
 }
