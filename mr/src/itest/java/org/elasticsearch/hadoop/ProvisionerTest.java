@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop;
 
-import org.elasticsearch.hadoop.HdpBootstrap;
-import org.elasticsearch.hadoop.Provisioner;
 import org.junit.Test;
 
 public class ProvisionerTest {
