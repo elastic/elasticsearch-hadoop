@@ -152,7 +152,7 @@ public abstract class InitializationUtils {
         }
 
         RestClient bootstrap = new RestClient(settings);
-        try  {
+        try {
             String message = "No data nodes with HTTP-enabled available";
             List<NodeInfo> dataNodes = bootstrap.getHttpDataNodes();
             if (dataNodes.isEmpty()) {
@@ -253,10 +253,18 @@ public abstract class InitializationUtils {
             Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
         }
 
+        //check the configuration is coherent in order to use the delete operation
+        if (ConfigurationOptions.ES_OPERATION_DELETE.equals(settings.getOperation())) {
+            Assert.isTrue(!settings.getInputAsJson(), "When using delete operation, providing data as JSON is not coherent because this operation does not need document as a payload. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingIncludes().isEmpty(), "When using delete operation, the field inclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When using delete operation, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingId() != null && !StringUtils.EMPTY.equals(settings.getMappingId()), "When using delete operation, the property " + ConfigurationOptions.ES_MAPPING_ID + " must be set and must not be empty since we need the document id in order to delete it. Bailing out...");
+        }
+
         // Check to make sure user doesn't specify more than one script type
         boolean hasScript = false;
         String[] scripts = {settings.getUpdateScriptInline(), settings.getUpdateScriptFile(), settings.getUpdateScriptStored()};
-        for (String script: scripts) {
+        for (String script : scripts) {
             boolean isSet = StringUtils.hasText(script);
             Assert.isTrue((hasScript && isSet) == false, "Multiple scripts are specified. Please specify only one via [es.update.script.inline], [es.update.script.file], or [es.update.script.stored]");
             hasScript = hasScript || isSet;

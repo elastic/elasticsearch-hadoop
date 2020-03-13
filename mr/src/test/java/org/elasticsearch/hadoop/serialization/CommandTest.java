@@ -18,11 +18,6 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -41,8 +36,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -64,38 +63,28 @@ public class CommandTest {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
-        return Arrays.asList(new Object[][] {
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X },
-        });
+        Collection<Object[]> result = new ArrayList<>();
+
+        String[] operations = new String[]{ConfigurationOptions.ES_OPERATION_INDEX,
+                ConfigurationOptions.ES_OPERATION_CREATE,
+                ConfigurationOptions.ES_OPERATION_UPDATE,
+                ConfigurationOptions.ES_OPERATION_DELETE};
+        boolean[] asJsons = new boolean[]{false, true};
+        EsMajorVersion[] versions = new EsMajorVersion[]{EsMajorVersion.V_1_X,
+                EsMajorVersion.V_2_X,
+                EsMajorVersion.V_5_X,
+                EsMajorVersion.V_6_X,
+                EsMajorVersion.V_7_X};
+
+        for (EsMajorVersion version : versions) {
+            for (boolean asJson : asJsons) {
+                for (String operation : operations) {
+                    result.add(new Object[]{operation, asJson, version});
+                }
+            }
+        }
+
+        return result;
     }
 
     public CommandTest(String operation, boolean jsonInput, EsMajorVersion version) {
@@ -112,8 +101,7 @@ public class CommandTest {
             map.put("n", 1);
             map.put("s", "v");
             data = map;
-        }
-        else {
+        } else {
             data = "{\"n\":1,\"s\":\"v\"}";
         }
     }
@@ -121,6 +109,7 @@ public class CommandTest {
     @Test
     public void testNoHeader() throws Exception {
         assumeFalse(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeFalse(ConfigurationOptions.ES_OPERATION_DELETE.equals(operation));
         create(settings()).write(data).copyTo(ba);
         String result = prefix() + "}}" + map();
         assertEquals(result, ba.toString());
@@ -129,6 +118,7 @@ public class CommandTest {
     @Test
     // check user friendliness and escape the string if needed
     public void testConstantId() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         noId = true;
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<foobar>");
@@ -142,6 +132,7 @@ public class CommandTest {
     @Test
     public void testParent() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
@@ -153,6 +144,7 @@ public class CommandTest {
     @Test
     public void testParent7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
@@ -164,6 +156,7 @@ public class CommandTest {
     @Test
     public void testVersion() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
@@ -175,6 +168,7 @@ public class CommandTest {
     @Test
     public void testVersion7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
@@ -185,6 +179,7 @@ public class CommandTest {
 
     @Test
     public void testTtl() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
 
@@ -195,6 +190,7 @@ public class CommandTest {
 
     @Test
     public void testTimestamp() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
         create(settings).write(data).copyTo(ba);
@@ -205,6 +201,7 @@ public class CommandTest {
     @Test
     public void testRouting() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
@@ -216,6 +213,7 @@ public class CommandTest {
     @Test
     public void testRouting7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
@@ -227,6 +225,7 @@ public class CommandTest {
     @Test
     public void testAll() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
@@ -240,6 +239,7 @@ public class CommandTest {
     @Test
     public void testAll7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
@@ -252,6 +252,7 @@ public class CommandTest {
 
     @Test
     public void testIdPattern() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setResourceWrite("foo/{n}");
 
@@ -301,7 +302,7 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
+                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -431,7 +432,7 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
+                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
         assertEquals(result, ba.toString());
     }
@@ -507,7 +508,6 @@ public class CommandTest {
 
         set.setInternalVersion(version);
         set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
-
         InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
         InitializationUtils.setBytesConverterIfNeeded(set, JdkBytesConverter.class, null);
@@ -530,6 +530,9 @@ public class CommandTest {
     }
 
     private String map() {
+        if (isDeleteOP()) {
+            return "\n";
+        }
         StringBuilder sb = new StringBuilder("\n{");
         if (isUpdateOp()) {
             sb.append("\"doc\":{");
@@ -546,4 +549,9 @@ public class CommandTest {
     private boolean isUpdateOp() {
         return ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation);
     }
+
+    private boolean isDeleteOP() {
+        return ConfigurationOptions.ES_OPERATION_DELETE.equals(operation);
+    }
 }
+
