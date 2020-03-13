@@ -13,16 +13,42 @@ variants {
     targetVersions '2.11.12'
 }
 
+println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
+String sparkVersion = spark13Version
+
 configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
     scalaCompilerPlugin {
         defaultDependencies { dependencies ->
             dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
         }
     }
+    testImplementation {
+        exclude group: "org.mortbay.jetty"
+    }
+    itestImplementation {
+        exclude group: "org.mortbay.jetty"
+    }
 }
 
-println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
-String sparkVersion = spark13Version
+// deal with the messy conflicts out there
+configurations.all { Configuration conf ->
+    conf.resolutionStrategy {
+        eachDependency { details ->
+            // in a similar vein, change all javax.servlet artifacts to the one used by Spark
+            // otherwise these will lead to SecurityException (signer information wrong)
+            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
+                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
+            }
+        }
+    }
+}
 
 tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
@@ -88,7 +114,7 @@ eclipse {
 }
 
 dependencies {
-    provided(project(":elasticsearch-hadoop-mr"))
+    embedded(project(":elasticsearch-hadoop-mr"))
 
     api("org.scala-lang:scala-library:${project.ext.scalaVersion}")
     api("org.scala-lang:scala-reflect:${project.ext.scalaVersion}")
@@ -138,7 +164,7 @@ dependencies {
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
@@ -158,27 +184,6 @@ sourcesJar {
 
 scaladoc {
     title = "${rootProject.description} ${version} API"
-}
-
-// deal with the messy conflicts out there
-configurations.all { Configuration conf ->
-    conf.resolutionStrategy {
-        eachDependency { details ->
-            // in a similar vein, change all javax.servlet artifacts to the one used by Spark
-            // otherwise these will lead to SecurityException (signer information wrong)
-            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
-                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
-            }
-        }
-    }
-}
-configurations {
-    testImplementation {
-        exclude group: "org.mortbay.jetty"
-    }
-    itestImplementation {
-        exclude group: "org.mortbay.jetty"
-    }
 }
 
 tasks.withType(ScalaCompile) {
