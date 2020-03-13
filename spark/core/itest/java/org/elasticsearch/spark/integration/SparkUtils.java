@@ -38,7 +38,7 @@ public abstract class SparkUtils {
         // init ES-Hadoop JAR
         // expect the jar under build\libs
         try {
-            File folder = new File(".." + File.separator + ".." + File.separator + "build" + File.separator + "libs" + File.separator).getCanonicalFile();
+            File folder = new File("build" + File.separator + "libs" + File.separator).getCanonicalFile();
             System.out.println(folder.getAbsolutePath());
             // find proper jar
             File[] files = folder.listFiles(new FileFilter() {

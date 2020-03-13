@@ -37,7 +37,6 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.Test
-import org.gradle.api.tasks.testing.TestReport
 import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.internal.jvm.Jvm
@@ -65,7 +64,6 @@ class BuildPlugin implements Plugin<Project>  {
         configureEclipse(project)
         configureMaven(project)
         configureIntegrationTestTask(project)
-        configureTestReports(project)
         configurePrecommit(project)
         configureDependenciesInfo(project)
     }
@@ -304,12 +302,6 @@ class BuildPlugin implements Plugin<Project>  {
             testImplementation("org.locationtech.spatial4j:spatial4j:0.6")
             testImplementation("com.vividsolutions:jts:1.13")
 
-            // TODO: Remove when we merge ITests to test dirs
-            itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
-                // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
-                // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
-                exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
-            }
             itestImplementation(project.sourceSets.main.output)
             itestImplementation(project.configurations.testImplementation)
             itestImplementation(project.configurations.provided)
@@ -590,70 +582,50 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureIntegrationTestTask(Project project) {
-        Jar hadoopTestingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-        if (hadoopTestingJar == null) {
-            // jar used for testing Hadoop remotely (es-hadoop + tests)
-            hadoopTestingJar = project.rootProject.tasks.create('hadoopTestingJar', Jar)
-            hadoopTestingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
-            hadoopTestingJar.classifier = 'testing'
-            project.logger.info("Created Remote Testing Jar")
-        }
-
-        // Add this project's classes to the testing uber-jar
-        hadoopTestingJar.from(project.sourceSets.test.output)
-        hadoopTestingJar.from(project.sourceSets.main.output)
-        hadoopTestingJar.from(project.sourceSets.itest.output)
-
-        Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
-        integrationTest.dependsOn(hadoopTestingJar)
-
-        integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
-        integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
-        integrationTest.excludes = ["**/Abstract*.class"]
-
-        integrationTest.ignoreFailures = false
-
-        integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
-        integrationTest.minHeapSize = "256m"
-        integrationTest.maxHeapSize = "2g"
-
-        integrationTest.testLogging {
-            displayGranularity 0
-            events "started", "failed" //, "standardOut", "standardError"
-            exceptionFormat "full"
-            showCauses true
-            showExceptions true
-            showStackTraces true
-            stackTraceFilters "groovy"
-            minGranularity 2
-            maxGranularity 2
-        }
-
-        integrationTest.reports.html.enabled = false
-
-        // Only add cluster settings if it's not the root project
         if (project != project.rootProject) {
+            TaskProvider<Task> itestJar = project.tasks.register('itestJar', Jar) { Jar itestJar ->
+                itestJar.dependsOn(project.tasks.getByName('jar'))
+                itestJar.getArchiveClassifier().set('testing')
+
+                // Add this project's classes to the testing uber-jar
+                itestJar.from(project.sourceSets.main.output)
+                itestJar.from(project.sourceSets.test.output)
+                itestJar.from(project.sourceSets.itest.output)
+            }
+
+            Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
+            integrationTest.dependsOn(itestJar)
+
+            integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
+            integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
+            integrationTest.excludes = ["**/Abstract*.class"]
+
+            integrationTest.ignoreFailures = false
+
+            integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+            integrationTest.minHeapSize = "256m"
+            integrationTest.maxHeapSize = "2g"
+
+            integrationTest.testLogging {
+                displayGranularity 0
+                events "started", "failed" //, "standardOut", "standardError"
+                exceptionFormat "full"
+                showCauses true
+                showExceptions true
+                showStackTraces true
+                stackTraceFilters "groovy"
+                minGranularity 2
+                maxGranularity 2
+            }
+
+            integrationTest.reports.html.enabled = false
+
+            // Only add cluster settings if it's not the root project
             project.logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
             // Create the cluster fixture around the integration test.
             // There's probably a more elegant way to do this in Gradle
             project.plugins.apply("es.hadoop.cluster")
         }
-    }
-
-    /**
-     * Configure the root testReport task with the test tasks in this project to report on, creating the report task
-     * on root if it is not created yet.
-     * @param project to configure
-     */
-    private static void configureTestReports(Project project) {
-        TestReport testReport = project.rootProject.getTasks().findByName('testReport') as TestReport
-        if (testReport == null) {
-            // Create the task on root if it is not created yet.
-            testReport = project.rootProject.getTasks().create('testReport', TestReport.class)
-            testReport.setDestinationDir(project.rootProject.file("${project.rootProject.getBuildDir()}/reports/allTests"))
-        }
-        testReport.reportOn(project.getTasks().getByName('test'))
-        testReport.reportOn(project.getTasks().getByName('integrationTest'))
     }
 
     /**

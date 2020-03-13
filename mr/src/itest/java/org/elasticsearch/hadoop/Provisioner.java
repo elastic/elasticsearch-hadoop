@@ -42,7 +42,7 @@ public abstract class Provisioner {
         // init ES-Hadoop JAR
         // expect the jar under build\libs
         try {
-            File folder = new File(".." + File.separator + "build" + File.separator + "libs" + File.separator).getCanonicalFile();
+            File folder = new File("build" + File.separator + "libs" + File.separator).getCanonicalFile();
             // find proper jar
             File[] files = folder.listFiles(new FileFilter() {
 
