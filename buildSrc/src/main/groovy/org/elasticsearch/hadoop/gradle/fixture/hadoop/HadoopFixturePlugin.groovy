@@ -28,6 +28,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.artifacts.repositories.IvyPatternRepositoryLayout
+import org.gradle.api.publish.ivy.IvyArtifact
 
 class HadoopFixturePlugin implements Plugin<Project> {
 
@@ -69,27 +70,18 @@ class HadoopFixturePlugin implements Plugin<Project> {
 
     private static configureApacheMirrorRepository(Project project) {
         RepositoryHandler repositoryHandler = project.getRepositories()
-        repositoryHandler.add(repositoryHandler.ivy(new Action<IvyArtifactRepository>() {
-            @Override
-            void execute(IvyArtifactRepository ivyArtifactRepository) {
-                ivyArtifactRepository.setUrl(APACHE_MIRROR)
-                ivyArtifactRepository.patternLayout(new Action<IvyPatternRepositoryLayout>() {
-                    @Override
-                    void execute(IvyPatternRepositoryLayout ivyPatternRepositoryLayout) {
-                        // We use this pattern normally and break the regular tradition of a strictly numerical version
-                        // because Hive does not provide a reasonable artifact name that makes a more robust pattern
-                        // reasonable (it has a very unorthodox layout)
-                        ivyPatternRepositoryLayout.artifact("[organization]/[module]/[revision].[ext]")
-                        ivyPatternRepositoryLayout.setM2compatible(true)
-                    }
-                })
-                ivyArtifactRepository.metadataSources(new Action<IvyArtifactRepository.MetadataSources>() {
-                    @Override
-                    void execute(IvyArtifactRepository.MetadataSources metadataSources) {
-                        metadataSources.artifact()
-                    }
-                })
-            }
+        repositoryHandler.add(repositoryHandler.ivy({IvyArtifactRepository ivyArtifactRepository ->
+            ivyArtifactRepository.setUrl(APACHE_MIRROR)
+            ivyArtifactRepository.patternLayout({IvyPatternRepositoryLayout ivyPatternRepositoryLayout ->
+                // We use this pattern normally and break the regular tradition of a strictly numerical version
+                // because Hive does not provide a reasonable artifact name that makes a more robust pattern
+                // reasonable (it has a very unorthodox layout)
+                ivyPatternRepositoryLayout.artifact("[organization]/[module]/[revision].[ext]")
+                ivyPatternRepositoryLayout.setM2compatible(true)
+            })
+            ivyArtifactRepository.metadataSources({IvyArtifactRepository.MetadataSources metadataSources ->
+                metadataSources.artifact()
+            })
         }))
     }
 }
