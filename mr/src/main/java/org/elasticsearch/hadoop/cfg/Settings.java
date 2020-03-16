@@ -221,6 +221,7 @@ public abstract class Settings {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
     }
 
+
     public String getSerializerBytesConverterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_BYTES_CLASS);
     }
@@ -765,3 +766,4 @@ public abstract class Settings {
 
     public abstract Properties asProperties();
 }
+
