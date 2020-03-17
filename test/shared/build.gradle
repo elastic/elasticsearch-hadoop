@@ -1,0 +1,50 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+apply plugin: 'es.hadoop.build.base'
+apply plugin: 'java-library'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+    api(project(':elasticsearch-hadoop-mr'))
+    
+    api(project.ext.hadoopClient)
+
+    api("junit:junit:${project.ext.junitVersion}")
+    implementation("org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
+
+    implementation("io.netty:netty-all:4.0.29.Final") {
+        because "Needed for creating mock SSL Server to test against"
+    }
+
+    implementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+        because "Embedding KDC in tests"
+        // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
+        // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
+        exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+    }
+}

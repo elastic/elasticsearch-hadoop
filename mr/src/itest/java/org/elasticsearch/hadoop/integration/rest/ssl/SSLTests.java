@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
+import org.elasticsearch.hadoop.rest.ssl.BasicSSLServer;
 import org.elasticsearch.hadoop.security.KeystoreWrapper;
 import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.IOUtils;

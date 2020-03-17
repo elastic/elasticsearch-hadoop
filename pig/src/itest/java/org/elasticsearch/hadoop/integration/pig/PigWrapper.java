@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.util.List;
 import java.util.Properties;
 
@@ -31,6 +32,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.junit.rules.LazyTempFolder;
 
 /**
  * Wrapper around Pig.
@@ -38,6 +40,11 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class PigWrapper {
 
     private PigServer pig;
+    private final LazyTempFolder stagingDir;
+
+    public PigWrapper(LazyTempFolder stagingDir) {
+        this.stagingDir = stagingDir;
+    }
 
     public void start() {
         try {
@@ -51,7 +58,7 @@ public class PigWrapper {
     protected PigServer createPig() throws ExecException {
         HdpBootstrap.hackHadoopStagingOnWin();
 
-        Properties properties = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(HdpBootstrap.hadoopConfig()));
+        Properties properties = HdpBootstrap.asProperties(new QueryTestParams(stagingDir).provisionQueries(HdpBootstrap.hadoopConfig()));
         String pigHost = properties.getProperty("pig");
         // remote Pig instance
         if (StringUtils.hasText(pigHost) && !"local".equals(pig)) {
