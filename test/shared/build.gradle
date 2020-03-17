@@ -18,7 +18,7 @@
  */
 
 apply plugin: 'es.hadoop.build.base'
-apply plugin: 'java'
+apply plugin: 'java-library'
 
 repositories {
     mavenCentral()
@@ -30,13 +30,11 @@ java {
 }
 
 dependencies {
-    implementation(project(':elasticsearch-hadoop-mr'))
+    api(project(':elasticsearch-hadoop-mr'))
     
-    implementation(project.ext.hadoopClient)
-    implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
-    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
+    api(project.ext.hadoopClient)
 
-    implementation("junit:junit:${project.ext.junitVersion}")
+    api("junit:junit:${project.ext.junitVersion}")
     implementation("org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
 
     implementation("io.netty:netty-all:4.0.29.Final") {
