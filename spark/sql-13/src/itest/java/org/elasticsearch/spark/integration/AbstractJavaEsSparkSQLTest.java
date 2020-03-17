@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.spark.integration;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.concurrent.TimeUnit;
@@ -35,13 +36,15 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.TestData;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -70,6 +73,9 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	private static transient JavaSparkContext sc = null;
 	private static transient SQLContext sqc = null;
 	private EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
+
+	@ClassRule
+	public static TestData testData = new TestData();
 
 	@BeforeClass
 	public static void setup() {
@@ -173,8 +179,8 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		assertEquals("sparksql-test-scala-dataframe-read-metadata", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(1));
 	}
 
-	private DataFrame artistsAsDataFrame() {
-		String input = TestUtils.sampleArtistsDat();
+	private DataFrame artistsAsDataFrame() throws IOException {
+		String input = testData.sampleArtistsDatUri().toString();
 		JavaRDD<String> data = sc.textFile(input);
 
 		StructType schema = DataTypes

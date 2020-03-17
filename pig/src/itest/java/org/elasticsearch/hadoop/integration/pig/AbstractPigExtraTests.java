@@ -19,7 +19,7 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import org.elasticsearch.hadoop.Provisioner;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;

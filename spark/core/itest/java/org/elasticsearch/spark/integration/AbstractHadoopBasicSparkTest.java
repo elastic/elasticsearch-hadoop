@@ -38,14 +38,15 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.elasticsearch.hadoop.HdpBootstrap;
+import org.elasticsearch.hadoop.TestData;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -67,6 +68,8 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
     private transient SparkConf cfg = null;
     private transient JavaSparkContext sc;
 
+    @ClassRule
+    public static TestData testData = new TestData();
 
     @Before
     public void setup() {
@@ -84,7 +87,7 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
     @Test
     public void testBasicRead() throws Exception {
         sc = new JavaSparkContext(cfg);
-        JavaRDD<String> data = readAsRDD(TestUtils.sampleArtistsDatUri()).cache();
+        JavaRDD<String> data = readAsRDD(testData.sampleArtistsDatUri()).cache();
 
         assertThat((int) data.count(), is(greaterThan(300)));
 

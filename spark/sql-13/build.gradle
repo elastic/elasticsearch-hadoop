@@ -122,8 +122,8 @@ dependencies {
         exclude group: 'org.apache.hadoop'
     }
 
-    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
-    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 
     testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
@@ -138,14 +138,6 @@ dependencies {
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
-        include "org/elasticsearch/hadoop/**"
-        include "esh-build.properties"
-        include "META-INF/services/*"
-    }
-}
-
-itestJar {
     from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"

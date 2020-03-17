@@ -19,6 +19,7 @@ include 'storm'
 project(":storm").name = "elasticsearch-storm"
 
 include 'test'
+include 'test:shared'
 include 'test:fixtures'
 include 'test:fixtures:minikdc'
 

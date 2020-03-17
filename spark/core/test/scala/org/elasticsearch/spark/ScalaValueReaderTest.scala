@@ -18,11 +18,11 @@
  */
 package org.elasticsearch.spark
 
+import org.elasticsearch.hadoop.serialization.BaseValueReaderTest
 import org.junit.Assert._
-import org.elasticsearch.hadoop.serialization.JdkValueReaderTest
 import org.elasticsearch.spark.serialization.ScalaValueReader
 
-class ScalaValueReaderTest extends JdkValueReaderTest {
+class ScalaValueReaderTest extends BaseValueReaderTest {
 
     override def createValueReader() = new ScalaValueReader()
 

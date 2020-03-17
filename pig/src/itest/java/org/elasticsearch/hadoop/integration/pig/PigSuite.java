@@ -20,13 +20,15 @@ package org.elasticsearch.hadoop.integration.pig;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.pig.impl.io.FileLocalizer;
-import org.elasticsearch.hadoop.HdfsUtils;
-import org.elasticsearch.hadoop.LocalEs;
+import org.elasticsearch.hadoop.TestData;
+import org.elasticsearch.hadoop.fs.HdfsUtils;
+import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -44,6 +46,12 @@ public class PigSuite {
 
     @ClassRule
     public static ExternalResource resource = new LocalEs();
+
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
+    @ClassRule
+    public static TestData testData = new TestData();
 
     @BeforeClass
     public static void setup() {

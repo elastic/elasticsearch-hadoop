@@ -45,7 +45,8 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.mr.PrintStreamOutputFormat;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -100,13 +101,13 @@ public class AbstractExtraMRTests {
         standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
         standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
-        FileInputFormat.setInputPaths(standard, new Path(TestUtils.gibberishDat(conf)));
+        FileInputFormat.setInputPaths(standard, new Path(MRSuite.testData.gibberishDat(conf)));
 
         JobConf json = new JobConf(conf);
         json.setMapperClass(IdentityMapper.class);
         json.setMapOutputValueClass(Text.class);
         json.set(ConfigurationOptions.ES_INPUT_JSON, "true");
-        FileInputFormat.setInputPaths(json, new Path(TestUtils.gibberishJson(conf)));
+        FileInputFormat.setInputPaths(json, new Path(MRSuite.testData.gibberishJson(conf)));
 
         return Arrays.asList(new Object[][] { { standard, "" }, { json, "json-" } });
     }
@@ -209,7 +210,7 @@ public class AbstractExtraMRTests {
         conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
         conf.set(ConfigurationOptions.ES_OUTPUT_JSON, "true");
 
-        FileInputFormat.setInputPaths(conf, new Path(TestUtils.gibberishDat(conf)));
+        FileInputFormat.setInputPaths(conf, new Path(MRSuite.testData.gibberishDat(conf)));
         return conf;
     }
 }

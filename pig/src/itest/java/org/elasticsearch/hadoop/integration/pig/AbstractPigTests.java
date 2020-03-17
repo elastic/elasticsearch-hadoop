@@ -42,7 +42,7 @@ public abstract class AbstractPigTests {
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new PigWrapper();
+        pig = new PigWrapper(PigSuite.tempFolder);
         pig.start();
     }
 

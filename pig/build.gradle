@@ -9,19 +9,11 @@ dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
-    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
-        include "org/elasticsearch/hadoop/**"
-        include "esh-build.properties"
-        include "META-INF/services/*"
-    }
-}
-
-itestJar {
     from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
