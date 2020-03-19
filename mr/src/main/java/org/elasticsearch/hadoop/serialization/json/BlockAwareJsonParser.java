@@ -105,6 +105,7 @@ public class BlockAwareJsonParser implements Parser {
     @Override
     public void skipChildren() {
         delegate.skipChildren();
+        updateLevelBasedOn(delegate.currentToken());
     }
 
     @Override

@@ -5,15 +5,32 @@ description = "Elasticsearch Storm"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
+configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
+}
+
 dependencies {
-    provided(project(":elasticsearch-hadoop-mr"))
+    embedded(project(":elasticsearch-hadoop-mr"))
+
+    provided("org.apache.storm:storm-core:$stormVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
 
     testImplementation(project(":test:shared"))
+
     itestImplementation(project(":test:shared"))
+    itestImplementation("com.google.guava:guava:16.0.1")
+    itestImplementation("com.twitter:carbonite:1.4.0")
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
@@ -28,17 +45,5 @@ javadoc {
 sourcesJar {
     from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
 }
-
-dependencies {
-    provided("org.apache.storm:storm-core:$stormVersion") {
-        exclude module: "log4j-slf4j-impl"
-    }
-
-    itestImplementation("com.google.guava:guava:16.0.1")
-    itestImplementation("com.twitter:carbonite:1.4.0")
-}
-
-// add itest to Eclipse
-//eclipse.classpath.plusConfigurations += [configurations.itestCompile]
 
 tasks.getByName('integrationTest').enabled = false
