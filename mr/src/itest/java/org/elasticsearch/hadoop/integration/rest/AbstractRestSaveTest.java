@@ -27,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;

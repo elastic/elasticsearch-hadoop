@@ -37,12 +37,13 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.mr.EsAssume;
+import org.elasticsearch.hadoop.EsAssume;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.mr.PrintStreamOutputFormat;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -106,20 +107,20 @@ public class AbstractMRNewApiSaveTest {
 
 
         Job standard = new Job(job.getConfiguration());
-        File fl = new File(TestUtils.sampleArtistsDat());
+        File fl = MRSuite.testData.sampleArtistsDatFile();
         long splitSize = fl.length() / 3;
         TextInputFormat.setMaxInputSplitSize(standard, splitSize);
         TextInputFormat.setMinInputSplitSize(standard, 50);
 
         standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
-        TextInputFormat.addInputPath(standard, new Path(TestUtils.sampleArtistsDat(conf)));
+        TextInputFormat.addInputPath(standard, new Path(MRSuite.testData.sampleArtistsDat(conf)));
 
         Job json = new Job(job.getConfiguration());
         json.setMapperClass(Mapper.class);
         json.setMapOutputValueClass(Text.class);
         json.getConfiguration().set(ConfigurationOptions.ES_INPUT_JSON, "true");
-        TextInputFormat.addInputPath(json, new Path(TestUtils.sampleArtistsJson(conf)));
+        TextInputFormat.addInputPath(json, new Path(MRSuite.testData.sampleArtistsJson(conf)));
 
         return Arrays.asList(new Object[][] {
                 { standard, "" },

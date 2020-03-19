@@ -20,7 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.elasticsearch.gradle.info.BuildParams
+import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
 import org.elasticsearch.hadoop.gradle.util.WaitForURL
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.GradleException
@@ -29,6 +29,8 @@ import org.gradle.api.Project
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 /**
  * Generic information for any process running in a hadoop ecosystem.
@@ -70,7 +72,7 @@ class InstanceInfo {
     /** The config files */
     List<File> configFiles
 
-    Map<String, Map<String, String>> configContents
+    Map<String, FileSettings> configContents
 
     /** Closure that renders the contents of the config file */
     Closure<String> configFileFormatter
@@ -84,8 +86,8 @@ class InstanceInfo {
     /** stdout/stderr log of the service process for this instance */
     File startLog
 
-    /** Major version of java this node runs with, or {@code null} if using the runtime java version */
-    Integer javaVersion
+    /** Location of the java installation to use when running processes **/
+    String javaHome
 
     /** environment variables to start the node with */
     Map<String, String> env
@@ -107,6 +109,9 @@ class InstanceInfo {
 
     /** buffer for ant output when starting this node */
     ByteArrayOutputStream buffer = new ByteArrayOutputStream()
+
+    /** Elasticsearch cluster dependency for tasks **/
+    ElasticsearchCluster elasticsearchCluster
 
     /**
      * A closure to call before the cluster is considered ready. The closure is passed the node info,
@@ -155,12 +160,15 @@ class InstanceInfo {
         startLog = new File(cwd, 'run.log')
 
         // We just default to the current runtime at this time
-        javaVersion = 8
+        javaHome = config.getJavaHome()
 
         // Prepare Environment
         env = [:]
         env.putAll(config.getEnvironmentVariables())
         config.getServiceDescriptor().finalizeEnv(env, config)
+
+        // Add JAVA_HOME to the environment
+        env['JAVA_HOME'] = javaHome
 
         // Prepare startup command and arguments
         args = []
@@ -202,6 +210,8 @@ class InstanceInfo {
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             args.add('"') // end the entire command, quoted
         }
+
+        this.elasticsearchCluster = config.getElasticsearchCluster()
     }
 
     Path binPath() {
@@ -235,11 +245,6 @@ class InstanceInfo {
         throw new UnsupportedOperationException("JNAKernal32Library is compiled for Java 10 and up.")
     }
 
-    /** Return the java home used by this node. */
-    String getJavaHome() {
-        return javaVersion == null ? project.runtimeJavaHome : BuildParams.javaVersions.find { it.version == javaVersion }.javaHome.absolutePath
-    }
-
     /** Returns debug string for the command that started this node. */
     String getCommandString() {
         String commandString = "\nService ${config.serviceDescriptor.serviceName()}: ${config.roleDescriptor.roleName()} configuration:\n"
@@ -247,7 +252,6 @@ class InstanceInfo {
         commandString += "|  cwd: ${cwd}\n"
         commandString += "|  command: ${executable} ${args.join(' ')}\n"
         commandString += '|  environment:\n'
-        commandString += "|    JAVA_HOME: ${javaHome}\n"
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
         commandString += "|\n|  [${backgroundScript.name}]\n"
         backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})

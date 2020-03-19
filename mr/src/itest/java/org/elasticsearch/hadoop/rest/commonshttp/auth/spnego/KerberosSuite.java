@@ -23,6 +23,7 @@ import java.io.File;
 
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.fixtures.KDCFixture;
+import org.elasticsearch.hadoop.security.UgiUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

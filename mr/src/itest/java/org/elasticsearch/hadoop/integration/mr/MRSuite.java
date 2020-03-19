@@ -18,9 +18,9 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
-import org.elasticsearch.hadoop.HdfsUtils;
-import org.elasticsearch.hadoop.LocalEs;
-import org.elasticsearch.hadoop.util.TestUtils;
+import org.elasticsearch.hadoop.TestData;
+import org.elasticsearch.hadoop.fs.HdfsUtils;
+import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
@@ -35,9 +35,12 @@ public class MRSuite {
     @ClassRule
     public static ExternalResource resource = new LocalEs();
 
+    @ClassRule
+    public static TestData testData = new TestData();
+
     @BeforeClass
     public static void setupHdfs() throws Exception {
-        HdfsUtils.copyFromLocal(TestUtils.sampleArtistsDat());
-        HdfsUtils.copyFromLocal(TestUtils.sampleArtistsJson());
+        HdfsUtils.copyFromLocal(testData.sampleArtistsDatUri().toString());
+        HdfsUtils.copyFromLocal(testData.sampleArtistsJsonUri().toString());
     }
 }

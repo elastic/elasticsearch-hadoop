@@ -18,13 +18,14 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.io.IOException;
 import java.util.Date;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.mr.EsAssume;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.EsAssume;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -161,7 +162,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
-                "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, Name:chararray, uRL:chararray, pIctUre: chararray, timestamp: chararray); " +
+                "A = LOAD '" + PigSuite.testData.sampleArtistsDatUri().toString() + "' USING PigStorage() AS (id:long, Name:chararray, uRL:chararray, pIctUre: chararray, timestamp: chararray); " +
                 "B = FOREACH A GENERATE Name, uRL, pIctUre;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO '"+resource("pig-casesensitivity", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
@@ -353,12 +354,12 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                         : is("*/*=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
-    private String loadArtistSource() {
-        return loadSource(TestUtils.sampleArtistsDat()) + " AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
+    private String loadArtistSource() throws IOException {
+        return loadSource(PigSuite.testData.sampleArtistsDatUri().toString()) + " AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
     }
 
-    private String loadJoinSource() {
-        return loadSource(TestUtils.sampleJoinDat()) + " AS (id:long, company:chararray, name:chararray, relation:chararray, parent:chararray);";
+    private String loadJoinSource() throws IOException {
+        return loadSource(PigSuite.testData.sampleJoinDatURI().toString()) + " AS (id:long, company:chararray, name:chararray, relation:chararray, parent:chararray);";
     }
 
     private String loadSource(String source) {

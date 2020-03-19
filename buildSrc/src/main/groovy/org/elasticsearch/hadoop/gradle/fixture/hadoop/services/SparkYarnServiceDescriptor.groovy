@@ -26,16 +26,10 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
-import org.gradle.api.GradleException
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 class SparkYarnServiceDescriptor implements ServiceDescriptor {
-
-    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
-    static {
-        VERSION_MAP.put(new Version(2, 3, 3),
-                ['SHA-512': '27CF9AD268E684D6926201BB5478F7F5A410659972BC79FC14AF61245EFF50C9A4363E400311B2FA9E1326E8AF1EB6DDE1D359B88B9143F25A49B3E11596B002'])
-    }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
 
@@ -61,16 +55,12 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 3)
+        return new Version(2, 3, 4)
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        Version version = configuration.getVersion()
-        task.packagePath = 'spark'
-        task.packageName = 'spark'
-        task.version = "$version"
-        task.artifactFileName = "${artifactName(configuration)}.tgz"
+    String getDependencyCoordinates(ServiceConfiguration configuration) {
+        return "spark:spark-${configuration.getVersion()}:${artifactName(configuration)}@tgz"
     }
 
     @Override
@@ -84,15 +74,6 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
         Version version = configuration.getVersion()
         Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP).getVersion()
         return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
-    }
-
-    @Override
-    Map<String, String> packageHashVerification(Version version) {
-        Map<String, String> hashVerifications = VERSION_MAP.get(version)
-        if (hashVerifications == null) {
-            throw new GradleException("Unsupported version [$version] - No download hash configured")
-        }
-        return hashVerifications
     }
 
     @Override
@@ -116,7 +97,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
         return ['spark-defaults.conf' : configuration.getSettingsContainer().flattenFile('spark-defaults.conf')]
     }
 
@@ -126,7 +107,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (GATEWAY.equals(configuration.roleDescriptor)) {
             return null
         }

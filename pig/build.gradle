@@ -9,8 +9,8 @@ dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 }
 
 jar {
@@ -36,11 +36,11 @@ dependencies {
     provided("org.apache.pig:pig:$pigVersion:$pigClassifier")
     provided("joda-time:joda-time:$jodaVersion")
 
-    testRuntime("org.apache.pig:pig:$pigVersion:$pigClassifier")
-    testRuntime("joda-time:joda-time:$jodaVersion")
+    testImplementation("org.apache.pig:pig:$pigVersion:$pigClassifier")
+    testImplementation("joda-time:joda-time:$jodaVersion")
 
-    testRuntime "com.google.guava:guava:11.0"
-    testRuntime "jline:jline:0.9.94"
+    testImplementation("com.google.guava:guava:11.0")
+    testImplementation("jline:jline:0.9.94")
 
-    itestRuntime "dk.brics.automaton:automaton:1.11-8"
+    itestImplementation("dk.brics.automaton:automaton:1.11-8")
 }

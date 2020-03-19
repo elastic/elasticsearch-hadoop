@@ -32,11 +32,11 @@ import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
 class TemplatedBulk implements BulkCommand {
 
-    private final Collection<Object> beforeObject;
-    private final Collection<Object> afterObject;
+    protected final Collection<Object> beforeObject;
+    protected final Collection<Object> afterObject;
 
-    private BytesArray scratchPad = new BytesArray(1024);
-    private BytesRef ref = new BytesRef();
+    protected BytesArray scratchPad = new BytesArray(1024);
+    protected BytesRef ref = new BytesRef();
 
     private final ValueWriter valueWriter;
 
@@ -71,7 +71,7 @@ class TemplatedBulk implements BulkCommand {
         ContentBuilder.generate(bos, writer).value(object).flush().close();
     }
 
-    private void writeTemplate(Collection<Object> template, Object object) {
+    protected void writeTemplate(Collection<Object> template, Object object) {
         for (Object item : template) {
             if (item instanceof BytesArray) {
                 ref.add((BytesArray) item);

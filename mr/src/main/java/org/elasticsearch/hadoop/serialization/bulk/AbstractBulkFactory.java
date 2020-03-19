@@ -18,13 +18,10 @@
  */
 package org.elasticsearch.hadoop.serialization.bulk;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Date;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
@@ -44,6 +41,10 @@ import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 public abstract class AbstractBulkFactory implements BulkFactory {
 
     private static Log log = LogFactory.getLog(AbstractBulkFactory.class);
@@ -60,13 +61,13 @@ public abstract class AbstractBulkFactory implements BulkFactory {
     // used when specifying an index pattern
     private IndexExtractor indexExtractor;
     private FieldExtractor idExtractor,
-    typeExtractor,
-    parentExtractor,
-    routingExtractor,
-    versionExtractor,
-    ttlExtractor,
-    timestampExtractor,
-    paramsExtractor;
+            typeExtractor,
+            parentExtractor,
+            routingExtractor,
+            versionExtractor,
+            ttlExtractor,
+            timestampExtractor,
+            paramsExtractor;
 
     private final FieldExtractor versionTypeExtractor = new FieldExtractor() {
 
@@ -139,14 +140,10 @@ public abstract class AbstractBulkFactory implements BulkFactory {
                 }
 
                 pool.get().bytes(valueString);
-            }
-            
-            else if (value instanceof Date) {
-                String valueString = (value == null ? "null": Long.toString(((Date) value).getTime()));
+            } else if (value instanceof Date) {
+                String valueString = (value == null ? "null" : Long.toString(((Date) value).getTime()));
                 pool.get().bytes(valueString);
-            }
-            
-            else if (value instanceof RawJson) {
+            } else if (value instanceof RawJson) {
                 pool.get().bytes(((RawJson) value).json());
             }
             // library specific type - use the value writer (a bit overkill but handles collections/arrays properly)
@@ -249,17 +246,16 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             ttlExtractor = jsonExtractors.ttl();
             timestampExtractor = jsonExtractors.timestamp();
             paramsExtractor = jsonExtractors.params();
-        }
-        else {
+        } else {
             // init extractors (if needed)
             if (settings.getMappingId() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingId());
-                idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(),
+                idExtractor = ObjectUtils.<FieldExtractor>instantiate(settings.getMappingIdExtractorClassName(),
                         settings);
             }
             if (settings.getMappingParent() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingParent());
-                parentExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                parentExtractor = ObjectUtils.<FieldExtractor>instantiate(
                         settings.getMappingParentExtractorClassName(), settings);
             }
             // Two different properties can satisfy the routing field extraction
@@ -267,7 +263,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             List<FieldExtractor> routings = new ArrayList<FieldExtractor>(2);
             if (settings.getMappingRouting() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingRouting());
-                FieldExtractor extractor = ObjectUtils.<FieldExtractor> instantiate(
+                FieldExtractor extractor = ObjectUtils.<FieldExtractor>instantiate(
                         settings.getMappingRoutingExtractorClassName(), settings);
                 // If we specify a routing field, return NOT_FOUND if we ultimately cannot find one instead of skipping
                 routingResponse = ChainedFieldExtractor.NoValueHandler.NOT_FOUND;
@@ -286,22 +282,22 @@ public abstract class AbstractBulkFactory implements BulkFactory {
 
             if (settings.getMappingTtl() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTtl());
-                ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(),
+                ttlExtractor = ObjectUtils.<FieldExtractor>instantiate(settings.getMappingTtlExtractorClassName(),
                         settings);
             }
             if (settings.getMappingVersion() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingVersion());
-                versionExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                versionExtractor = ObjectUtils.<FieldExtractor>instantiate(
                         settings.getMappingVersionExtractorClassName(), settings);
             }
             if (settings.getMappingTimestamp() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTimestamp());
-                timestampExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                timestampExtractor = ObjectUtils.<FieldExtractor>instantiate(
                         settings.getMappingTimestampExtractorClassName(), settings);
             }
 
             // create adapter
-            IndexExtractor iformat = ObjectUtils.<IndexExtractor> instantiate(settings.getMappingIndexExtractorClassName(), settings);
+            IndexExtractor iformat = ObjectUtils.<IndexExtractor>instantiate(settings.getMappingIndexExtractorClassName(), settings);
             iformat.compile(new Resource(settings, false).toString());
 
             if (iformat.hasPattern()) {
@@ -371,14 +367,15 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         if (!isStatic) {
             before.add(new DynamicHeaderRef());
             after.add(new DynamicEndRef());
-        }
-        else {
+        } else {
             writeObjectHeader(before);
             before = compact(before);
             writeObjectEnd(after);
             after = compact(after);
         }
-
+        if (ConfigurationOptions.ES_OPERATION_DELETE.equals(getOperation())) {
+            return new DeleteTemplatedBulk(before, after);
+        }
         boolean isScriptUpdate = settings.hasUpdateScript();
         // compress pieces
         if (jsonInput) {
@@ -523,15 +520,13 @@ public abstract class AbstractBulkFactory implements BulkFactory {
                     stringAccumulator.setLength(0);
                 }
                 compacted.add(object);
-            }
-            else if (object instanceof FieldExtractor) {
+            } else if (object instanceof FieldExtractor) {
                 if (stringAccumulator.length() > 0) {
                     compacted.add(new BytesArray(stringAccumulator.toString()));
                     stringAccumulator.setLength(0);
                 }
                 compacted.add(new FieldWriter((FieldExtractor) object));
-            }
-            else {
+            } else {
                 stringAccumulator.append(object.toString());
             }
         }
@@ -546,3 +541,4 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         return paramsExtractor;
     }
 }
+

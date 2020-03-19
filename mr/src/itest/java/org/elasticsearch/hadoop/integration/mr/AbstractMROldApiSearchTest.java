@@ -31,18 +31,21 @@ import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.mr.EsAssume;
+import org.elasticsearch.hadoop.EsAssume;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.mr.PrintStreamOutputFormat;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -56,10 +59,12 @@ import static org.junit.Assert.assertThat;
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSearchTest {
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.jsonParams();
+        return new QueryTestParams(tempFolder).jsonParams();
     }
 
     private final String query;
@@ -206,8 +211,8 @@ public class AbstractMROldApiSearchTest {
         conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
         conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
 
-        QueryTestParams.provisionQueries(conf);
-        FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));
+        new QueryTestParams(tempFolder).provisionQueries(conf);
+        FileInputFormat.setInputPaths(conf, new Path(MRSuite.testData.sampleArtistsDatUri()));
 
         HdpBootstrap.addProperties(conf, TestSettings.TESTING_PROPS, false);
         return conf;

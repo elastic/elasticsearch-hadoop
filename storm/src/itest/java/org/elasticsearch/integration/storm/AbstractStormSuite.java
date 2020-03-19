@@ -26,7 +26,7 @@ import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
-import org.elasticsearch.hadoop.LocalEs;
+import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.junit.ClassRule;
@@ -66,7 +66,6 @@ public abstract class AbstractStormSuite {
             copyPropertiesIntoCfg(cfg);
 
             String stormMode = TestSettings.TESTING_PROPS.getProperty("storm", "local");
-
             isLocal = "local".equals(stormMode);
             //cfg.setDebug(true);
             cfg.setNumWorkers(Integer.parseInt(TestSettings.TESTING_PROPS.getProperty("storm.numworkers", "2")));

@@ -22,7 +22,8 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 /**
  * Describes deployment characteristics for different Hadoop ecosystem projects.
@@ -58,9 +59,10 @@ interface ServiceDescriptor {
     Version defaultVersion()
 
     /**
-     * Callback to configure a download task to perform the package download.
+     * The coordinates for this dependency that will be used with a custom Ivy Repository to download the artifact from
+     * an Apache mirror.
      */
-    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration)
+    String getDependencyCoordinates(ServiceConfiguration configuration)
 
     /**
      * The official apache package name for the artifact.
@@ -71,11 +73,6 @@ interface ServiceDescriptor {
      * The name of the artifact that will be downloaded.
      */
     String artifactName(ServiceConfiguration configuration)
-
-    /**
-     * Return a mapping of hash algorithm id to hash value for an artifact of the given version.
-     */
-    Map<String, String> packageHashVerification(Version version)
 
     /**
      * The name of the directory under the base dir that contains the package contents.
@@ -100,7 +97,7 @@ interface ServiceDescriptor {
     /**
      * Collect all configuration entries, setting defaults for the service, role, and instance.
      */
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration)
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration)
 
     /**
      * Closure that formats a configuration map into a String for the config file contents.
@@ -110,7 +107,7 @@ interface ServiceDescriptor {
     /**
      * Produces the HTTP/S URI to reach the web front end for a running instance, or null if there is no web interface.
      */
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents)
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents)
 
     /**
      * The command line to use for starting the given role and instance.

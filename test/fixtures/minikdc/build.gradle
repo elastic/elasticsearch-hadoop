@@ -17,6 +17,7 @@
  * under the License.
  */
 
+apply plugin: 'es.hadoop.build.base'
 apply plugin: 'java'
 
 repositories {
@@ -24,12 +25,16 @@ repositories {
 }
 
 dependencies {
-    compile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+    implementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
     }
 }
+
+// Target Java 1.8 compilation
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 
 // for testing, until fixture are actually debuggable.
 // gradle hides EVERYTHING so you have no clue what went wrong.
