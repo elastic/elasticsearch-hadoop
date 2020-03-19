@@ -40,6 +40,9 @@ import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
 import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
 import org.springframework.build.gradle.propdep.PropDepsPlugin
 
+import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
+import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariant
+
 class BuildPlugin implements Plugin<Project>  {
 
     public static final String SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedTestImplementation"
@@ -109,14 +112,14 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
+    // TODO: Remove optional and provided configurations.
     private static void configureConfigurations(Project project) {
         Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
         project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
 
-        // TODO: Remove optional and provided configurations.
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
-            SparkVariantPlugin.SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPlugin.SparkVariantPluginExtension.class)
-            sparkVariants.featureVariants { SparkVariantPlugin.SparkVariant variant ->
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
                 Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
                 variantTestImplementation.extendsFrom(sharedTestImplementation)
             }
@@ -129,6 +132,16 @@ class BuildPlugin implements Plugin<Project>  {
             disableTransitiveDependencies(project, project.configurations.provided)
             disableTransitiveDependencies(project, project.configurations.optional)
             disableTransitiveDependencies(project, project.configurations.compileOnly)
+
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVariants.featureVariants { SparkVariant variant ->
+                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("api")))
+                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("implementation")))
+                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("compileOnly")))
+                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("runtimeOnly")))
+                }
+            }
         }
     }
 
@@ -142,9 +155,11 @@ class BuildPlugin implements Plugin<Project>  {
         sourceSets.create('itest')
         Configuration sharedItestImplementation = project.configurations.create(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME)
         project.configurations.getByName('itestImplementation').extendsFrom(sharedItestImplementation)
+
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
-            SparkVariantPlugin.SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPlugin.SparkVariantPluginExtension.class)
-            sparkVariants.featureVariants { SparkVariantPlugin.SparkVariant variant ->
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+
                 Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
                 variantTestImplementation.extendsFrom(sharedItestImplementation)
             }
