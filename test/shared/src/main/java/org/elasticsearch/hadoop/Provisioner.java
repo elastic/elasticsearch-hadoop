@@ -37,24 +37,21 @@ public abstract class Provisioner {
 
     public static final String ESHADOOP_TESTING_JAR;
     public static final String HDFS_ES_HDP_LIB = "/eshdp/libs/es-hadoop.jar";
+    public static final String SYS_PROP_JOB_JAR = "es.hadoop.job.jar";
 
     static {
         // init ES-Hadoop JAR
         // expect the jar under build\libs
         try {
-            File folder = new File("build" + File.separator + "libs" + File.separator).getCanonicalFile();
-            // find proper jar
-            File[] files = folder.listFiles(new FileFilter() {
+            String jobJarLocation = System.getProperty(SYS_PROP_JOB_JAR);
+            if (jobJarLocation == null) {
+                throw new RuntimeException("Cannot find elasticsearch hadoop jar. System Property [" + SYS_PROP_JOB_JAR + "] was not set.");
+            }
 
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.getName().contains("-testing");
-                }
-            });
-            Assert.isTrue(files != null && files.length == 1,
-                    String.format("Cannot find elasticsearch hadoop jar (too many or no file found);%s", Arrays.toString(files)));
-            ESHADOOP_TESTING_JAR = files[0].getAbsoluteFile().toURI().toString();
-
+            File testJar = new File(jobJarLocation).getCanonicalFile();
+            Assert.isTrue(testJar.exists(),
+                    String.format("Cannot find elasticsearch hadoop jar. File not found [%s]", testJar));
+            ESHADOOP_TESTING_JAR = testJar.getAbsolutePath();
         } catch (IOException ex) {
             throw new RuntimeException("Cannot find required files", ex);
         }

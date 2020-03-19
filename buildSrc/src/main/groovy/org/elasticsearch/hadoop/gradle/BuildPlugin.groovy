@@ -428,6 +428,9 @@ class BuildPlugin implements Plugin<Project>  {
 
             Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
             integrationTest.dependsOn(itestJar)
+            integrationTest.doFirst {
+                integrationTest.systemProperty("es.hadoop.job.jar", itestJar.getArchiveFile().get().asFile.absolutePath)
+            }
 
             integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
             integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
