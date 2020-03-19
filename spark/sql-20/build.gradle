@@ -14,6 +14,13 @@ variants {
 }
 
 configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
     scalaCompilerPlugin {
         defaultDependencies { dependencies ->
             dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
@@ -93,7 +100,7 @@ eclipse {
 }
 
 dependencies {
-    provided(project(":elasticsearch-hadoop-mr"))
+    embedded(project(":elasticsearch-hadoop-mr"))
 
     api("org.scala-lang:scala-library:$scalaVersion")
     api("org.scala-lang:scala-reflect:$scalaVersion")
@@ -152,7 +159,7 @@ dependencies {
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
