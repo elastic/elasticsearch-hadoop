@@ -87,7 +87,7 @@ class RootBuildPlugin implements Plugin<Project> {
         // Copy master jar, sourceJar, and javadocJar to zip
         project.afterEvaluate {
             // Do not copy the hadoop testing jar
-            project.getTasks().withType(Jar.class).findAll { it.name != 'hadoopTestingJar' }.each { Jar jarTask ->
+            project.getTasks().withType(Jar.class).each { Jar jarTask ->
                 distZip.from(jarTask.archivePath) { CopySpec spec ->
                     spec.into("${project.rootProject.ext.folderName}/dist")
                 }

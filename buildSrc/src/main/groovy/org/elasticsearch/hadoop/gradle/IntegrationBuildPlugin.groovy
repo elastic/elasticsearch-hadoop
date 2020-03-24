@@ -88,32 +88,17 @@ class IntegrationBuildPlugin implements Plugin<Project> {
         // If this becomes a problem, we could see if there's a way to listen for new dependencies and add them
         // to root at the same time.
         project.afterEvaluate {
+            project.getConfigurations().getByName('api').getAllDependencies()
+                    .withType(ExternalDependency.class)
+                    .each { Dependency dependency ->
+                        project.rootProject.getDependencies().add('api', dependency)
+                    }
+
             project.getConfigurations().getByName('implementation').getAllDependencies()
                     .withType(ExternalDependency.class)
                     .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
-                }
-
-            project.getConfigurations().getByName('provided').getAllDependencies()
-                .withType(ExternalDependency.class)
-                .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
-                }
-
-            project.getConfigurations().getByName('optional').getAllDependencies()
-                .withType(ExternalDependency.class)
-                .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
-                }
+                        project.rootProject.getDependencies().add('implementation', dependency)
+                    }
         }
     }
 }
