@@ -121,11 +121,11 @@ dependencies {
     // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
+    compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
     
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
-    implementation("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
     implementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
