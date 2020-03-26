@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.gradle
 
 import org.elasticsearch.gradle.VersionProperties
 import org.elasticsearch.gradle.info.BuildParams
-import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.info.JavaHome
 import org.elasticsearch.hadoop.gradle.util.Resources
@@ -65,6 +64,7 @@ class BaseBuildPlugin implements Plugin<Project> {
         if (!project.rootProject.ext.has('buildInfoConfigured')) {
 
             JavaVersion minimumRuntimeVersion = JavaVersion.toVersion(Resources.getResourceContents("/minimumRuntimeVersion"))
+            println "Min runtime: ${minimumRuntimeVersion}"
 
             // We snap the runtime to java 8 since Hadoop needs to see some significant
             // upgrades to support any runtime higher than that
@@ -78,12 +78,14 @@ class BaseBuildPlugin implements Plugin<Project> {
             }
 
             // Set on global build info
-            GenerateGlobalBuildInfoTask generateTask = project.getTasks().getByName("generateGlobalBuildInfo") as GenerateGlobalBuildInfoTask
-            generateTask.setMinimumRuntimeVersion(minimumRuntimeVersion)
-            generateTask.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome.getAbsoluteFile())
+            BuildParams.init { params ->
+                params.setMinimumRuntimeVersion(minimumRuntimeVersion)
+                params.setRuntimeJavaVersion(minimumRuntimeVersion)
+                params.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome.get())
+            }
 
             // Set on build settings
-            project.rootProject.ext.runtimeJavaHome = esHadoopRuntimeJava.javaHome.getAbsoluteFile()
+            project.rootProject.ext.runtimeJavaHome = esHadoopRuntimeJava.javaHome.get()
             project.rootProject.ext.minimumRuntimeVersion = minimumRuntimeVersion
 
             project.rootProject.ext.buildInfoConfigured = true
