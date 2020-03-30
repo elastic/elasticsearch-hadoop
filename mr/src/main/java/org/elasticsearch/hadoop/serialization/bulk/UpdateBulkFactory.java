@@ -143,6 +143,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
              *   "params": ...,
              *   "lang": "...",
              *   "script": "...",
+             *   "scripted_upsert":true,
              *   "upsert": {...}
              * }
              */
@@ -180,12 +181,12 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         if (HAS_SCRIPT) {
             /*
              * {
-             *   "scripted_upsert":true,
              *   "script":{
              *     "inline": "...",
              *     "lang": "...",
              *     "params": ...,
              *   },
+             *   "scripted_upsert":true,
              *   "upsert": {...}
              * }
              */
