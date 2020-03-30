@@ -251,6 +251,8 @@ public interface ConfigurationOptions {
 
     String ES_UPDATE_SCRIPT_FILE = "es.update.script.file";
     String ES_UPDATE_SCRIPT_INLINE = "es.update.script.inline";
+    String ES_UPDATE_SCRIPT_UPSERT = "es.update.script.upsert";
+    String ES_UPDATE_SCRIPT_UPSERT_DEFAULT = "false";
     String ES_UPDATE_SCRIPT_STORED = "es.update.script.stored";
     String ES_UPDATE_SCRIPT_LEGACY = "es.update.script";
     String ES_UPDATE_SCRIPT_LANG = "es.update.script.lang";

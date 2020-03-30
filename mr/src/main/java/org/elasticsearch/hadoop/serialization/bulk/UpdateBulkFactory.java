@@ -41,7 +41,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     private final String SCRIPT_1X;
     private final String SCRIPT_LANG_1X;
 
-    private final boolean HAS_SCRIPT, HAS_LANG;
+    private final boolean HAS_SCRIPT, HAS_LANG, HAS_SCRIPT_UPSERT;
     private final boolean UPSERT;
 
     public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
@@ -56,6 +56,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         RETRY_HEADER = getRequestParameterNames().retryOnConflict + RETRY_ON_FAILURE + "";
 
         HAS_SCRIPT = settings.hasUpdateScript();
+        HAS_SCRIPT_UPSERT = settings.hasScriptUpsert();
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
 
         SCRIPT_LANG_5X = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
@@ -149,6 +150,9 @@ class UpdateBulkFactory extends AbstractBulkFactory {
                 list.add(SCRIPT_LANG_1X);
             }
             list.add(SCRIPT_1X);
+            if (HAS_SCRIPT_UPSERT) {
+                list.add(",\"scripted_upsert\": true");
+            }
             if (UPSERT) {
                 list.add(",\"upsert\":");
             }
@@ -176,6 +180,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         if (HAS_SCRIPT) {
             /*
              * {
+             *   "scripted_upsert":true,
              *   "script":{
              *     "inline": "...",
              *     "lang": "...",
@@ -193,6 +198,9 @@ class UpdateBulkFactory extends AbstractBulkFactory {
                 list.add(paramExtractor);
             }
             list.add("}");
+            if (HAS_SCRIPT_UPSERT) {
+                list.add(",\"scripted_upsert\": true");
+            }
             if (UPSERT) {
                 list.add(",\"upsert\":");
             }

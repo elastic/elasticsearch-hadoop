@@ -45,7 +45,12 @@ class JsonScriptTemplateBulk extends JsonTemplatedBulk {
 
         BytesArray ba = null;
         if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(settings.getOperation())) {
-            ba = storage;
+            if (settings.hasScriptUpsert()) {
+                ba = storage;
+                jsonWriter.convert("{}", ba);
+                scratchPad.reset();
+                ba = scratchPad;
+            } else ba = storage;
         }
         else {
             scratchPad.reset();
@@ -60,6 +65,7 @@ class JsonScriptTemplateBulk extends JsonTemplatedBulk {
         }
 
         jsonExtractors.process(ba);
+
         return storage;
     }
 }
