@@ -79,8 +79,6 @@ class BaseBuildPlugin implements Plugin<Project> {
             // Set on global build info
             BuildParams.init { params ->
                 params.setMinimumRuntimeVersion(minimumRuntimeVersion)
-                params.setRuntimeJavaVersion(minimumRuntimeVersion)
-                params.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome.get())
             }
 
             // Set on build settings
