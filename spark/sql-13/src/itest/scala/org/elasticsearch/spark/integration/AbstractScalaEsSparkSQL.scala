@@ -997,11 +997,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_starts_with")
     var filter = df.filter(df("airport").startsWith("O"))
 
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
-
     if (!keepHandledFilters) {
       // term query pick field with multi values
       assertEquals(2, filter.count())
@@ -1017,11 +1012,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown10EndsWith() {
     val df = esDataSource("pd_ends_with")
     var filter = df.filter(df("airport").endsWith("O"))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     if (!keepHandledFilters) {
       // term query pick field with multi values
@@ -1046,11 +1036,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown12And() {
     val df = esDataSource("pd_and")
     var filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
