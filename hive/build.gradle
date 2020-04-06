@@ -18,12 +18,11 @@ configurations {
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    api("org.apache.hive:hive-service:$hiveVersion") {
+    implementation("org.apache.hive:hive-service:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
-    api("org.apache.hive:hive-exec:$hiveVersion")
-    api("org.apache.hive:hive-metastore:$hiveVersion")
-
+    implementation("org.apache.hive:hive-exec:$hiveVersion")
+    implementation("org.apache.hive:hive-metastore:$hiveVersion")
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 

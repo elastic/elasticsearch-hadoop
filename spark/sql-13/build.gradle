@@ -122,22 +122,22 @@ dependencies {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    api("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+
+    implementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    api("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    implementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
 
     // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("com.google.guava:guava:16.0.1")
     compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
     compileOnly("org.slf4j:slf4j-api:1.7.6")
-
-    implementation("commons-logging:commons-logging:1.1.1")
-    implementation("javax.xml.bind:jaxb-api:2.3.1")
-    implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
 
     if ('2.10'.equals(scalaMajorVersion)) {
         implementation("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")

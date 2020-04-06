@@ -108,27 +108,27 @@ dependencies {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    api("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+
+    implementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    api("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    implementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    api("org.slf4j:slf4j-api:1.7.6") {
+    implementation("org.slf4j:slf4j-api:1.7.6") {
         because 'spark exposes slf4j components in traits that we need to extend'
     }
-
-    // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
-    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
-    compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
-    compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
-    
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
     implementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
+
+    // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
+    compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
 
     if ('2.10'.equals(scalaMajorVersion)) {
         implementation("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")

@@ -20,8 +20,7 @@ ext.pigClassifier = "h2"
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    api("org.apache.pig:pig:$pigVersion:$pigClassifier")
-
+    implementation("org.apache.pig:pig:$pigVersion:$pigClassifier")
     implementation("joda-time:joda-time:$jodaVersion")
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("javax.xml.bind:jaxb-api:2.3.1")

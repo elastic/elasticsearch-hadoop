@@ -91,7 +91,8 @@ class IntegrationBuildPlugin implements Plugin<Project> {
             project.getConfigurations().getByName('api').getAllDependencies()
                     .withType(ExternalDependency.class)
                     .each { Dependency dependency ->
-                        project.rootProject.getDependencies().add('api', dependency)
+                        // Set API dependencies as implementation in the uberjar so that not everything is compile scope
+                        project.rootProject.getDependencies().add('implementation', dependency)
                     }
 
             project.getConfigurations().getByName('implementation').getAllDependencies()
