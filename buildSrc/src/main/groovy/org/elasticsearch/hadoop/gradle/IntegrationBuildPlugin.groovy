@@ -65,15 +65,18 @@ class IntegrationBuildPlugin implements Plugin<Project> {
      */
     private static void configureProjectZip(Project project) {
         // We do this after evaluation since the scala projects may change around what the final archive name is.
+        // TODO: Swap this out with exposing those jars as artifacts to be consumed in a dist project.
         project.afterEvaluate {
             Zip rootDistZip = project.rootProject.getTasks().getByName('distZip') as Zip
             rootDistZip.dependsOn(project.getTasks().pack)
 
-            project.getTasks().withType(Jar.class).each { Jar jarTask ->
+            project.getTasks().withType(Jar.class) { Jar jarTask ->
                 // Add jar output under the dist directory
-                rootDistZip.from(jarTask.archivePath) { CopySpec copySpecification ->
-                    copySpecification.into("${project.rootProject.ext.folderName}/dist")
-                    copySpecification.setDuplicatesStrategy(DuplicatesStrategy.WARN)
+                if (jarTask.name != "itestJar") {
+                    rootDistZip.from(jarTask.archiveFile) { CopySpec copySpecification ->
+                        copySpecification.into("${project.rootProject.ext.folderName}/dist")
+                        copySpecification.setDuplicatesStrategy(DuplicatesStrategy.WARN)
+                    }
                 }
             }
         }
@@ -84,22 +87,15 @@ class IntegrationBuildPlugin implements Plugin<Project> {
      * @param project to be configured
      */
     private static void configureRootProjectDependencies(Project project) {
-        // We do this in an after evaluate so that we pick up all dependencies set after the plugin was configured.
-        // If this becomes a problem, we could see if there's a way to listen for new dependencies and add them
-        // to root at the same time.
-        project.afterEvaluate {
-            project.getConfigurations().getByName('api').getAllDependencies()
-                    .withType(ExternalDependency.class)
-                    .each { Dependency dependency ->
-                        // Set API dependencies as implementation in the uberjar so that not everything is compile scope
-                        project.rootProject.getDependencies().add('implementation', dependency)
-                    }
+        project.getConfigurations().getByName('api').getAllDependencies()
+                .withType(ExternalDependency.class) { Dependency dependency ->
+                    // Set API dependencies as implementation in the uberjar so that not everything is compile scope
+                    project.rootProject.getDependencies().add('implementation', dependency)
+                }
 
-            project.getConfigurations().getByName('implementation').getAllDependencies()
-                    .withType(ExternalDependency.class)
-                    .each { Dependency dependency ->
-                        project.rootProject.getDependencies().add('implementation', dependency)
-                    }
-        }
+        project.getConfigurations().getByName('implementation').getAllDependencies()
+                .withType(ExternalDependency.class) { Dependency dependency ->
+                    project.rootProject.getDependencies().add('implementation', dependency)
+                }
     }
 }

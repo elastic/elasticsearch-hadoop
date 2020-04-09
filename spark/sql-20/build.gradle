@@ -130,7 +130,7 @@ dependencies {
     compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
     compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
 
-    if ('2.10'.equals(scalaMajorVersion)) {
+    if ('2.10' == scalaMajorVersion) {
         implementation("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")
         implementation("org.apache.avro:avro:1.7.7")
         implementation("log4j:log4j:1.2.17")
