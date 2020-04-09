@@ -35,7 +35,6 @@ dependencies {
     }
 
     sources(project(":elasticsearch-hadoop-mr"))
-    javadoc(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {

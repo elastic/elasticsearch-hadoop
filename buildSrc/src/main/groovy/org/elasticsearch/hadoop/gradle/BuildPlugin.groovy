@@ -112,11 +112,6 @@ class BuildPlugin implements Plugin<Project>  {
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
                 attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
             }
-
-            // Should this just be implementation?
-            Configuration javadoc = project.configurations.create("javadoc")
-            javadoc.canBeConsumed = false
-            javadoc.canBeResolved = true
         }
 
         if (project.path.startsWith(":qa")) {
@@ -297,7 +292,6 @@ class BuildPlugin implements Plugin<Project>  {
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             javadoc.source += project.configurations.sources
-            javadoc.classpath += project.configurations.javadoc
         }
         // Set javadoc executable to runtime Java (1.8)
         javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')

@@ -29,7 +29,6 @@ dependencies {
     itestImplementation("com.twitter:carbonite:1.4.0")
     
     sources(project(":elasticsearch-hadoop-mr"))
-    javadoc(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
