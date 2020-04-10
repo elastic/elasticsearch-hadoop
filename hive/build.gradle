@@ -33,6 +33,8 @@ dependencies {
     itestImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
@@ -41,13 +43,4 @@ jar {
         include "esh-build.properties"
         include "META-INF/services/*"
     }
-}
-
-javadoc {
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
-}
-
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
 }

@@ -158,6 +158,15 @@ dependencies {
     itestImplementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+}
+
+// Export generated Java code from the genjavadoc compiler plugin
+artifacts {
+    sourceElements(project.file("$buildDir/generated/java")) {
+        builtBy compileScala
+    }
 }
 
 jar {
@@ -173,12 +182,6 @@ javadoc {
         dependsOn compileScala
         source += "$buildDir/generated/java"
     }
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
-}
-
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
 }
 
 scaladoc {

@@ -17,11 +17,15 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
 import org.gradle.api.file.CopySpec
+import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.Upload
@@ -84,6 +88,32 @@ class BuildPlugin implements Plugin<Project> {
     }
 
     private static void configureConfigurations(Project project) {
+        if (project != project.rootProject) {
+            // Set up avenues for sharing source files between projects in order to create embedded Javadocs
+            // Import source configuration
+            Configuration sources = project.configurations.create("additionalSources")
+            sources.canBeConsumed = false
+            sources.canBeResolved = true
+            sources.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export source configuration
+            Configuration sourceElements = project.configurations.create("sourceElements")
+            sourceElements.canBeConsumed = true
+            sourceElements.canBeResolved = false
+            sourceElements.extendsFrom(sources)
+            sourceElements.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+        }
+
         if (project.path.startsWith(":qa")) {
             return
         }
@@ -186,6 +216,15 @@ class BuildPlugin implements Plugin<Project> {
         project.sourceCompatibility = '1.8'
         project.targetCompatibility = '1.8'
 
+        // TODO: Remove all root project distribution logic. It should exist in a separate dist project.
+        if (project != project.rootProject) {
+            SourceSet mainSourceSet = project.sourceSets.main
+            FileCollection javaSourceDirs = mainSourceSet.java.sourceDirectories
+            javaSourceDirs.each { File srcDir ->
+                project.getArtifacts().add('sourceElements', srcDir)
+            }
+        }
+
         JavaCompile compileJava = project.tasks.getByName('compileJava') as JavaCompile
         compileJava.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
 
@@ -221,6 +260,10 @@ class BuildPlugin implements Plugin<Project> {
         sourcesJar.dependsOn(project.tasks.classes)
         sourcesJar.classifier = 'sources'
         sourcesJar.from(project.sourceSets.main.allSource)
+        // TODO: Remove when root project does not handle distribution
+        if (project != project.rootProject) {
+            sourcesJar.from(project.configurations.additionalSources)
+        }
 
         // Configure javadoc
         Javadoc javadoc = project.tasks.getByName('javadoc') as Javadoc
@@ -232,6 +275,10 @@ class BuildPlugin implements Plugin<Project> {
                 "org/elasticsearch/hadoop/util/**",
                 "org/apache/hadoop/hive/**"
         ]
+        // TODO: Remove when root project does not handle distribution
+        if (project != project.rootProject) {
+            javadoc.source = project.files(project.configurations.additionalSources)
+        }
         // Set javadoc executable to runtime Java (1.8)
         javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
 
