@@ -34,7 +34,7 @@ dependencies {
         exclude module: "log4j-slf4j-impl"
     }
 
-    sources(project(":elasticsearch-hadoop-mr"))
+    additionalSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {

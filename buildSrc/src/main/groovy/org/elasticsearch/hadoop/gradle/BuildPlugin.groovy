@@ -91,7 +91,7 @@ class BuildPlugin implements Plugin<Project>  {
         if (project != project.rootProject) {
             // Set up avenues for sharing source files between projects in order to create embedded Javadocs
             // Import source configuration
-            Configuration sources = project.configurations.create("sources")
+            Configuration sources = project.configurations.create("additionalSources")
             sources.canBeConsumed = false
             sources.canBeResolved = true
             sources.attributes {
@@ -276,7 +276,7 @@ class BuildPlugin implements Plugin<Project>  {
         sourcesJar.from(project.sourceSets.main.allSource)
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
-            sourcesJar.from(project.configurations.sources)
+            sourcesJar.from(project.configurations.additionalSources)
         }
 
         // Configure javadoc
@@ -291,7 +291,7 @@ class BuildPlugin implements Plugin<Project>  {
         ]
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
-            javadoc.source += project.configurations.sources
+            javadoc.source = project.files(project.configurations.additionalSources)
         }
         // Set javadoc executable to runtime Java (1.8)
         javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')

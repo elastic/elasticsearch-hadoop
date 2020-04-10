@@ -161,8 +161,8 @@ dependencies {
     testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    
-    sources(project(":elasticsearch-hadoop-mr"))
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
 }
 
 // Export generated Java code from the genjavadoc compiler plugin

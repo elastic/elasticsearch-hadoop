@@ -27,8 +27,8 @@ dependencies {
     itestImplementation(project(":test:shared"))
     itestImplementation("com.google.guava:guava:16.0.1")
     itestImplementation("com.twitter:carbonite:1.4.0")
-    
-    sources(project(":elasticsearch-hadoop-mr"))
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
