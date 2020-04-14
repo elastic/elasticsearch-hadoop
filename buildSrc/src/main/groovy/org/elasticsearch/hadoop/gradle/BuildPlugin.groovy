@@ -112,6 +112,14 @@ class BuildPlugin implements Plugin<Project>  {
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
                 attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
             }
+
+            // Export configuration for archives that should be in the distribution
+            Configuration distElements = project.configurations.create('distElements')
+            distElements.canBeConsumed = true
+            distElements.canBeResolved = false
+            distElements.attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'packaging'))
+            }
         }
 
         if (project.path.startsWith(":qa")) {
@@ -269,6 +277,10 @@ class BuildPlugin implements Plugin<Project>  {
             spec.expand(copyright: new Date().format('yyyy'), version: project.version)
         }
 
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', jar)
+        }
+
         // Jar up the sources of the project
         Jar sourcesJar = project.tasks.create('sourcesJar', Jar)
         sourcesJar.dependsOn(project.tasks.classes)
@@ -277,6 +289,7 @@ class BuildPlugin implements Plugin<Project>  {
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             sourcesJar.from(project.configurations.additionalSources)
+            project.getArtifacts().add('distElements', sourcesJar)
         }
 
         // Configure javadoc
@@ -325,6 +338,9 @@ class BuildPlugin implements Plugin<Project>  {
         Jar javadocJar = project.tasks.create('javadocJar', Jar)
         javadocJar.classifier = 'javadoc'
         javadocJar.from(project.tasks.javadoc)
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', javadocJar)
+        }
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
         Task pack = project.tasks.create('pack')

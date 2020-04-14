@@ -1,0 +1,141 @@
+
+apply plugin: 'es.hadoop.build'
+
+description = "Elasticsearch for Apache Hadoop"
+project.archivesBaseName = 'elasticsearch-hadoop'
+
+configurations {
+    embedded {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+    }
+    dist {
+        canBeResolved = true
+        canBeConsumed = false
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'packaging'))
+        }
+    }
+}
+
+dependencies {
+    // This is only going to pull in each project's regular jar
+    embedded(project(":elasticsearch-hadoop-mr"))
+    embedded(project(":elasticsearch-hadoop-hive"))
+    embedded(project(":elasticsearch-hadoop-pig"))
+    embedded(project(":elasticsearch-spark-20"))
+    embedded(project(":elasticsearch-storm"))
+
+    // To squash Javadoc warnings
+    compileOnly(project(":elasticsearch-hadoop-mr"))
+    compileOnly(project(":elasticsearch-hadoop-hive"))
+    compileOnly(project(":elasticsearch-hadoop-pig"))
+    compileOnly(project(":elasticsearch-spark-20"))
+    compileOnly(project(":elasticsearch-storm"))
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
+
+    // For Uber pom (and Javadoc to a lesser extent)
+    // TODO: Would be way better if we could pull these directly from those projects. Should we just grab the configurations?
+    provided("commons-logging:commons-logging:1.1.1")
+    provided("commons-httpclient:commons-httpclient:3.0.1")
+    provided("commons-codec:commons-codec:1.4")
+    provided("javax.xml.bind:jaxb-api:2.3.1")
+    optional("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    optional("org.apache.hive:hive-exec:$hiveVersion")
+    optional("org.apache.hive:hive-metastore:$hiveVersion")
+    optional("org.apache.pig:pig:$pigVersion:h2")
+    optional("org.apache.spark:spark-core_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
+    optional("org.apache.spark:spark-yarn_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    optional("org.apache.spark:spark-sql_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    optional("org.apache.spark:spark-streaming_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    optional("org.scala-lang:scala-library:$scala211Version")
+    optional("org.scala-lang:scala-reflect:$scala211Version")
+    optional("org.apache.storm:storm-core:$stormVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    provided(project.ext.hadoopClient)
+    provided("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
+    provided("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
+    provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    optional("joda-time:joda-time:$jodaVersion")
+
+    // This will allow us to pull the sources required to build the uberjar's javadoc and source jars
+    // TODO: SO this pulls the generated java code from the spark project, but NOT the scala code.
+    // Scala code is not exported in the sourceElements configurations because it shouldn't be consumed by javadoc
+    // Scala code will eventually need to be consumed by downstream scaladoc tasks in spark variants
+    // It is also needed here, for original source packaging purposes
+    // Maybe we need to expose "java sources", "scala sources", and "all sources" as separate artifact configurations?
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    additionalSources(project(":elasticsearch-hadoop-hive"))
+    additionalSources(project(":elasticsearch-hadoop-pig"))
+    additionalSources(project(":elasticsearch-spark-20"))
+    additionalSources(project(":elasticsearch-storm"))
+
+    // This will pull in the regular jar, javadoc jar, and source jar for each project
+    dist(project(":elasticsearch-hadoop-mr"))
+    dist(project(":elasticsearch-hadoop-hive"))
+    dist(project(":elasticsearch-hadoop-pig"))
+    dist(project(":elasticsearch-spark-20"))
+    dist(project(":elasticsearch-storm"))
+}
+
+// Configure uber jar
+jar {
+    dependsOn(project.configurations.embedded)
+
+    manifest {
+        attributes['Implementation-Title'] = 'elasticsearch-hadoop'
+    }
+
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+
+    // Each integration will be copying it's entire jar contents into this master jar.
+    // There will be lots of duplicates since they all package up the core code inside of them.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Name of the directory under the root of the zip file that will contain the zip contents
+String zipContentDir = "elasticsearch-hadoop-${project.version}"
+
+// Create a zip task for creating the distribution
+task('distZip', type: Zip.class) {
+    group = 'Distribution'
+    description = "Builds zip archive, containing all jars and docs, suitable for download page."
+
+    dependsOn(tasks.pack)
+
+    from(project.rootDir) {
+        include('README.md')
+        include('LICENSE.txt')
+        include('NOTICE.txt')
+        into(zipContentDir)
+    }
+
+    into("$zipContentDir/dist") {
+        from(project.configurations.dist)
+        from(tasks.jar)
+        from(tasks.javadocJar)
+        from(tasks.sourcesJar)
+    }
+}
+
+distribution {
+    dependsOn(distZip)
+}
