@@ -33,6 +33,7 @@ dependencies {
     itestImplementation("dk.brics.automaton:automaton:1.11-8")
 
     additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {

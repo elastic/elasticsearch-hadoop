@@ -78,6 +78,12 @@ dependencies {
     // Scala code will eventually need to be consumed by downstream scaladoc tasks in spark variants
     // It is also needed here, for original source packaging purposes
     // Maybe we need to expose "java sources", "scala sources", and "all sources" as separate artifact configurations?
+    javadocSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-hive"))
+    javadocSources(project(":elasticsearch-hadoop-pig"))
+    javadocSources(project(":elasticsearch-spark-20"))
+    javadocSources(project(":elasticsearch-storm"))
+
     additionalSources(project(":elasticsearch-hadoop-mr"))
     additionalSources(project(":elasticsearch-hadoop-hive"))
     additionalSources(project(":elasticsearch-hadoop-pig"))
@@ -109,6 +115,12 @@ jar {
     // Each integration will be copying it's entire jar contents into this master jar.
     // There will be lots of duplicates since they all package up the core code inside of them.
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+javadoc {
+    options {
+        header = "elasticsearch-hadoop"
+    }
 }
 
 // Name of the directory under the root of the zip file that will contain the zip contents
