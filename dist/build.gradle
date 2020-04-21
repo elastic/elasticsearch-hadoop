@@ -19,24 +19,25 @@ configurations {
     }
 }
 
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig", 
+                    ":elasticsearch-spark-20", ":elasticsearch-storm"]
+distProjects.each { distProject ->
+    dependencies {
+        // This is only going to pull in each project's regular jar to create the project-wide uberjar.
+        embedded(project(distProject))
+        // To squash Javadoc warnings.
+        compileOnly(project(distProject))
+        // This will pull all java sources (including generated) for the project-wide javadoc.
+        javadocSources(project(distProject))
+        // This will pull all non-generated sources for the project-wide source jar.
+        additionalSources(project(distProject))
+        // This will pull in the regular jar, javadoc jar, and source jar to be packaged in the distribution.
+        dist(project(distProject))
+    }
+}
+
 dependencies {
-    // This is only going to pull in each project's regular jar
-    embedded(project(":elasticsearch-hadoop-mr"))
-    embedded(project(":elasticsearch-hadoop-hive"))
-    embedded(project(":elasticsearch-hadoop-pig"))
-    embedded(project(":elasticsearch-spark-20"))
-    embedded(project(":elasticsearch-storm"))
-
-    // To squash Javadoc warnings
-    compileOnly(project(":elasticsearch-hadoop-mr"))
-    compileOnly(project(":elasticsearch-hadoop-hive"))
-    compileOnly(project(":elasticsearch-hadoop-pig"))
-    compileOnly(project(":elasticsearch-spark-20"))
-    compileOnly(project(":elasticsearch-storm"))
-    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
-
     // For Uber pom (and Javadoc to a lesser extent)
-    // TODO: Would be way better if we could pull these directly from those projects. Should we just grab the configurations?
     provided("commons-logging:commons-logging:1.1.1")
     provided("commons-httpclient:commons-httpclient:3.0.1")
     provided("commons-codec:commons-codec:1.4")
@@ -71,31 +72,7 @@ dependencies {
     provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
     optional("joda-time:joda-time:$jodaVersion")
-
-    // This will allow us to pull the sources required to build the uberjar's javadoc and source jars
-    // TODO: SO this pulls the generated java code from the spark project, but NOT the scala code.
-    // Scala code is not exported in the sourceElements configurations because it shouldn't be consumed by javadoc
-    // Scala code will eventually need to be consumed by downstream scaladoc tasks in spark variants
-    // It is also needed here, for original source packaging purposes
-    // Maybe we need to expose "java sources", "scala sources", and "all sources" as separate artifact configurations?
-    javadocSources(project(":elasticsearch-hadoop-mr"))
-    javadocSources(project(":elasticsearch-hadoop-hive"))
-    javadocSources(project(":elasticsearch-hadoop-pig"))
-    javadocSources(project(":elasticsearch-spark-20"))
-    javadocSources(project(":elasticsearch-storm"))
-
-    additionalSources(project(":elasticsearch-hadoop-mr"))
-    additionalSources(project(":elasticsearch-hadoop-hive"))
-    additionalSources(project(":elasticsearch-hadoop-pig"))
-    additionalSources(project(":elasticsearch-spark-20"))
-    additionalSources(project(":elasticsearch-storm"))
-
-    // This will pull in the regular jar, javadoc jar, and source jar for each project
-    dist(project(":elasticsearch-hadoop-mr"))
-    dist(project(":elasticsearch-hadoop-hive"))
-    dist(project(":elasticsearch-hadoop-pig"))
-    dist(project(":elasticsearch-spark-20"))
-    dist(project(":elasticsearch-storm"))
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
 }
 
 // Configure uber jar
