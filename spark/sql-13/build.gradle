@@ -82,12 +82,17 @@ sourceSets {
     itest.resources.srcDirs += "$coreSrc/itest/resources"
 }
 
+def javaFilesOnly = { FileTreeElement spec ->
+    spec.file.name.endsWith('.java') || spec.isDirectory()
+}
+
 artifacts {
     sourceElements(project.file("$coreSrc/main/scala"))
-    // Add java files from core source to javadocElements. 
-    project.fileTree("$coreSrc/main/scala").include { FileTreeElement spec ->
-        spec.file.name.endsWith('.java') || spec.isDirectory()
-    }.each {
+    // Add java files from core source to javadocElements.
+    project.fileTree("$coreSrc/main/scala").include(javaFilesOnly).each {
+        javadocElements(it)
+    }
+    project.fileTree("src/main/scala").include(javaFilesOnly).each {
         javadocElements(it)
     }
 }
