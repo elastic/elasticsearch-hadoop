@@ -4,30 +4,27 @@ apply plugin: 'es.hadoop.build.integration'
 description = "Elasticsearch Hadoop Map/Reduce"
 
 dependencies {
-    provided(project.ext.hadoopClient)
-    provided("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
-    provided("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
+    api(project.ext.hadoopClient)
+    api("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
+    api("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
     
-    provided("commons-logging:commons-logging:1.1.1")
-    provided("commons-httpclient:commons-httpclient:3.0.1")
-    provided("commons-codec:commons-codec:1.4")
-
-    provided("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("commons-httpclient:commons-httpclient:3.0.1")
+    implementation("commons-codec:commons-codec:1.4")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    implementation("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
     
-    provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-    provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-    
-    testImplementation(project.ext.hadoopClient)
+    testImplementation(project(":test:shared"))
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
+    
+    itestImplementation(project(":test:shared"))
     itestImplementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
     }
-
-    testImplementation(project(":test:shared"))
-    itestImplementation(project(":test:shared"))
 }
 
 String generatedResources = "$buildDir/generated-resources/main"

@@ -104,53 +104,54 @@ dependencies {
 
     api("org.scala-lang:scala-library:$scalaVersion")
     api("org.scala-lang:scala-reflect:$scalaVersion")
-
-    provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    api("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${project.ext.scalaMajorVersion}:2.6.7.1")
+
+    implementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.slf4j:slf4j-api:1.7.6") {
+        because 'spark exposes slf4j components in traits that we need to extend'
+    }
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
+    implementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+
+    // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
-    compileOnly("org.slf4j:slf4j-api:1.7.6")
-
-    if ('2.10'.equals(scalaMajorVersion)) {
-        compileOnly("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")
-        compileOnly("org.apache.avro:avro:1.7.7")
-        compileOnly("log4j:log4j:1.2.17")
-        compileOnly("com.google.code.findbugs:jsr305:2.0.1")
-        compileOnly("org.json4s:json4s-ast_2.10:3.2.10")
-        compileOnly("com.esotericsoftware.kryo:kryo:2.21")
-    }
-    
-    optional("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
-        exclude group: 'org.apache.hadoop'
-    }
-    optional("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
-        exclude group: 'org.apache.hadoop'
-    }
-    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
     compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
-    compileOnly("com.google.protobuf:protobuf-java:2.5.0")
 
-    optional("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
-        exclude group: 'org.apache.hadoop'
+    if ('2.10' == scalaMajorVersion) {
+        implementation("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")
+        implementation("org.apache.avro:avro:1.7.7")
+        implementation("log4j:log4j:1.2.17")
+        implementation("com.google.code.findbugs:jsr305:2.0.1")
+        implementation("org.json4s:json4s-ast_2.10:3.2.10")
+        implementation("com.esotericsoftware.kryo:kryo:2.21")
     }
-
-    testImplementation("org.elasticsearch:securemock:1.2")
 
     testImplementation(project(":test:shared"))
-    itestImplementation(project(":test:shared"))
-
     testImplementation(project.ext.hadoopClient)
+    testImplementation("org.elasticsearch:securemock:1.2")
     testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    itestImplementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    
+    itestImplementation(project(":test:shared"))
+    itestImplementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
     itestImplementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
@@ -168,6 +169,7 @@ artifacts {
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"

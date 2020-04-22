@@ -18,9 +18,13 @@ configurations {
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    provided("org.apache.storm:storm-core:$stormVersion") {
+    api("org.apache.storm:storm-core:$stormVersion") {
         exclude module: "log4j-slf4j-impl"
     }
+
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("commons-codec:commons-codec:1.4")
 
     testImplementation(project(":test:shared"))
 
@@ -32,6 +36,7 @@ dependencies {
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
