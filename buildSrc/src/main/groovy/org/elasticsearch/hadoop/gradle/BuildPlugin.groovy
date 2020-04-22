@@ -22,6 +22,7 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
@@ -37,10 +38,6 @@ import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
-import org.springframework.build.gradle.propdep.PropDepsEclipsePlugin
-import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
-import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
-import org.springframework.build.gradle.propdep.PropDepsPlugin
 
 class BuildPlugin implements Plugin<Project> {
 
@@ -66,7 +63,7 @@ class BuildPlugin implements Plugin<Project> {
         project.getPluginManager().apply(BaseBuildPlugin.class)
 
         // BuildPlugin will continue to assume Java projects for the time being.
-        project.getPluginManager().apply(JavaPlugin.class)
+        project.getPluginManager().apply(JavaLibraryPlugin.class)
 
         // IDE Support
         project.getPluginManager().apply(IdeaPlugin.class)
@@ -74,12 +71,6 @@ class BuildPlugin implements Plugin<Project> {
 
         // Maven Support
         project.getPluginManager().apply(MavenPlugin.class)
-
-        // Support for modeling provided/optional dependencies
-        project.getPluginManager().apply(PropDepsPlugin.class)
-        project.getPluginManager().apply(PropDepsIdeaPlugin.class)
-        project.getPluginManager().apply(PropDepsEclipsePlugin.class)
-        project.getPluginManager().apply(PropDepsMavenPlugin.class)
     }
 
     /** Return the configuration name used for finding transitive deps of the given dependency. */
@@ -133,11 +124,10 @@ class BuildPlugin implements Plugin<Project> {
             }
         }
 
-        project.configurations.compile.dependencies.all(disableTransitiveDeps)
+        project.configurations.api.dependencies.all(disableTransitiveDeps)
         project.configurations.implementation.dependencies.all(disableTransitiveDeps)
-        project.configurations.provided.dependencies.all(disableTransitiveDeps)
-        project.configurations.optional.dependencies.all(disableTransitiveDeps)
         project.configurations.compileOnly.dependencies.all(disableTransitiveDeps)
+        project.configurations.runtimeOnly.dependencies.all(disableTransitiveDeps)
     }
 
     /**
@@ -167,7 +157,6 @@ class BuildPlugin implements Plugin<Project> {
 
             itestImplementation(project.sourceSets.main.output)
             itestImplementation(project.configurations.testImplementation)
-            itestImplementation(project.configurations.provided)
             itestImplementation(project.sourceSets.test.output)
             itestImplementation(project.configurations.testRuntimeClasspath)
         }
@@ -387,17 +376,6 @@ class BuildPlugin implements Plugin<Project> {
             // eliminate test-scoped dependencies (no need in maven central poms)
             generatedPom.dependencies.removeAll { dep ->
                 dep.scope == 'test' || dep.artifactId == 'elasticsearch-hadoop-mr'
-            }
-
-            // Mark the optional dependencies to actually be optional
-            generatedPom.dependencies.findAll { it.scope == 'optional' }.each {
-                it.optional = "true"
-            }
-
-            // By default propdeps models optional dependencies as compile/optional
-            // for es-hadoop optional is best if these are modeled as provided/optional
-            generatedPom.dependencies.findAll { it.optional == "true" }.each {
-                it.scope = "provided"
             }
 
             // Storm hosts their jars outside of maven central.
