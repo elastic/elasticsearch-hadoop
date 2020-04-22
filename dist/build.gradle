@@ -19,7 +19,7 @@ configurations {
     }
 }
 
-def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig", 
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig",
                     ":elasticsearch-spark-20", ":elasticsearch-storm"]
 distProjects.each { distProject ->
     dependencies {
@@ -104,7 +104,7 @@ javadoc {
 String zipContentDir = "elasticsearch-hadoop-${project.version}"
 
 // Create a zip task for creating the distribution
-task('distZip', type: Zip.class) {
+task('distZip', type: Zip) {
     group = 'Distribution'
     description = "Builds zip archive, containing all jars and docs, suitable for download page."
 
