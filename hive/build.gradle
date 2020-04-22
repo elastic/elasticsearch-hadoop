@@ -18,11 +18,13 @@ configurations {
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    provided("org.apache.hive:hive-service:$hiveVersion") {
+    implementation("org.apache.hive:hive-service:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
-    provided("org.apache.hive:hive-exec:$hiveVersion")
-    provided("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("org.apache.hive:hive-exec:$hiveVersion")
+    implementation("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation(project(":test:shared"))
 
@@ -39,6 +41,7 @@ dependencies {
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
