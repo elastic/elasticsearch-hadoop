@@ -10,7 +10,7 @@ apply plugin: 'scala.variants'
 
 variants {
     defaultVersion '2.11.12'
-    targetVersions '2.11.12'
+    targetVersions '2.10.7', '2.11.12'
 }
 
 configurations {
@@ -21,9 +21,11 @@ configurations {
     implementation {
         extendsFrom project.configurations.embedded
     }
-    scalaCompilerPlugin {
-        defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+    if (project.ext.scalaMajorVersion != '2.10') {
+        scalaCompilerPlugin {
+            defaultDependencies { dependencies ->
+                dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+            }
         }
     }
 }
@@ -42,6 +44,7 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
 }
 
 compileScala {
+    options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').canonicalPath
     configure(scalaCompileOptions.forkOptions) {
         memoryMaximumSize = '1g'
         jvmArgs = ['-XX:MaxPermSize=512m']
@@ -137,6 +140,9 @@ dependencies {
         implementation("com.google.code.findbugs:jsr305:2.0.1")
         implementation("org.json4s:json4s-ast_2.10:3.2.10")
         implementation("com.esotericsoftware.kryo:kryo:2.21")
+        compileOnly("org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
+        compileOnly("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+        compileOnly("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     }
 
     testImplementation(project(":test:shared"))
@@ -186,11 +192,13 @@ scaladoc {
     title = "${rootProject.description} ${version} API"
 }
 
-tasks.withType(ScalaCompile) {
-    scalaCompileOptions.with {
-        additionalParameters = [
-                "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
-                "-P:genjavadoc:out=$buildDir/generated/java".toString()
-        ]
+if (project.ext.scalaMajorVersion != '2.10') {
+    tasks.withType(ScalaCompile) {
+        scalaCompileOptions.with {
+            additionalParameters = [
+                    "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
+                    "-P:genjavadoc:out=$buildDir/generated/java".toString()
+            ]
+        }
     }
 }
