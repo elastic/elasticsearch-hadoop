@@ -10,7 +10,7 @@ apply plugin: 'scala.variants'
 
 variants {
     defaultVersion '2.11.12'
-    targetVersions '2.11.12'
+    targetVersions '2.10.7', '2.11.12'
 }
 
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
@@ -58,6 +58,7 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
 }
 
 compileScala {
+    options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').canonicalPath
     configure(scalaCompileOptions.forkOptions) {
         memoryMaximumSize = '1g'
         jvmArgs = ['-XX:MaxPermSize=512m']
@@ -148,6 +149,9 @@ dependencies {
         implementation("com.google.code.findbugs:jsr305:2.0.1")
         implementation("org.json4s:json4s-ast_2.10:3.2.10")
         implementation("com.esotericsoftware.kryo:kryo:2.21")
+        compileOnly("org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
+        compileOnly("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+        compileOnly("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     }
 
     testImplementation(project(":test:shared"))
