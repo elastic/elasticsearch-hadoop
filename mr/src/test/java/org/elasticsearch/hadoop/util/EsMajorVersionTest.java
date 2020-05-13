@@ -63,12 +63,6 @@ public class EsMajorVersionTest {
         versions.add("7.0.0");
         versions.add("7.1.0");
         versions.add("7.1.1");
-        versions.add("8.0.0-alpha1");
-        versions.add("8.0.0-beta2");
-        versions.add("8.0.0-rc3");
-        versions.add("8.0.0");
-        versions.add("8.1.0");
-        versions.add("8.1.1");
         TEST_VERSIONS = Collections.unmodifiableList(versions);
     }
 
