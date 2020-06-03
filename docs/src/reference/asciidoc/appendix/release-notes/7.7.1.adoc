@@ -1,0 +1,5 @@
+[[eshadoop-7.7.1]]
+== Elasticsearch for Apache Hadoop version 7.7.1
+
+ES-Hadoop 7.7.1 is a version compatibility release, tested specifically against 
+Elasticsearch 7.7.1.
