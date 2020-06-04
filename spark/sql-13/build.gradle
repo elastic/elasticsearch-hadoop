@@ -55,10 +55,10 @@ configurations.all { Configuration conf ->
 tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
+    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').canonicalPath
 }
 
 compileScala {
-    options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').canonicalPath
     configure(scalaCompileOptions.forkOptions) {
         memoryMaximumSize = '1g'
         jvmArgs = ['-XX:MaxPermSize=512m']
