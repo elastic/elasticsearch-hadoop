@@ -148,10 +148,6 @@ class BaseBuildPlugin implements Plugin<Project> {
         if (!project.rootProject.ext.has('settingsConfigured')) {
             // Force any Elasticsearch test clusters to use packaged java versions if they have them available
             project.rootProject.ext.isRuntimeJavaHomeSet = false
-
-            File gitHead = gitBranch(project)
-            project.rootProject.ext.gitHead = gitHead
-            project.rootProject.ext.revHash = gitHash(gitHead)
             project.rootProject.ext.settingsConfigured = true
 
             // TODO: Forward Port?
@@ -163,8 +159,6 @@ class BaseBuildPlugin implements Plugin<Project> {
 //                params.setIsRutimeJavaHomeSet(project.rootProject.ext.isRuntimeJavaHomeSet)
 //            }
         }
-        project.ext.gitHead = project.rootProject.ext.gitHead
-        project.ext.revHash = project.rootProject.ext.revHash
         project.ext.javaVersions = BuildParams.javaVersions
         project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
     }
@@ -215,45 +209,5 @@ class BaseBuildPlugin implements Plugin<Project> {
             }
         }
         // End section
-    }
-
-    /**
-     * @param project that belongs to a git repo
-     * @return the file containing the hash for the current branch
-     */
-    private static File gitBranch(Project project) {
-        // parse the git files to find out the revision
-        File gitHead =  project.file("${project.rootDir}/.git/HEAD")
-        if (gitHead != null && !gitHead.exists()) {
-            // Try as a sub module
-            File subModuleGit = project.file("${project.rootDir}/.git")
-            if (subModuleGit != null && subModuleGit.exists()) {
-                String content = subModuleGit.text.trim()
-                if (content.startsWith("gitdir:")) {
-                    gitHead = project.file("${project.rootDir}/" + content.replace('gitdir: ','') + "/HEAD")
-                }
-            }
-        }
-
-        if (gitHead != null && gitHead.exists()) {
-            String content = gitHead.text.trim()
-            if (content.startsWith("ref:")) {
-                return project.file("${project.rootDir}/.git/" + content.replace('ref: ',''))
-            }
-            return gitHead
-        }
-        return null
-    }
-
-    /**
-     * @param gitHead file containing the the currently checked out ref
-     * @return the current commit version hash
-     */
-    private static String gitHash(File gitHead) {
-        String rev = "unknown"
-        if (gitHead != null && gitHead.exists()) {
-            rev = gitHead.text.trim()
-        }
-        return rev
     }
 }

@@ -1,3 +1,4 @@
+import org.elasticsearch.gradle.info.BuildParams
 
 apply plugin: 'es.hadoop.build.integration'
 
@@ -36,13 +37,13 @@ sourceSets {
 }
 
 task generateGitHash {
-    inputs.file project.ext.gitHead
+    inputs.property "revision", BuildParams.gitRevision
     outputs.dir generatedResources
 
     doLast {
         Properties props = new Properties()
         props.put("version", version)
-        props.put("hash", project.ext.revHash)
+        props.put("hash", BuildParams.gitRevision)
         File output = new File(generatedResources, "esh-build.properties")
         new File(generatedResources).mkdirs()
         output.createNewFile()

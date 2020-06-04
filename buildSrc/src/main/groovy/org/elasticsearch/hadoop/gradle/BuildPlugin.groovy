@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.elasticsearch.gradle.DependenciesInfoTask
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
@@ -231,7 +232,7 @@ class BuildPlugin implements Plugin<Project> {
         manifest.attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
         manifest.attributes['Implementation-Vendor'] = "Elastic"
         manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-        manifest.attributes['Repository-Revision'] = project.ext.revHash
+        manifest.attributes['Repository-Revision'] = BuildParams.gitRevision
         String build = System.env['ESHDP.BUILD']
         if (build != null) {
             manifest.attributes['Build'] = build
