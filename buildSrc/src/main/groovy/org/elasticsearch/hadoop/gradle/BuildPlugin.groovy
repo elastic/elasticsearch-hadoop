@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.elasticsearch.gradle.DependenciesInfoTask
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
@@ -226,20 +227,6 @@ class BuildPlugin implements Plugin<Project>  {
                 }
             }
         }
-
-        // Do substitutions for ES fixture downloads
-        project.configurations.all { Configuration configuration ->
-            configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
-                // TODO: Build tools requests a version format that does not match the version id of the distribution.
-                // Fix this when it is fixed in the mainline
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}linux-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-linux-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}windows-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-windows-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}darwin-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-darwin-x86_64"))
-            }
-        }
     }
 
     /**
@@ -288,7 +275,7 @@ class BuildPlugin implements Plugin<Project>  {
         manifest.attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
         manifest.attributes['Implementation-Vendor'] = "Elastic"
         manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-        manifest.attributes['Repository-Revision'] = project.ext.revHash
+        manifest.attributes['Repository-Revision'] = BuildParams.gitRevision
         String build = System.env['ESHDP.BUILD']
         if (build != null) {
             manifest.attributes['Build'] = build
