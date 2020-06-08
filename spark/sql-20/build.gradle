@@ -71,6 +71,20 @@ sourceSets {
     itest.resources.srcDirs += "$coreSrc/itest/resources"
 }
 
+def javaFilesOnly = { FileTreeElement spec ->
+    spec.file.name.endsWith('.java') || spec.isDirectory()
+}
+
+artifacts {
+    sourceElements(project.file("$coreSrc/main/scala"))
+    // Add java files from core source to javadocElements.
+    project.fileTree("$coreSrc/main/scala").include(javaFilesOnly).each {
+        javadocElements(it)
+    }
+    project.fileTree("src/main/scala").include(javaFilesOnly).each {
+        javadocElements(it)
+    }
+}
 
 // currently the outside project folders are transformed into linked resources however
 // Gradle only supports one so the project will be invalid as not all sources will be in there
@@ -165,11 +179,12 @@ dependencies {
     }
 
     additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 // Export generated Java code from the genjavadoc compiler plugin
 artifacts {
-    sourceElements(project.file("$buildDir/generated/java")) {
+    javadocElements(project.file("$buildDir/generated/java")) {
         builtBy compileScala
     }
 }

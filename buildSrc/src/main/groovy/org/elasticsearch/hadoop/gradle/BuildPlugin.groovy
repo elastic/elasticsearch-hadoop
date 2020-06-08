@@ -27,6 +27,7 @@ import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
+import org.gradle.api.plugins.scala.ScalaPlugin
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
@@ -103,6 +104,37 @@ class BuildPlugin implements Plugin<Project>  {
                 // into incremental compilation analysis.
                 attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
                 attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Import javadoc sources
+            Configuration javadocSources = project.configurations.create("javadocSources")
+            javadocSources.canBeConsumed = false
+            javadocSources.canBeResolved = true
+            javadocSources.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export source configuration
+            Configuration javadocElements = project.configurations.create("javadocElements")
+            javadocElements.canBeConsumed = true
+            javadocElements.canBeResolved = false
+            javadocElements.extendsFrom(sources)
+            javadocElements.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export configuration for archives that should be in the distribution
+            Configuration distElements = project.configurations.create('distElements')
+            distElements.canBeConsumed = true
+            distElements.canBeResolved = false
+            distElements.attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'packaging'))
             }
         }
 
@@ -209,9 +241,20 @@ class BuildPlugin implements Plugin<Project>  {
         // TODO: Remove all root project distribution logic. It should exist in a separate dist project.
         if (project != project.rootProject) {
             SourceSet mainSourceSet = project.sourceSets.main
+
+            // Add java source to project's source elements and javadoc elements
             FileCollection javaSourceDirs = mainSourceSet.java.sourceDirectories
             javaSourceDirs.each { File srcDir ->
                 project.getArtifacts().add('sourceElements', srcDir)
+                project.getArtifacts().add('javadocElements', srcDir)
+            }
+
+            // Add scala sources to source elements if that plugin is applied
+            project.getPlugins().withType(ScalaPlugin.class) {
+                FileCollection scalaSourceDirs = mainSourceSet.scala.sourceDirectories
+                scalaSourceDirs.each { File scalaSrcDir ->
+                    project.getArtifacts().add('sourceElements', scalaSrcDir)
+                }
             }
         }
 
@@ -245,6 +288,10 @@ class BuildPlugin implements Plugin<Project>  {
             spec.expand(copyright: new Date().format('yyyy'), version: project.version)
         }
 
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', jar)
+        }
+
         // Jar up the sources of the project
         Jar sourcesJar = project.tasks.create('sourcesJar', Jar)
         sourcesJar.dependsOn(project.tasks.classes)
@@ -253,6 +300,7 @@ class BuildPlugin implements Plugin<Project>  {
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             sourcesJar.from(project.configurations.additionalSources)
+            project.getArtifacts().add('distElements', sourcesJar)
         }
 
         // Configure javadoc
@@ -267,7 +315,7 @@ class BuildPlugin implements Plugin<Project>  {
         ]
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
-            javadoc.source = project.files(project.configurations.additionalSources)
+            javadoc.source += project.files(project.configurations.javadocSources)
         }
         // Set javadoc executable to runtime Java (1.8)
         javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
@@ -301,6 +349,9 @@ class BuildPlugin implements Plugin<Project>  {
         Jar javadocJar = project.tasks.create('javadocJar', Jar)
         javadocJar.classifier = 'javadoc'
         javadocJar.from(project.tasks.javadoc)
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', javadocJar)
+        }
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
         Task pack = project.tasks.create('pack')
