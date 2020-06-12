@@ -1,6 +1,6 @@
 package org.elasticsearch.hadoop.gradle
 
-import org.elasticsearch.gradle.DependenciesInfoTask
+import org.elasticsearch.gradle.DependenciesInfoPlugin
 import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
@@ -12,7 +12,6 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyResolveDetails
-import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
@@ -24,7 +23,6 @@ import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaLibraryPlugin
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
 import org.gradle.api.plugins.scala.ScalaPlugin
@@ -559,14 +557,7 @@ class BuildPlugin implements Plugin<Project> {
 
     private static void configureDependenciesInfo(Project project) {
         if (!project.path.startsWith(":qa")) {
-            project.tasks.register("dependenciesInfo", DependenciesInfoTask) { DependenciesInfoTask task ->
-                task.runtimeConfiguration = project.configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
-                task.compileOnlyConfiguration = project.configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)
-                // Create a property called mappings that points to the same mappings in the dependency licenses task.
-                task.getConventionMapping().map('mappings') {
-                    (project.tasks.getByName('dependencyLicenses') as DependencyLicensesTask).mappings
-                }
-            }
+            project.getPluginManager().apply(DependenciesInfoPlugin.class)
         }
     }
 }
