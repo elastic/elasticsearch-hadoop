@@ -69,21 +69,21 @@ private[spark] abstract class AbstractEsRDDIterator[T](
     createValue(value)
   }
 
-  def closeIfNeeded() {
+  def closeIfNeeded(): Unit = {
     if (!closed) {
       close()
       closed = true
     }
   }
 
-  protected def close() = {
+  protected def close(): Unit = {
     if (initialized) {
       reader.close()
     }
   }
 
   def getLogger(): Log
-  def initReader(settings:Settings, log: Log)
+  def initReader(settings:Settings, log: Log): Unit
   def createValue(value: Array[Object]): T
 
 }

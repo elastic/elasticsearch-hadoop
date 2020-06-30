@@ -51,7 +51,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
     esSplit.esPartition.getHostNames
   }
 
-  override def checkpoint() {
+  override def checkpoint(): Unit = {
     // Do nothing. Elasticsearch RDD should not be checkpointed.
   }
 

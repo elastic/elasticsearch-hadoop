@@ -1,0 +1,127 @@
+
+description = "Elasticsearch Spark (for Spark 3.X)"
+
+evaluationDependsOn(':elasticsearch-hadoop-mr')
+
+apply plugin: 'scala'
+apply plugin: 'es.hadoop.build.integration'
+apply plugin: 'scala.variants'
+
+variants {
+    defaultVersion '2.12.10'
+    targetVersions '2.12.10'
+}
+
+println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
+String sparkVersion = spark30Version
+
+compileScala {
+    configure(scalaCompileOptions.forkOptions) {
+        memoryMaximumSize = '1g'
+        jvmArgs = ['-XX:MaxPermSize=512m']
+    }
+    scalaCompileOptions.additionalParameters = [
+        "-feature",
+        "-unchecked",
+        "-deprecation",
+        "-Xfuture",
+        "-Yno-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-numeric-widen"
+    ]
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+String coreSrc = file("$projectDir/../core").absolutePath.replace('\\','/')
+
+sourceSets {
+    main.scala.srcDirs += "$coreSrc/main/scala"
+    test.scala.srcDirs += "$coreSrc/test/scala"
+    itest.java.srcDirs += "$coreSrc/itest/java"
+    itest.scala.srcDirs += "$coreSrc/itest/scala"
+    itest.resources.srcDirs += "$coreSrc/itest/resources"
+}
+
+
+// currently the outside project folders are transformed into linked resources however
+// Gradle only supports one so the project will be invalid as not all sources will be in there
+// as such, they are setup here manually for Eclipse. IntelliJ probably needs a similar approach
+eclipse {
+    project.file.whenMerged { pj ->
+        // eliminated resources created by gradle
+
+        linkedResources.clear()
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/main/scala", "2", "$coreSrc/main/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/test/scala", "2", "$coreSrc/test/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/java", "2", "$coreSrc/itest/java", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/scala", "2", "$coreSrc/itest/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/resources","2", "$coreSrc/itest/resources", null))
+
+    }
+    classpath.file {
+        whenMerged { cp ->
+            entries.removeAll { entry ->
+                entry.kind == 'src' && (entry.path in ["scala", "java", "resources"] || entry.path.startsWith("itest-") || entry.path.endsWith("-scala"))
+            }
+
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/main/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/test/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/java", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/resources", null))
+        }
+    }
+}
+
+dependencies {
+    provided(project(":elasticsearch-hadoop-mr"))
+    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
+
+    compile("org.scala-lang:scala-library:$scalaVersion")
+
+    provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
+
+    optional("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    optional("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+
+    testCompile "org.elasticsearch:securemock:1.2"
+    testCompile(project(":elasticsearch-hadoop-mr").sourceSets.test.output)
+
+    itestCompile(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
+
+    itestCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    itestCompile("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+}
+
+jar {
+    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+    }
+}
+
+javadoc {
+    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
+    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
+}
+
+sourcesJar {
+    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
+}
+
+scaladoc {
+    title = "${rootProject.description} ${version} API"
+}
