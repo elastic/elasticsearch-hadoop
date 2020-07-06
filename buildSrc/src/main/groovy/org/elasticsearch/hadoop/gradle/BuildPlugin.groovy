@@ -115,6 +115,13 @@ class BuildPlugin implements Plugin<Project>  {
                     project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$version"]
                     println "Using Apache Hadoop on YARN [$version]"
                     break
+                // Hadoop YARN/3.2.x
+                case "hadoopYarn3":
+                    String version = project.hadoop32Version
+                    project.rootProject.ext.hadoopVersion = version
+                    project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$version"]
+                    println "Using Apache Hadoop on YARN [$version]"
+                    break
 
                 default:
                     String version = project.hadoop22Version
