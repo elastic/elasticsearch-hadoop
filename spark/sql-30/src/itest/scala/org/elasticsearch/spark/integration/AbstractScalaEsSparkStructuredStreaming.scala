@@ -46,7 +46,7 @@ import org.junit.runners.MethodSorters
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.io.Codec
 import scala.io.Source
 
@@ -64,7 +64,7 @@ object AbstractScalaEsSparkStructuredStreaming {
 
   @BeforeClass
   def setup(): Unit =  {
-    sparkConf.setAll(TestSettings.TESTING_PROPS)
+    sparkConf.setAll(TestSettings.TESTING_PROPS.asScala)
     spark = Some(
       SparkSession.builder()
         .config(sparkConf)

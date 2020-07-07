@@ -28,7 +28,7 @@ import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
@@ -36,9 +36,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{Encoder, Row, SQLContext, SaveMode, SparkSession}
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.Decimal
 import org.apache.spark.sql.types.DecimalType
@@ -86,8 +84,6 @@ import org.junit.runners.Parameterized.Parameters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
-
-import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.serialization.JsonUtils
@@ -96,7 +92,7 @@ import org.junit.Assert._
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf()
-    .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
+    .setAll(TestSettings.TESTING_PROPS.asScala)
     .setAppName("estest")
     .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
   @transient var cfg: SparkConf = null
@@ -108,7 +104,7 @@ object AbstractScalaEsScalaSparkSQL {
 
   @BeforeClass
   def setup() {
-    conf.setAll(TestSettings.TESTING_PROPS);
+    conf.setAll(TestSettings.TESTING_PROPS.asScala);
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
 
@@ -489,8 +485,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     )
 
     val conf = Map(ES_MAPPING_ID -> "id")
-    val rdd = sc.makeRDD(docs)
-    val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
+    import sqc.implicits._
+    val ds = sqc.createDataset[String](sc.makeRDD(docs))
+    val jsonDF = sqc.read.json(ds).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(idx)
     val hit1 = RestUtils.get(s"$target/1/_source")
@@ -511,8 +508,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     )
 
     val conf = Map(ES_MAPPING_ID -> "id", ES_SPARK_DATAFRAME_WRITE_NULL_VALUES -> "true")
-    val rdd = sc.makeRDD(docs)
-    val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
+    import sqc.implicits._
+    val ds = sqc.createDataset[String](sc.makeRDD(docs))
+    val jsonDF = sqc.read.json(ds).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(idx)
     val hit1 = RestUtils.get(s"$target/1/_source")
@@ -1148,13 +1146,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test()
   def testJsonLoadAndSavedToEs() {
-    val input = sqc.read.json(readAsRDD(this.getClass.getResource("/simple.json").toURI()))
+    import sqc.implicits._
+    val input = sqc.read.json(sqc.createDataset[String](readAsRDD(this.getClass.getResource("/simple.json").toURI())))
     println(input.schema.simpleString)
 
     val target = wrapIndex("spark-test-json-file/data")
     input.saveToEs(target, cfg)
 
-    val basic = sqc.read.json(readAsRDD(this.getClass.getResource("/basic.json").toURI()))
+    val basic = sqc.read.json(sqc.createDataset[String](readAsRDD(this.getClass.getResource("/basic.json").toURI())))
     println(basic.schema.simpleString)
     basic.saveToEs(target, cfg)
   }
@@ -1162,7 +1161,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testJsonLoadAndSavedToEsSchema() {
     assumeFalse(readMetadata)
-    val input = sqc.read.json(readAsRDD(this.getClass.getResource("/multi-level-doc.json").toURI()))
+    import sqc.implicits._
+    val input = sqc.read.json(sqc.createDataset[String](readAsRDD(this.getClass.getResource("/multi-level-doc.json").toURI())))
     println("JSON schema")
     println(input.schema.treeString)
     println(input.schema)
@@ -1355,7 +1355,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   private def artistsJsonAsDataFrame = {
-    sqc.read.json(readAsRDD(this.getClass.getResource("/small-sample.json").toURI()))
+    import sqc.implicits._
+    sqc.read.json(sqc.createDataset[String](readAsRDD(this.getClass.getResource("/small-sample.json").toURI())))
   }
 
   @Test

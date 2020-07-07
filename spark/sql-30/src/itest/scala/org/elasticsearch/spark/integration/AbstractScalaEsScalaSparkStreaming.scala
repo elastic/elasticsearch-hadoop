@@ -43,7 +43,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized.Parameters
 import org.junit.runners.{MethodSorters, Parameterized}
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -59,7 +59,7 @@ object AbstractScalaEsScalaSparkStreaming {
 
   @BeforeClass
   def setup(): Unit =  {
-    conf.setAll(TestSettings.TESTING_PROPS)
+    conf.setAll(TestSettings.TESTING_PROPS.asScala)
     sc = new SparkContext(conf)
   }
 
@@ -242,14 +242,12 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsRDDIngest(): Unit = {
+    val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     try {
-      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-      try {
-        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
-      } finally {
-        if (versionTestingClient != null) versionTestingClient.close()
-      }
+      val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
+      Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
+    } finally {
+      if (versionTestingClient != null) versionTestingClient.close()
     }
 
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
