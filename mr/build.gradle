@@ -6,6 +6,8 @@ description = "Elasticsearch Hadoop Map/Reduce"
 dependencies {
     provided(project.ext.hadoopClient)
     provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    compile("commons-httpclient:commons-httpclient:3.0.1")
+    compile("commons-lang:commons-lang:2.6")
     testCompile "io.netty:netty-all:4.0.29.Final"
     testCompile "org.elasticsearch:securemock:1.2"
 }

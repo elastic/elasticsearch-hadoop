@@ -69,7 +69,7 @@ public class SerializationEventConverterTest {
         SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, Matchers.startsWith("org.apache.hadoop.io.MapWritable@"));
+        assertTrue(rawEvent.matches("\\{field=value\\}|^org.apache.hadoop.io.MapWritable@.*"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);
