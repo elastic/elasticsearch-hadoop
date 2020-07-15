@@ -462,6 +462,12 @@ class BuildPlugin implements Plugin<Project>  {
                     connection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                     developerConnection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                 }
+                developers {
+                    developer {
+                        name = 'Elastic'
+                        url = 'https://www.elastic.co'
+                    }
+                }
             }
 
             groupId = "org.elasticsearch"
