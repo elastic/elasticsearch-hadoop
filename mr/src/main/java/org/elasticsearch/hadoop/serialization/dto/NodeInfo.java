@@ -52,13 +52,13 @@ public class NodeInfo implements Serializable {
                 this.isData = true;
             } else {
                 String data = (String) attributes.get("data");
-                this.isClient = data == null ? true : !Boolean.parseBoolean(data);
-                this.isData = data == null ? true : Boolean.parseBoolean(data);
+                this.isClient = data == null || !Boolean.parseBoolean(data);
+                this.isData = data == null || Boolean.parseBoolean(data);
             }
             this.isIngest = false;
         } else {
             List<String> roles = (List<String>) map.get("roles");
-            this.isClient = roles.contains("data") == false;
+            this.isClient = !roles.contains("data");
             this.isData = roles.contains("data");
             this.isIngest = roles.contains("ingest");
         }

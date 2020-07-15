@@ -124,6 +124,13 @@ class BaseBuildPlugin implements Plugin<Project> {
                     project.rootProject.ext.hadoopVersion = project.hadoop22Version
                     println "Using Apache Hadoop [$project.hadoop22Version]"
                     break
+            // Hadoop YARN/3.2.x
+                case "hadoopYarn3":
+                    String version = project.hadoop32Version
+                    project.rootProject.ext.hadoopVersion = version
+                    project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$version"]
+                    println "Using Apache Hadoop on YARN [$version]"
+                    break
                 default:
                     throw new GradleException("Invalid [hadoopDistro] setting: [$project.rootProject.ext.hadoopDistro]")
             }

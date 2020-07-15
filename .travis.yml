@@ -1,12 +1,17 @@
 language: java
 jdk:
- - oraclejdk8
-
+ - openjdk12
 
 dist: trusty
+
+addons:
+ apt:
+  packages:
+   - oracle-java8-installer
 
 before_install:
  - "chmod +x gradlew"
  - export JAVA_OPTS="-Xmx2048m -XX:MaxPermSize=386m"
+ - export JAVA8_HOME=$(update-alternatives --list java | grep java-8-oracle | sed 's|/bin/java$||' | sed 's|/jre$||')
 
-install: ./gradlew assemble -Pskip.signing
+install: ./gradlew assemble -Pskip.signing updateSHAs

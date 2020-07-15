@@ -85,7 +85,7 @@ public class HiveSerializationEventConverterTest {
         SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), tuple, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, startsWith("HiveType{object=org.apache.hadoop.io.MapWritable@"));
+        assertTrue(rawEvent.matches("HiveType\\{object=\\{three=3, one=1, two=2\\}.*|^HiveType\\{object=org.apache.hadoop.io.MapWritable@.*"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);

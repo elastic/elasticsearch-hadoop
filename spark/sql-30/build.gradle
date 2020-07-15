@@ -1,0 +1,220 @@
+
+description = "Elasticsearch Spark (for Spark 3.X)"
+
+evaluationDependsOn(':elasticsearch-hadoop-mr')
+
+apply plugin: 'java-library'
+apply plugin: 'scala'
+apply plugin: 'es.hadoop.build.integration'
+apply plugin: 'scala.variants'
+
+variants {
+    defaultVersion '2.12.10'
+    targetVersions '2.12.10'
+}
+
+configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
+    if (project.ext.scalaMajorVersion != '2.10') {
+        scalaCompilerPlugin {
+            defaultDependencies { dependencies ->
+                dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.16"))
+            }
+        }
+    }
+}
+
+println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
+String sparkVersion = spark30Version
+
+// Revert to spark 2.2.0 for scala 2.10 as 2.3+ does not support scala 2.10
+if (project.ext.scalaMajorVersion == '2.10') {
+    sparkVersion = '2.2.0'
+}
+
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
+    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
+}
+
+compileScala {
+    configure(scalaCompileOptions.forkOptions) {
+        memoryMaximumSize = '1g'
+        jvmArgs = ['-XX:MaxPermSize=512m']
+    }
+    scalaCompileOptions.additionalParameters = [
+        "-feature",
+        "-unchecked",
+        "-deprecation",
+        "-Xfuture",
+        "-Yno-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-numeric-widen",
+        "-Xfatal-warnings"
+    ]
+}
+
+String coreSrc = file("$projectDir/../core").absolutePath.replace('\\','/')
+
+sourceSets {
+    main.scala.srcDirs += "$coreSrc/main/scala"
+    test.scala.srcDirs += "$coreSrc/test/scala"
+    itest.java.srcDirs += "$coreSrc/itest/java"
+    itest.scala.srcDirs += "$coreSrc/itest/scala"
+    itest.resources.srcDirs += "$coreSrc/itest/resources"
+}
+
+def javaFilesOnly = { FileTreeElement spec ->
+    spec.file.name.endsWith('.java') || spec.isDirectory()
+}
+
+artifacts {
+    sourceElements(project.file("$coreSrc/main/scala"))
+    // Add java files from core source to javadocElements.
+    project.fileTree("$coreSrc/main/scala").include(javaFilesOnly).each {
+        javadocElements(it)
+    }
+    project.fileTree("src/main/scala").include(javaFilesOnly).each {
+        javadocElements(it)
+    }
+}
+
+// currently the outside project folders are transformed into linked resources however
+// Gradle only supports one so the project will be invalid as not all sources will be in there
+// as such, they are setup here manually for Eclipse. IntelliJ probably needs a similar approach
+eclipse {
+    project.file.whenMerged { pj ->
+        // eliminated resources created by gradle
+
+        linkedResources.clear()
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/main/scala", "2", "$coreSrc/main/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/test/scala", "2", "$coreSrc/test/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/java", "2", "$coreSrc/itest/java", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/scala", "2", "$coreSrc/itest/scala", null))
+        linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/resources","2", "$coreSrc/itest/resources", null))
+
+    }
+    classpath.file {
+        whenMerged { cp ->
+            entries.removeAll { entry ->
+                entry.kind == 'src' && (entry.path in ["scala", "java", "resources"] || entry.path.startsWith("itest-") || entry.path.endsWith("-scala"))
+            }
+
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/main/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/test/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/java", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/scala", null))
+            entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/resources", null))
+        }
+    }
+}
+
+dependencies {
+    embedded(project(":elasticsearch-hadoop-mr"))
+
+    api("org.scala-lang:scala-library:$scalaVersion")
+    api("org.scala-lang:scala-reflect:$scalaVersion")
+    api("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
+
+    implementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.slf4j:slf4j-api:1.7.6") {
+        because 'spark exposes slf4j components in traits that we need to extend'
+    }
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
+    implementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+
+    // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
+    compileOnly("org.json4s:json4s-ast_${project.ext.scalaMajorVersion}:3.2.11")
+    compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
+
+    if ('2.10' == scalaMajorVersion) {
+        implementation("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")
+        implementation("org.apache.avro:avro:1.7.7")
+        implementation("log4j:log4j:1.2.17")
+        implementation("com.google.code.findbugs:jsr305:2.0.1")
+        implementation("org.json4s:json4s-ast_2.10:3.2.10")
+        implementation("com.esotericsoftware.kryo:kryo:2.21")
+        compileOnly("org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
+        compileOnly("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+        compileOnly("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    }
+
+    testImplementation(project(":test:shared"))
+    testImplementation(project.ext.hadoopClient)
+    testImplementation("org.elasticsearch:securemock:1.2")
+    testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
+    testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    
+    itestImplementation(project(":test:shared"))
+    itestImplementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+    itestImplementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
+}
+
+// Export generated Java code from the genjavadoc compiler plugin
+artifacts {
+    javadocElements(project.file("$buildDir/generated/java")) {
+        builtBy compileScala
+    }
+}
+
+jar {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+javadoc {
+    dependsOn compileScala
+    source += "$buildDir/generated/java"
+}
+
+scaladoc {
+    title = "${rootProject.description} ${version} API"
+}
+
+if (project.ext.scalaMajorVersion != '2.10') {
+    tasks.withType(ScalaCompile) {
+        scalaCompileOptions.with {
+            additionalParameters = [
+                    "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
+                    "-P:genjavadoc:out=$buildDir/generated/java".toString()
+            ]
+        }
+    }
+}
