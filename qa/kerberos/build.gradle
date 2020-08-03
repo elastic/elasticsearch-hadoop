@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopFixturePlugin
@@ -47,6 +46,21 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
 }
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
+
+// Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be 
+// used in other projects instead of requiring a jar operation to happen. Kerberos depends on the spark integration to 
+// compile some code, but due to how the current spark compilation works it's likely that the classes directory in the 
+// spark projects do not exist anymore when the kerberos compilation happens during a distribution build.
+// TODO: Clean this up when we get to variants, they should persist their classes dirs in a sane way
+configurations {
+    compileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+}
 
 dependencies {
     implementation(project(":elasticsearch-hadoop-mr"))

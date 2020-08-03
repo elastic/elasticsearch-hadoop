@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
-import org.elasticsearch.gradle.DependenciesInfoTask
+import org.elasticsearch.gradle.DependenciesInfoPlugin
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
@@ -12,17 +13,21 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyResolveDetails
-import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
 import org.gradle.api.file.CopySpec
+import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
+import org.gradle.api.plugins.scala.ScalaPlugin
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
@@ -35,10 +40,6 @@ import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
-import org.springframework.build.gradle.propdep.PropDepsEclipsePlugin
-import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
-import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
-import org.springframework.build.gradle.propdep.PropDepsPlugin
 
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariant
@@ -70,7 +71,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.getPluginManager().apply(BaseBuildPlugin.class)
 
         // BuildPlugin will continue to assume Java projects for the time being.
-        project.getPluginManager().apply(JavaPlugin.class)
+        project.getPluginManager().apply(JavaLibraryPlugin.class)
 
         // IDE Support
         project.getPluginManager().apply(IdeaPlugin.class)
@@ -78,12 +79,6 @@ class BuildPlugin implements Plugin<Project>  {
 
         // Maven Support
         project.getPluginManager().apply(MavenPlugin.class)
-
-        // Support for modeling provided/optional dependencies
-        project.getPluginManager().apply(PropDepsPlugin.class)
-        project.getPluginManager().apply(PropDepsIdeaPlugin.class)
-        project.getPluginManager().apply(PropDepsEclipsePlugin.class)
-        project.getPluginManager().apply(PropDepsMavenPlugin.class)
     }
 
     /** Return the configuration name used for finding transitive deps of the given dependency. */
@@ -112,10 +107,85 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
-    // TODO: Remove optional and provided configurations.
     private static void configureConfigurations(Project project) {
         Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
         project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
+
+        if (project != project.rootProject) {
+            // Set up avenues for sharing source files between projects in order to create embedded Javadocs
+            // Import source configuration
+            Configuration sources = project.configurations.create("additionalSources")
+            sources.canBeConsumed = false
+            sources.canBeResolved = true
+            sources.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export source configuration
+            Configuration sourceElements = project.configurations.create("sourceElements")
+            sourceElements.canBeConsumed = true
+            sourceElements.canBeResolved = false
+            sourceElements.extendsFrom(sources)
+            sourceElements.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Import javadoc sources
+            Configuration javadocSources = project.configurations.create("javadocSources")
+            javadocSources.canBeConsumed = false
+            javadocSources.canBeResolved = true
+            javadocSources.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export source configuration
+            Configuration javadocElements = project.configurations.create("javadocElements")
+            javadocElements.canBeConsumed = true
+            javadocElements.canBeResolved = false
+            javadocElements.extendsFrom(sources)
+            javadocElements.attributes {
+                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+                // into incremental compilation analysis.
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
+            }
+
+            // Export configuration for archives that should be in the distribution
+            Configuration distElements = project.configurations.create('distElements')
+            distElements.canBeConsumed = true
+            distElements.canBeResolved = false
+            distElements.attributes {
+                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'packaging'))
+            }
+        }
+
+        if (project.path.startsWith(":qa")) {
+            return
+        }
+
+        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
+        Closure disableTransitiveDeps = { Dependency dep ->
+            if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
+                dep.transitive = false
+
+                // also create a configuration just for this dependency version, so that later
+                // we can determine which transitive dependencies it has
+                String depConfig = transitiveDepConfigName(dep.group, dep.name, dep.version)
+                if (project.configurations.findByName(depConfig) == null) {
+                    project.configurations.create(depConfig)
+                    project.dependencies.add(depConfig, "${dep.group}:${dep.name}:${dep.version}")
+                }
+            }
+        }
 
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
@@ -127,11 +197,10 @@ class BuildPlugin implements Plugin<Project>  {
 
         if (!project.path.startsWith(":qa")) {
             // FIXHERE : Spark Restructure - all the variant configurations will need this
-            disableTransitiveDependencies(project, project.configurations.compile)
+            disableTransitiveDependencies(project, project.configurations.api)
             disableTransitiveDependencies(project, project.configurations.implementation)
-            disableTransitiveDependencies(project, project.configurations.provided)
-            disableTransitiveDependencies(project, project.configurations.optional)
             disableTransitiveDependencies(project, project.configurations.compileOnly)
+            disableTransitiveDependencies(project, project.configurations.runtimeOnly)
 
             project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
                 SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
@@ -213,7 +282,6 @@ class BuildPlugin implements Plugin<Project>  {
 
             itestImplementation project.sourceSets.main.output
             itestImplementation project.configurations.testImplementation
-            itestImplementation project.configurations.provided
             itestImplementation project.sourceSets.test.output
             itestImplementation project.configurations.testRuntimeClasspath
         }
@@ -251,20 +319,6 @@ class BuildPlugin implements Plugin<Project>  {
                 }
             }
         }
-
-        // Do substitutions for ES fixture downloads
-        project.configurations.all { Configuration configuration ->
-            configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
-                // TODO: Build tools requests a version format that does not match the version id of the distribution.
-                // Fix this when it is fixed in the mainline
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}linux-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-linux-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}windows-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-windows-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}darwin-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-darwin-x86_64"))
-            }
-        }
     }
 
     /**
@@ -275,6 +329,26 @@ class BuildPlugin implements Plugin<Project>  {
         // Target Java 1.8 compilation
         project.sourceCompatibility = '1.8'
         project.targetCompatibility = '1.8'
+
+        // TODO: Remove all root project distribution logic. It should exist in a separate dist project.
+        if (project != project.rootProject) {
+            SourceSet mainSourceSet = project.sourceSets.main
+
+            // Add java source to project's source elements and javadoc elements
+            FileCollection javaSourceDirs = mainSourceSet.java.sourceDirectories
+            javaSourceDirs.each { File srcDir ->
+                project.getArtifacts().add('sourceElements', srcDir)
+                project.getArtifacts().add('javadocElements', srcDir)
+            }
+
+            // Add scala sources to source elements if that plugin is applied
+            project.getPlugins().withType(ScalaPlugin.class) {
+                FileCollection scalaSourceDirs = mainSourceSet.scala.sourceDirectories
+                scalaSourceDirs.each { File scalaSrcDir ->
+                    project.getArtifacts().add('sourceElements', scalaSrcDir)
+                }
+            }
+        }
 
         project.tasks.withType(JavaCompile) { JavaCompile compile ->
             compile.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
@@ -294,7 +368,7 @@ class BuildPlugin implements Plugin<Project>  {
             manifest.attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
             manifest.attributes['Implementation-Vendor'] = "Elastic"
             manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-            manifest.attributes['Repository-Revision'] = project.ext.revHash
+            manifest.attributes['Repository-Revision'] = BuildParams.gitRevision
             String build = System.env['ESHDP.BUILD']
             if (build != null) {
                 manifest.attributes['Build'] = build
@@ -308,6 +382,10 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
 
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', project.tasks.getByName('jar'))
+        }
+
         // Jar up the sources of the project
         // FIXHERE : Spark Restructure - Need sources jars for the variants
 //        project.java {
@@ -318,6 +396,11 @@ class BuildPlugin implements Plugin<Project>  {
         sourcesJar.dependsOn(project.tasks.classes)
         sourcesJar.classifier = 'sources'
         sourcesJar.from(project.sourceSets.main.allSource)
+        // TODO: Remove when root project does not handle distribution
+        if (project != project.rootProject) {
+            sourcesJar.from(project.configurations.additionalSources)
+            project.getArtifacts().add('distElements', sourcesJar)
+        }
 
         // Configure javadoc
         project.tasks.withType(Javadoc) { Javadoc javadoc ->
@@ -329,6 +412,10 @@ class BuildPlugin implements Plugin<Project>  {
                     "org/elasticsearch/hadoop/util/**",
                     "org/apache/hadoop/hive/**"
             ]
+            // TODO: Remove when root project does not handle distribution
+            if (project != project.rootProject) {
+                javadoc.source += project.files(project.configurations.javadocSources)
+            }
             // Set javadoc executable to runtime Java (1.8)
             javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
 
@@ -363,6 +450,9 @@ class BuildPlugin implements Plugin<Project>  {
         Jar javadocJar = project.tasks.create('javadocJar', Jar)
         javadocJar.classifier = 'javadoc'
         javadocJar.from(project.tasks.javadoc)
+        if (project != project.rootProject) {
+            project.getArtifacts().add('distElements', javadocJar)
+        }
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
         // FIXHERE : Spark Restructure - all of those jars will need to be added to pack
@@ -444,17 +534,6 @@ class BuildPlugin implements Plugin<Project>  {
             // eliminate test-scoped dependencies (no need in maven central poms)
             generatedPom.dependencies.removeAll { dep ->
                 dep.scope == 'test' || dep.artifactId == 'elasticsearch-hadoop-mr'
-            }
-
-            // Mark the optional dependencies to actually be optional
-            generatedPom.dependencies.findAll { it.scope == 'optional' }.each {
-                it.optional = "true"
-            }
-
-            // By default propdeps models optional dependencies as compile/optional
-            // for es-hadoop optional is best if these are modeled as provided/optional
-            generatedPom.dependencies.findAll { it.optional == "true" }.each {
-                it.scope = "provided"
             }
 
             // Storm hosts their jars outside of maven central.
@@ -587,14 +666,7 @@ class BuildPlugin implements Plugin<Project>  {
 
     private static void configureDependenciesInfo(Project project) {
         if (!project.path.startsWith(":qa")) {
-            project.tasks.register("dependenciesInfo", DependenciesInfoTask) { DependenciesInfoTask task ->
-                task.runtimeConfiguration = project.configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
-                task.compileOnlyConfiguration = project.configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)
-                // Create a property called mappings that points to the same mappings in the dependency licenses task.
-                task.getConventionMapping().map('mappings') {
-                    (project.tasks.getByName('dependencyLicenses') as DependencyLicensesTask).mappings
-                }
-            }
+            project.getPluginManager().apply(DependenciesInfoPlugin.class)
         }
     }
 }

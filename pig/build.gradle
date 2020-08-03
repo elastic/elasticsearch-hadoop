@@ -20,8 +20,10 @@ ext.pigClassifier = "h2"
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    provided("org.apache.pig:pig:$pigVersion:$pigClassifier")
-    provided("joda-time:joda-time:$jodaVersion")
+    implementation("org.apache.pig:pig:$pigVersion:$pigClassifier")
+    implementation("joda-time:joda-time:$jodaVersion")
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation(project(":test:shared"))
     testImplementation("org.apache.pig:pig:$pigVersion:$pigClassifier")
@@ -31,21 +33,16 @@ dependencies {
 
     itestImplementation(project(":test:shared"))
     itestImplementation("dk.brics.automaton:automaton:1.11-8")
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
-}
-
-javadoc {
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
-}
-
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
 }

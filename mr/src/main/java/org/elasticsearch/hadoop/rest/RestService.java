@@ -285,6 +285,7 @@ public abstract class RestService implements Serializable {
                                                          List<List<Map<String, Object>>> shards, Log log) {
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
+        PartitionDefinition.PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(settings, resolvedMapping);
         for (List<Map<String, Object>> group : shards) {
             String index = null;
             int shardId = -1;
@@ -308,8 +309,7 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                PartitionDefinition partition = new PartitionDefinition(settings, resolvedMapping, index, shardId,
-                        locationList.toArray(new String[0]));
+                PartitionDefinition partition = partitionBuilder.build(index, shardId, locationList.toArray(new String[0]));
                 partitions.add(partition);
             }
         }
@@ -326,6 +326,7 @@ public abstract class RestService implements Serializable {
         Assert.notNull(maxDocsPerPartition, "Attempting to find slice partitions but maximum documents per partition is not set.");
         Resource readResource = new Resource(settings, true);
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
+        PartitionDefinition.PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(settings, resolvedMapping);
 
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
@@ -362,7 +363,7 @@ public abstract class RestService implements Serializable {
                 int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
-                    partitions.add(new PartitionDefinition(settings, resolvedMapping, index, shardId, slice, locations));
+                    partitions.add(partitionBuilder.build(index, shardId, slice, locations));
                 }
             }
         }
