@@ -5,7 +5,7 @@ import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
-import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -493,7 +493,7 @@ class BuildPlugin implements Plugin<Project> {
                 itestJar.from(project.sourceSets.itest.output)
             }
 
-            Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
+            Test integrationTest = project.tasks.create('integrationTest', StandaloneRestIntegTestTask.class)
             integrationTest.dependsOn(itestJar)
 
             itestJar.configure { Jar jar ->
