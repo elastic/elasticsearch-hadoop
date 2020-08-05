@@ -1,7 +1,7 @@
 package org.elasticsearch.hadoop.gradle.fixture
 
 import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
-import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.gradle.testclusters.TestClustersPlugin
 import org.elasticsearch.gradle.testclusters.TestDistribution
 import org.gradle.api.NamedDomainObjectContainer
@@ -29,7 +29,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         // Optionally allow user to disable the fixture
         def useFixture = Boolean.parseBoolean(project.findProperty("tests.fixture.es.enable") ?: "true")
 
-        def integrationTestTask = project.tasks.getByName("integrationTest") as RestTestRunnerTask
+        def integrationTestTask = project.tasks.getByName("integrationTest") as StandaloneRestIntegTestTask
         if (useFixture) {
             // Depends on project already containing an "integrationTest"
             // task, as well as javaHome+runtimeJavaHome configured
@@ -39,7 +39,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         }
     }
 
-    private static void createClusterFor(RestTestRunnerTask integrationTest, Project project, String version) {
+    private static void createClusterFor(StandaloneRestIntegTestTask integrationTest, Project project, String version) {
         def clustersContainer = project.extensions.getByName(TestClustersPlugin.EXTENSION_NAME) as NamedDomainObjectContainer<ElasticsearchCluster>
         def integTestCluster = clustersContainer.create("integTest") { ElasticsearchCluster cluster ->
             cluster.version = version
