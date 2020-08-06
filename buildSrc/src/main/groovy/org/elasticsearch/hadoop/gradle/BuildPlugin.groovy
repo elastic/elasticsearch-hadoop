@@ -6,7 +6,6 @@ import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
 import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
-import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
