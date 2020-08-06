@@ -107,64 +107,71 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
-    private static void configureConfigurations(Project project) {
-        Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
-        project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
+    private static Configuration createConfiguration(Project project, String configurationName, boolean canBeConsumed, boolean canBeResolved,
+                                            String usageAttribute) {
+        return createConfiguration(project, configurationName, canBeConsumed, canBeResolved, usageAttribute, null)
+    }
 
+    private static Configuration createConfiguration(Project project, String configurationName, boolean canBeConsumed, boolean canBeResolved,
+                                            String usageAttribute, String libraryElements) {
+        Configuration configuration = project.configurations.create(configurationName)
+        configuration.canBeConsumed = canBeConsumed
+        configuration.canBeResolved = canBeResolved
+        configuration.attributes {
+            // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
+            // into incremental compilation analysis.
+            attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, usageAttribute))
+            if (libraryElements != null) {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, libraryElements))
+            }
+        }
+        return configuration
+    }
+
+    private static void configureConfigurations(Project project) {
         if (project != project.rootProject) {
             // Set up avenues for sharing source files between projects in order to create embedded Javadocs
             // Import source configuration
-            Configuration sources = project.configurations.create("additionalSources")
-            sources.canBeConsumed = false
-            sources.canBeResolved = true
-            sources.attributes {
-                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
-                // into incremental compilation analysis.
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
-            }
+            Configuration additionalSources = createConfiguration(project, 'additionalSources', false, true, 'java-source', 'sources')
 
             // Export source configuration
-            Configuration sourceElements = project.configurations.create("sourceElements")
-            sourceElements.canBeConsumed = true
-            sourceElements.canBeResolved = false
-            sourceElements.extendsFrom(sources)
-            sourceElements.attributes {
-                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
-                // into incremental compilation analysis.
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'java-source'))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
-            }
+            Configuration sourceElements = createConfiguration(project, 'sourceElements', true, false, 'java-source', 'source')
+            sourceElements.extendsFrom(additionalSources)
 
             // Import javadoc sources
-            Configuration javadocSources = project.configurations.create("javadocSources")
-            javadocSources.canBeConsumed = false
-            javadocSources.canBeResolved = true
-            javadocSources.attributes {
-                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
-                // into incremental compilation analysis.
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
-            }
+            createConfiguration(project, 'javadocSources', false, true, 'javadoc-source', 'sources')
 
-            // Export source configuration
-            Configuration javadocElements = project.configurations.create("javadocElements")
-            javadocElements.canBeConsumed = true
-            javadocElements.canBeResolved = false
-            javadocElements.extendsFrom(sources)
-            javadocElements.attributes {
-                // Changing USAGE is required when working with Scala projects, otherwise the source dirs get pulled
-                // into incremental compilation analysis.
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'javadoc-source'))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'sources'))
-            }
+            // Export javadoc source configuration
+            Configuration javadocElements = createConfiguration(project, 'javadocElements', true, false, 'javadoc-source', 'sources')
+            javadocElements.extendsFrom(additionalSources)
 
             // Export configuration for archives that should be in the distribution
-            Configuration distElements = project.configurations.create('distElements')
-            distElements.canBeConsumed = true
-            distElements.canBeResolved = false
-            distElements.attributes {
-                attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, 'packaging'))
+            createConfiguration(project, 'distElements', true, false, 'packaging')
+
+            // Do the same for any variants if the project has them
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVariants.featureVariants { SparkVariant variant ->
+                    Configuration vAdditionalSources = createConfiguration(project, variant.configuration('additionalSources'), false, true, 'java-source', 'sources')
+
+                    Configuration vSourceElements = createConfiguration(project, variant.configuration('sourceElements'), true, false, 'java-source', 'source')
+                    vSourceElements.extendsFrom(vAdditionalSources)
+
+                    createConfiguration(project, variant.configuration('javadocSources'), false, true, 'javadoc-source', 'sources')
+
+                    Configuration vJavadocElements = createConfiguration(project, variant.configuration('javadocElements'), true, false, 'javadoc-source', 'sources')
+                    vJavadocElements.extendsFrom(vAdditionalSources)
+
+                    createConfiguration(project, variant.configuration('distElements'), true, false, 'packaging')
+                }
+                sparkVariants.all { SparkVariant variant ->
+                    // Set capabilities on ALL variants if variants are enabled.
+                    // These are required to differentiate the different producing configurations from each other when resolving artifacts for consuming configurations.
+                    String variantCapability = variant.getCapabilityName(project.getVersion())
+                    project.configurations.getByName(variant.configuration('sourceElements')).getOutgoing().capability(variantCapability)
+                    project.configurations.getByName(variant.configuration('javadocElements')).getOutgoing().capability(variantCapability)
+                    project.configurations.getByName(variant.configuration('distElements')).getOutgoing().capability(variantCapability)
+                }
             }
         }
 
@@ -172,21 +179,9 @@ class BuildPlugin implements Plugin<Project>  {
             return
         }
 
-        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
-        Closure disableTransitiveDeps = { Dependency dep ->
-            if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
-                dep.transitive = false
-
-                // also create a configuration just for this dependency version, so that later
-                // we can determine which transitive dependencies it has
-                String depConfig = transitiveDepConfigName(dep.group, dep.name, dep.version)
-                if (project.configurations.findByName(depConfig) == null) {
-                    project.configurations.create(depConfig)
-                    project.dependencies.add(depConfig, "${dep.group}:${dep.name}:${dep.version}")
-                }
-            }
-        }
-
+        // Create a configuration that will hold common test dependencies to be shared with all of a project's test sources, including variants if present
+        Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
@@ -195,21 +190,19 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
 
-        if (!project.path.startsWith(":qa")) {
-            // FIXHERE : Spark Restructure - all the variant configurations will need this
-            disableTransitiveDependencies(project, project.configurations.api)
-            disableTransitiveDependencies(project, project.configurations.implementation)
-            disableTransitiveDependencies(project, project.configurations.compileOnly)
-            disableTransitiveDependencies(project, project.configurations.runtimeOnly)
+        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
+        disableTransitiveDependencies(project, project.configurations.api)
+        disableTransitiveDependencies(project, project.configurations.implementation)
+        disableTransitiveDependencies(project, project.configurations.compileOnly)
+        disableTransitiveDependencies(project, project.configurations.runtimeOnly)
 
-            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
-                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
-                sparkVariants.featureVariants { SparkVariant variant ->
-                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("api")))
-                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("implementation")))
-                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("compileOnly")))
-                    disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("runtimeOnly")))
-                }
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("api")))
+                disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("implementation")))
+                disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("compileOnly")))
+                disableTransitiveDependencies(project, project.getConfigurations().findByName(variant.configuration("runtimeOnly")))
             }
         }
     }
@@ -219,51 +212,43 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureDependencies(Project project) {
-        // Create an itest source set, which will set up itest based configurations
         SourceSetContainer sourceSets = project.sourceSets as SourceSetContainer
-        sourceSets.create('itest')
-        Configuration sharedItestImplementation = project.configurations.create(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME)
-        project.configurations.getByName('itestImplementation').extendsFrom(sharedItestImplementation)
+        SourceSet main = sourceSets.getByName('main')
 
+        // Create an itest source set, just like the test source set
+        SourceSet itest = sourceSets.create('itest')
+        itest.setCompileClasspath(project.objects.fileCollection().from(main.getOutput(), project.getConfigurations().getByName('itestCompileClasspath')))
+        itest.setRuntimeClasspath(project.objects.fileCollection().from(itest.getOutput(), main.getOutput(), project.getConfigurations().getByName('itestRuntimeClasspath')))
+
+        // Set configuration extension for itest:
+        //   shared test <-- shared itest <-- itest
+        //   test <-- itest
+        Configuration sharedItestImplementation = project.configurations.create(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        Configuration sharedTestImplementation = project.configurations.getByName(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        Configuration testImplementation = project.configurations.getByName('testImplementation')
+        Configuration itestImplementation = project.configurations.getByName('itestImplementation')
+        sharedItestImplementation.extendsFrom(sharedTestImplementation)
+        itestImplementation.extendsFrom(sharedItestImplementation)
+        itestImplementation.extendsFrom(testImplementation)
+
+        // Create an itest source set for each variant
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
+                SparkVariantPlugin.configureAdditionalVariantSourceSet(project, variant, 'itest')
 
-                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
-                variantTestImplementation.extendsFrom(sharedItestImplementation)
+                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration('test', 'implementation'))
+                Configuration variantITestImplementation = project.configurations.getByName(variant.configuration('itest', 'implementation'))
+                variantITestImplementation.extendsFrom(sharedItestImplementation)
+                variantITestImplementation.extendsFrom(variantTestImplementation)
             }
         }
 
         // Detail all common dependencies
-        // FIXHERE : Spark Restructure - each variant's configurations needs to have these set.
-        // FIXHERE : Spark Restructure - Maybe we can add "shared" configurations and configure this to depend on those.
-        // FIXHERE : Spark Restructure - Or maybe this doesn't make sense in a plugin?
         project.dependencies {
-
-            /*
-
-            compile (default) Scala 2.11
-            ^
-            |
-            compile (variant) Scala 2.10 (needs `force`)
-
-            Add a depedency resolution rule (could come in as a transitive dependency)
-            - Add to all configurations (default AND variant)
-
-            unfortunately, this is clunky:
-            the scala versions are easy to fix, but the spark versions
-            require extensive exclusions since their archive name format
-            (with the scala version in it) makes Gradle think that they
-            are different artifacts and thus does not consolidate multiple
-            spark versions together if they have different scala versions.
-
-             */
-
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "junit:junit:${project.ext.junitVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
-
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "joda-time:joda-time:2.8")
-
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.slf4j:slf4j-log4j12:1.7.6")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}")
@@ -273,17 +258,12 @@ class BuildPlugin implements Plugin<Project>  {
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.locationtech.spatial4j:spatial4j:0.6")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "com.vividsolutions:jts:1.13")
 
-            // TODO: Remove when we merge ITests to test dirs
+            // TODO: May not be needed on all itests
             add(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
                 // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
                 // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
                 exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
             }
-
-            itestImplementation project.sourceSets.main.output
-            itestImplementation project.configurations.testImplementation
-            itestImplementation project.sourceSets.test.output
-            itestImplementation project.configurations.testRuntimeClasspath
         }
 
         // Deal with the messy conflicts out there
@@ -348,6 +328,25 @@ class BuildPlugin implements Plugin<Project>  {
                     project.getArtifacts().add('sourceElements', scalaSrcDir)
                 }
             }
+
+            // Do the same for any variants
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVariants.featureVariants { SparkVariant variant ->
+                    SourceSet variantMainSourceSet = project.sourceSets.getByName(variant.getSourceSetName('main'))
+
+                    FileCollection variantJavaSourceDirs = variantMainSourceSet.java.sourceDirectories
+                    variantJavaSourceDirs.each { File srcDir ->
+                        project.getArtifacts().add(variant.configuration('sourceElements'), srcDir)
+                        project.getArtifacts().add(variant.configuration('javadocElements'), srcDir)
+                    }
+
+                    FileCollection variantScalaSourceDirs = variantMainSourceSet.scala.sourceDirectories
+                    variantScalaSourceDirs.each { File scalaSrcDir ->
+                        project.getArtifacts().add(variant.configuration('sourceElements'), scalaSrcDir)
+                    }
+                }
+            }
         }
 
         project.tasks.withType(JavaCompile) { JavaCompile compile ->
@@ -384,10 +383,16 @@ class BuildPlugin implements Plugin<Project>  {
 
         if (project != project.rootProject) {
             project.getArtifacts().add('distElements', project.tasks.getByName('jar'))
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVariants.featureVariants { SparkVariant variant ->
+                    project.getArtifacts().add(variant.configuration('distElements'), project.tasks.getByName(variant.taskName('jar')))
+                }
+            }
         }
 
         // Jar up the sources of the project
-        // FIXHERE : Spark Restructure - Need sources jars for the variants
+        // FIXHERE: It seems that gradle will set up both the jar tasks and the producing configuration for javadocs and sources, with the same name we're using right now. Get on that instead.
 //        project.java {
 //            withJavadocJar()
 //            withSourcesJar()
@@ -401,6 +406,18 @@ class BuildPlugin implements Plugin<Project>  {
             sourcesJar.from(project.configurations.additionalSources)
             project.getArtifacts().add('distElements', sourcesJar)
         }
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                // Don't need to create sources jar task since it is already created by the variant plugin
+                Jar variantSourcesJar = project.tasks.getByName(variant.taskName('sourcesJar')) as Jar
+                variantSourcesJar.dependsOn(project.tasks.getByName(variant.taskName('classes')))
+                variantSourcesJar.classifier = 'sources'
+                variantSourcesJar.from(project.sourceSets.getByName(variant.getSourceSetName('main')).allSource)
+                variantSourcesJar.from(project.configurations.getByName(variant.configuration('additionalSources')))
+                project.getArtifacts().add(variant.configuration('distElements'), variantSourcesJar)
+            }
+        }
 
         // Configure javadoc
         project.tasks.withType(Javadoc) { Javadoc javadoc ->
@@ -412,10 +429,6 @@ class BuildPlugin implements Plugin<Project>  {
                     "org/elasticsearch/hadoop/util/**",
                     "org/apache/hadoop/hive/**"
             ]
-            // TODO: Remove when root project does not handle distribution
-            if (project != project.rootProject) {
-                javadoc.source += project.files(project.configurations.javadocSources)
-            }
             // Set javadoc executable to runtime Java (1.8)
             javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
 
@@ -444,36 +457,80 @@ class BuildPlugin implements Plugin<Project>  {
                     "https://storm.apache.org/releases/current/javadocs/"
             ]
         }
+        // TODO: Remove when root project does not handle distribution
+        if (project != project.rootProject) {
+            Javadoc javadoc = project.tasks.getByName('javadoc') as Javadoc
+            javadoc.source += project.files(project.configurations.javadocSources)
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVarients = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVarients.featureVariants { SparkVariant variant ->
+                    Javadoc variantJavadoc = project.tasks.getByName(variant.taskName('javadoc')) as Javadoc
+                    variantJavadoc.source += project.files(project.configurations.getByName(variant.configuration('javadocSources')))
+                }
+            }
+        }
 
         // Package up the javadocs into their own jar
-        // FIXHERE : Spark Restructure -  And they'll need jar tasks for the javadocs
         Jar javadocJar = project.tasks.create('javadocJar', Jar)
         javadocJar.classifier = 'javadoc'
         javadocJar.from(project.tasks.javadoc)
         if (project != project.rootProject) {
             project.getArtifacts().add('distElements', javadocJar)
         }
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                Jar variantJavadocJar = project.tasks.create(variant.taskName('javadocJar'), Jar)
+                variantJavadocJar.classifier = 'javadoc'
+                variantJavadocJar.from(project.tasks.getByName(variant.taskName('javadoc')))
+                project.getArtifacts().add(variant.configuration('distElements'), variantJavadocJar)
+            }
+        }
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
-        // FIXHERE : Spark Restructure - all of those jars will need to be added to pack
         Task pack = project.tasks.create('pack')
         pack.dependsOn(project.tasks.jar)
         pack.dependsOn(project.tasks.javadocJar)
         pack.dependsOn(project.tasks.sourcesJar)
         pack.outputs.files(project.tasks.jar.archivePath, project.tasks.javadocJar.archivePath, project.tasks.sourcesJar.archivePath)
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                pack.dependsOn(project.tasks.getByName(variant.taskName('jar')))
+                pack.dependsOn(project.tasks.getByName(variant.taskName('javadocJar')))
+                pack.dependsOn(project.tasks.getByName(variant.taskName('sourcesJar')))
+                pack.outputs.files(
+                        project.tasks.getByName(variant.taskName('jar')).archivePath,
+                        project.tasks.getByName(variant.taskName('javadocJar')).archivePath,
+                        project.tasks.getByName(variant.taskName('sourcesJar')).archivePath
+                )
+            }
+        }
 
         // The distribution task is like assemble, but packages up a lot of extra jars and performs extra tasks that
         // are mostly used for snapshots and releases.
-        // FIXHERE : Spark Restructure - And this too....
         Task distribution = project.tasks.create('distribution')
         distribution.dependsOn(pack)
         // Co-locate all build artifacts into distributions subdir for easier build automation
         distribution.doLast {
             project.copy { CopySpec spec ->
-                spec.from(jar.archivePath)
-                spec.from(javadocJar.archivePath)
-                spec.from(sourcesJar.archivePath)
+                spec.from(project.tasks.jar.archivePath)
+                spec.from(project.tasks.javadocJar.archivePath)
+                spec.from(project.tasks.sourcesJar.archivePath)
                 spec.into("${project.buildDir}/distributions")
+            }
+        }
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                distribution.doLast {
+                    project.copy { CopySpec spec ->
+                        spec.from(project.tasks.getByName(variant.taskName('jar')).archivePath)
+                        spec.from(project.tasks.getByName(variant.taskName('javadocJar')).archivePath)
+                        spec.from(project.tasks.getByName(variant.taskName('sourcesJar')).archivePath)
+                        spec.into("${project.buildDir}/distributions")
+                    }
+                }
             }
         }
     }

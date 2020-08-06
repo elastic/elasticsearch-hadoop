@@ -19,58 +19,66 @@ sparkVariants {
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
+        // Configure main compile task
         project.getTasks().getByName(project.sourceSets.getByName(variant.getSourceSetName("main")).getCompileTaskName("scala")).configure { ScalaCompile compileScala ->
-           configure(compileScala.scalaCompileOptions.forkOptions) {
-               memoryMaximumSize = '1g'
-               jvmArgs = ['-XX:MaxPermSize=512m']
-           }
-           compileScala.scalaCompileOptions.additionalParameters = [
-                   "-feature",
-                   "-unchecked",
-                   "-deprecation",
-                   "-Xfuture",
-                   "-Yno-adapted-args",
-                   "-Ywarn-dead-code",
-                   "-Ywarn-numeric-widen",
-                   "-Xfatal-warnings"
-           ]
+            configure(compileScala.scalaCompileOptions.forkOptions) {
+                memoryMaximumSize = '1g'
+                jvmArgs = ['-XX:MaxPermSize=512m']
+            }
+            compileScala.scalaCompileOptions.additionalParameters = [
+                    "-feature",
+                    "-unchecked",
+                    "-deprecation",
+                    "-Xfuture",
+                    "-Yno-adapted-args",
+                    "-Ywarn-dead-code",
+                    "-Ywarn-numeric-widen",
+                    "-Xfatal-warnings"
+            ]
         }
 
         dependencies {
-            implementation(project(":elasticsearch-hadoop-mr"))
-            implementation(project(path: ":elasticsearch-hadoop-mr", configuration: "implementation"))
+            add(variant.configuration('api'), "org.scala-lang:scala-library:${variant.scalaVersion}")
+            add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
 
-            api("org.scala-lang:scala-library:${variant.scalaVersion}")
-            api("org.scala-lang:scala-reflect:${variant.scalaVersion}")
+            add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('implementation'), project(path: ":elasticsearch-hadoop-mr", configuration: "implementation"))
 
-            api("org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
+            add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
             }
-            compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.6.7.1")
-            compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
-            compileOnly("com.google.guava:guava:14.0.1")
-            compileOnly("com.google.protobuf:protobuf-java:2.5.0")
-            compileOnly("org.slf4j:slf4j-api:1.7.6")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.6.7.1")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+            add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
+            add(variant.configuration('compileOnly'), "com.google.protobuf:protobuf-java:2.5.0")
+            add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:1.7.6")
 
-            testImplementation project(":test:shared")
-            testImplementation("com.esotericsoftware.kryo:kryo:2.21")
+            add(variant.configuration(variant.getSourceSetName('test'), 'implementation'), project(":test:shared"))
+            add(variant.configuration(variant.getSourceSetName('test'), 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
 
-            itestImplementation project(":test:shared")
-        }
-
-        // deal with the messy conflicts out there
-        configurations.all { Configuration conf ->
-            conf.resolutionStrategy {
-                eachDependency { details ->
-                    // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
-                    // SecurityException (signer information wrong)
-                    if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
-                        details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
-                    }
-                }
-            }
-            conf.exclude group: "org.mortbay.jetty"
+            add(variant.configuration(variant.getSourceSetName('itest'), 'implementation'), project(":test:shared"))
         }
     }
+}
+
+// deal with the messy conflicts out there
+configurations.all { Configuration conf ->
+    conf.resolutionStrategy {
+        eachDependency { details ->
+            // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
+            // SecurityException (signer information wrong)
+            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
+                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
+            }
+        }
+    }
+    conf.exclude group: "org.mortbay.jetty"
+}
+
+// Set minimum compatibility and java home for compiler task
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
+    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
 }

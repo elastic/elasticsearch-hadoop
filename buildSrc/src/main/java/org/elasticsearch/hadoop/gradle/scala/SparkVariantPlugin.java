@@ -161,6 +161,10 @@ public class SparkVariantPlugin implements Plugin<Project> {
         public String itestTaskName() {
             return isDefaultVariant ? "integrationTest" : "integrationTest" + StringGroovyMethods.capitalize(name);
         }
+
+        public String getCapabilityName(Object version) {
+            return capability + ":" + getName() + ":" + version.toString();
+        }
     }
 
     public static class SparkVariantPluginExtension {
@@ -276,7 +280,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
     private static void configureDefaultVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
                                                 JavaPluginConvention javaPluginConvention) {
         ConfigurationContainer configurations = project.getConfigurations();
-        String capability = sparkVariant.capability + ":" + sparkVariant.getName() + ":" + project.getVersion().toString();
+        String capability = sparkVariant.getCapabilityName(project.getVersion());
 
         Configuration apiElements = configurations.getByName(API_ELEMENTS_CONFIGURATION_NAME);
         apiElements.getOutgoing().capability(capability);
@@ -286,10 +290,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
         SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
         SourceSet testSourceSet = sourceSets.getByName(sparkVariant.getSourceSetName(TEST_SOURCE_SET_NAME));
-        javaPluginExtension.registerFeature(sparkVariant.getVariantName("test"), featureSpec -> {
-            featureSpec.usingSourceSet(testSourceSet);
-            featureSpec.capability(sparkVariant.capability, sparkVariant.getVariantName("test"), project.getVersion().toString());
-        });
+        registerAdditionalVariant(javaPluginExtension, sparkVariant, "test", testSourceSet, project.getVersion());
     }
 
     private static void configureVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
@@ -297,26 +298,17 @@ public class SparkVariantPlugin implements Plugin<Project> {
         SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
         ConfigurationContainer configurations = project.getConfigurations();
         TaskContainer tasks = project.getTasks();
-        String version = project.getVersion().toString();
+        Object version = project.getVersion();
 
         // Create a main and test source set for this variant
         SourceSet main = createVariantSourceSet(sparkVariant, sourceSets, MAIN_SOURCE_SET_NAME);
-        SourceSet test = createVariantSourceSet(sparkVariant, sourceSets, TEST_SOURCE_SET_NAME);
 
-        // Each variant's test source set is registered like just another variant in Gradle. These variants do not get any of the special
-        // treatment needed in order to function like the testing part of a regular project. We need to do some basic wiring in the test
-        // source set ourselves in order to get there.
-        String testCompileClasspathName = sparkVariant.configuration(TEST_SOURCE_SET_NAME, COMPILE_CLASSPATH_CONFIGURATION_NAME);
-        Configuration testCompileClasspath = configurations.getByName(testCompileClasspathName);
-        test.setCompileClasspath((project.files(main.getOutput(), testCompileClasspath)));
+        // Register our main source set as a variant in the project
+        registerMainVariant(javaPluginExtension, sparkVariant, main, version);
 
-        String testRuntimeClasspathName = sparkVariant.configuration(TEST_SOURCE_SET_NAME, RUNTIME_CLASSPATH_CONFIGURATION_NAME);
-        Configuration testRuntimeClasspath = configurations.getByName(testRuntimeClasspathName);
-        test.setRuntimeClasspath(project.files(test.getOutput(), main.getOutput(), testRuntimeClasspath));
-
-        // Register our source sets as variants in the project
-        registerVariants(javaPluginExtension, sparkVariant, main, test, version);
-        extendParentConfigurations(configurations, sparkVariant);
+        // Register a test source set as an additional variant source set that extends from main
+        SourceSet test = configureAdditionalVariantSourceSet(project, sparkVariant, javaPluginExtension, sourceSets,
+                configurations, version, TEST_SOURCE_SET_NAME);
 
         // Task Creation and Configuration
         createVariantTestTask(tasks, sparkVariant, test);
@@ -324,19 +316,62 @@ public class SparkVariantPlugin implements Plugin<Project> {
         registerVariantScaladoc(project, tasks, sparkVariant, main);
     }
 
-    private static SourceSet createVariantSourceSet(SparkVariant sparkVariant, SourceSetContainer sourceSets, String srcSetName) {
-        SourceSet sourceSet = sourceSets.create(sparkVariant.getSourceSetName(srcSetName));
+    public static SourceSet configureAdditionalVariantSourceSet(Project project, SparkVariant sparkVariant, String sourceSetName) {
+        final JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
+        final JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
+        SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
+        ConfigurationContainer configurations = project.getConfigurations();
+        String version = project.getVersion().toString();
+
+        return configureAdditionalVariantSourceSet(project, sparkVariant, javaPluginExtension, sourceSets, configurations,
+                version, sourceSetName);
+    }
+
+
+    private static SourceSet configureAdditionalVariantSourceSet(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
+                                                     SourceSetContainer sourceSets, ConfigurationContainer configurations, Object version,
+                                                     String sourceSetName) {
+        // Create the additional source set for this variant
+        SourceSet additional = createVariantSourceSet(sparkVariant, sourceSets, sourceSetName);
+
+        // Each variant's test source set is registered like just another variant in Gradle. These variants do not get any of the special
+        // treatment needed in order to function like the testing part of a regular project. We need to do some basic wiring in the test
+        // source set ourselves in order to get there.
+        SourceSet main = sourceSets.getByName(sparkVariant.getSourceSetName(MAIN_SOURCE_SET_NAME));
+
+        configureAdditionalSourceSetClasspaths(project, configurations, sparkVariant, sourceSetName, additional, main);
+
+        // Register variant and extend
+        registerAdditionalVariant(javaPluginExtension, sparkVariant, sourceSetName, additional, version);
+        extendMainConfigurations(configurations, sparkVariant, sourceSetName);
+
+        return additional;
+    }
+
+    private static SourceSet createVariantSourceSet(SparkVariant sparkVariant, SourceSetContainer sourceSets, String sourceSetName) {
+        SourceSet sourceSet = sourceSets.create(sparkVariant.getSourceSetName(sourceSetName));
 
         SourceDirectorySet javaSourceSet = sourceSet.getJava();
-        javaSourceSet.setSrcDirs(Collections.singletonList("src/" + srcSetName + "/java"));
+        javaSourceSet.setSrcDirs(Collections.singletonList("src/" + sourceSetName + "/java"));
 
         SourceDirectorySet scalaSourceSet = getScalaSourceSet(sourceSet).getScala();
         scalaSourceSet.setSrcDirs(Arrays.asList(
-                "src/" + srcSetName + "/scala",
-                "src/" + srcSetName + "/" + sparkVariant.getName()
+                "src/" + sourceSetName + "/scala",
+                "src/" + sourceSetName + "/" + sparkVariant.getName()
         ));
 
         return sourceSet;
+    }
+
+    private static void configureAdditionalSourceSetClasspaths(Project project, ConfigurationContainer configurations, SparkVariant sparkVariant,
+                                                               String sourceSetName, SourceSet additionalSourceSet, SourceSet mainSourceSet) {
+        String additionalCompileClasspathName = sparkVariant.configuration(sourceSetName, COMPILE_CLASSPATH_CONFIGURATION_NAME);
+        Configuration additionalCompileClasspath = configurations.getByName(additionalCompileClasspathName);
+        additionalSourceSet.setCompileClasspath((project.files(mainSourceSet.getOutput(), additionalCompileClasspath)));
+
+        String additionalRuntimeClasspathName = sparkVariant.configuration(sourceSetName, RUNTIME_CLASSPATH_CONFIGURATION_NAME);
+        Configuration additionalRuntimeClasspath = configurations.getByName(additionalRuntimeClasspathName);
+        additionalSourceSet.setRuntimeClasspath(project.files(additionalSourceSet.getOutput(), mainSourceSet.getOutput(), additionalRuntimeClasspath));
     }
 
     private static DefaultScalaSourceSet getScalaSourceSet(SourceSet sourceSet) {
@@ -344,27 +379,26 @@ public class SparkVariantPlugin implements Plugin<Project> {
         return (DefaultScalaSourceSet) sourceSetConvention.getPlugins().get("scala");
     }
 
-    private static void registerVariants(JavaPluginExtension java, SparkVariant sparkVariant, SourceSet main, SourceSet test,
-                                         String version) {
-        // Register variant main source
+    private static void registerMainVariant(JavaPluginExtension java, SparkVariant sparkVariant, SourceSet main, Object version) {
         java.registerFeature(sparkVariant.getName(), featureSpec -> {
             featureSpec.usingSourceSet(main);
-            featureSpec.capability(sparkVariant.getCapability(), sparkVariant.getName(), version);
+            featureSpec.capability(sparkVariant.getCapability(), sparkVariant.getName(), version.toString());
             featureSpec.withJavadocJar();
             featureSpec.withSourcesJar();
         });
+    }
 
-        // Register variant test source
-        java.registerFeature(sparkVariant.getVariantName("test"), featureSpec -> {
-            featureSpec.usingSourceSet(test);
-            featureSpec.capability(sparkVariant.getCapability(), sparkVariant.getVariantName("test"), version);
+    private static void registerAdditionalVariant(JavaPluginExtension java, SparkVariant sparkVariant, String sourceSetName, SourceSet additional, Object version) {
+        java.registerFeature(sparkVariant.getVariantName(sourceSetName), featureSpec -> {
+            featureSpec.usingSourceSet(additional);
+            featureSpec.capability(sparkVariant.getCapability(), sparkVariant.getVariantName(sourceSetName), version.toString());
         });
     }
 
-    private static void extendParentConfigurations(ConfigurationContainer configurations, SparkVariant sparkVariant) {
+    private static void extendMainConfigurations(ConfigurationContainer configurations, SparkVariant sparkVariant, String testSourceSetName) {
         for (String configurationName : TEST_CONFIGURATIONS_EXTENDED) {
             Configuration mainConfiguration = configurations.getByName(sparkVariant.configuration(MAIN_SOURCE_SET_NAME, configurationName));
-            Configuration testConfiguration = configurations.getByName(sparkVariant.configuration(TEST_SOURCE_SET_NAME, configurationName));
+            Configuration testConfiguration = configurations.getByName(sparkVariant.configuration(testSourceSetName, configurationName));
             testConfiguration.extendsFrom(mainConfiguration);
         }
     }

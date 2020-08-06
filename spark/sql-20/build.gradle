@@ -76,11 +76,11 @@ def javaFilesOnly = { FileTreeElement spec ->
 }
 
 artifacts {
-    sourceElements(project.file("$coreSrc/main/scala"))
-    // Add java files from core source to javadocElements.
-    project.fileTree("$coreSrc/main/scala").include(javaFilesOnly).each {
-        javadocElements(it)
-    }
+//    sourceElements(project.file("$coreSrc/main/scala"))
+//    // Add java files from core source to javadocElements.
+//    project.fileTree("$coreSrc/main/scala").include(javaFilesOnly).each {
+//        javadocElements(it)
+//    }
     project.fileTree("src/main/scala").include(javaFilesOnly).each {
         javadocElements(it)
     }
@@ -201,10 +201,10 @@ jar {
         include "META-INF/services/*"
     }
 
-    from(zipTree(project(":elasticsearch-spark").jar.archivePath)) {
-        include "org/elasticsearch/spark/**"
-        include "META-INF/services/*"
-    }
+//    from(zipTree(project(":elasticsearch-spark").jar.archivePath)) {
+//        include "org/elasticsearch/spark/**"
+//        include "META-INF/services/*"
+//    }
 }
 
 javadoc {
