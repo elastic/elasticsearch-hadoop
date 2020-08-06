@@ -96,7 +96,7 @@ artifacts {
 //        javadocElements(it)
 //    }
     project.fileTree("src/main/scala").include(javaFilesOnly).each {
-        javadocElements(it)
+        javadocSourceElements(it)
     }
 }
 
@@ -192,7 +192,7 @@ dependencies {
 
 // Export generated Java code from the genjavadoc compiler plugin
 artifacts {
-    javadocElements(project.file("$buildDir/generated/java")) {
+    javadocSourceElements(project.file("$buildDir/generated/java")) {
         builtBy compileScala
     }
 }

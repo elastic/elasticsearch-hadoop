@@ -54,10 +54,10 @@ sparkVariants {
             add(variant.configuration('compileOnly'), "com.google.protobuf:protobuf-java:2.5.0")
             add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:1.7.6")
 
-            add(variant.configuration(variant.getSourceSetName('test'), 'implementation'), project(":test:shared"))
-            add(variant.configuration(variant.getSourceSetName('test'), 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+            add(variant.configuration('test', 'implementation'), project(":test:shared"))
+            add(variant.configuration('test', 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
 
-            add(variant.configuration(variant.getSourceSetName('itest'), 'implementation'), project(":test:shared"))
+            add(variant.configuration('itest', 'implementation'), project(":test:shared"))
         }
     }
 }

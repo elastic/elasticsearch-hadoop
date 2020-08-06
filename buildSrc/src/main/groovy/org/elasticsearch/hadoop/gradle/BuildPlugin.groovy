@@ -129,23 +129,35 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configureConfigurations(Project project) {
+        // Create a configuration that will hold common test dependencies to be shared with all of a project's test sources, including variants if present
+        Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariant variant ->
+                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
+                variantTestImplementation.extendsFrom(sharedTestImplementation)
+            }
+        }
+
         if (project != project.rootProject) {
             // Set up avenues for sharing source files between projects in order to create embedded Javadocs
             // Import source configuration
             Configuration additionalSources = createConfiguration(project, 'additionalSources', false, true, 'java-source', 'sources')
 
-            // Export source configuration
+            // Export source configuration - different from 'sourcesElements' which contains sourceJars instead of source files
             Configuration sourceElements = createConfiguration(project, 'sourceElements', true, false, 'java-source', 'source')
             sourceElements.extendsFrom(additionalSources)
 
             // Import javadoc sources
             createConfiguration(project, 'javadocSources', false, true, 'javadoc-source', 'sources')
 
-            // Export javadoc source configuration
-            Configuration javadocElements = createConfiguration(project, 'javadocElements', true, false, 'javadoc-source', 'sources')
-            javadocElements.extendsFrom(additionalSources)
+            // Export javadoc source configuration - different from 'javadocElements' which contains javadocJars instead of java source files used to generate javadocs
+            Configuration javadocSourceElements = createConfiguration(project, 'javadocSourceElements', true, false, 'javadoc-source', 'sources')
+            javadocSourceElements.extendsFrom(additionalSources)
 
             // Export configuration for archives that should be in the distribution
+            // TODO: Should we ditch this in favor of just using the built in exporting configurations? all three artifact types have them now
             createConfiguration(project, 'distElements', true, false, 'packaging')
 
             // Do the same for any variants if the project has them
@@ -159,8 +171,8 @@ class BuildPlugin implements Plugin<Project>  {
 
                     createConfiguration(project, variant.configuration('javadocSources'), false, true, 'javadoc-source', 'sources')
 
-                    Configuration vJavadocElements = createConfiguration(project, variant.configuration('javadocElements'), true, false, 'javadoc-source', 'sources')
-                    vJavadocElements.extendsFrom(vAdditionalSources)
+                    Configuration vJavadocSourceElements = createConfiguration(project, variant.configuration('javadocSourceElements'), true, false, 'javadoc-source', 'sources')
+                    vJavadocSourceElements.extendsFrom(vAdditionalSources)
 
                     createConfiguration(project, variant.configuration('distElements'), true, false, 'packaging')
                 }
@@ -169,7 +181,7 @@ class BuildPlugin implements Plugin<Project>  {
                     // These are required to differentiate the different producing configurations from each other when resolving artifacts for consuming configurations.
                     String variantCapability = variant.getCapabilityName(project.getVersion())
                     project.configurations.getByName(variant.configuration('sourceElements')).getOutgoing().capability(variantCapability)
-                    project.configurations.getByName(variant.configuration('javadocElements')).getOutgoing().capability(variantCapability)
+                    project.configurations.getByName(variant.configuration('javadocSourceElements')).getOutgoing().capability(variantCapability)
                     project.configurations.getByName(variant.configuration('distElements')).getOutgoing().capability(variantCapability)
                 }
             }
@@ -177,17 +189,6 @@ class BuildPlugin implements Plugin<Project>  {
 
         if (project.path.startsWith(":qa")) {
             return
-        }
-
-        // Create a configuration that will hold common test dependencies to be shared with all of a project's test sources, including variants if present
-        Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
-        project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
-        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
-            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
-            sparkVariants.featureVariants { SparkVariant variant ->
-                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
-                variantTestImplementation.extendsFrom(sharedTestImplementation)
-            }
         }
 
         // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
@@ -318,7 +319,7 @@ class BuildPlugin implements Plugin<Project>  {
             FileCollection javaSourceDirs = mainSourceSet.java.sourceDirectories
             javaSourceDirs.each { File srcDir ->
                 project.getArtifacts().add('sourceElements', srcDir)
-                project.getArtifacts().add('javadocElements', srcDir)
+                project.getArtifacts().add('javadocSourceElements', srcDir)
             }
 
             // Add scala sources to source elements if that plugin is applied
@@ -338,7 +339,7 @@ class BuildPlugin implements Plugin<Project>  {
                     FileCollection variantJavaSourceDirs = variantMainSourceSet.java.sourceDirectories
                     variantJavaSourceDirs.each { File srcDir ->
                         project.getArtifacts().add(variant.configuration('sourceElements'), srcDir)
-                        project.getArtifacts().add(variant.configuration('javadocElements'), srcDir)
+                        project.getArtifacts().add(variant.configuration('javadocSourceElements'), srcDir)
                     }
 
                     FileCollection variantScalaSourceDirs = variantMainSourceSet.scala.sourceDirectories
@@ -373,6 +374,7 @@ class BuildPlugin implements Plugin<Project>  {
                 manifest.attributes['Build'] = build
             }
 
+            // TODO: Are these better to be set on just the jar or do these make sense to be on all jars (jar, javadoc, source)?
             jar.from("${project.rootDir}/docs/src/info") { CopySpec spec ->
                 spec.include("license.txt")
                 spec.include("notice.txt")
@@ -391,16 +393,17 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
 
-        // Jar up the sources of the project
-        // FIXHERE: It seems that gradle will set up both the jar tasks and the producing configuration for javadocs and sources, with the same name we're using right now. Get on that instead.
-//        project.java {
-//            withJavadocJar()
-//            withSourcesJar()
-//        }
-        Jar sourcesJar = project.tasks.create('sourcesJar', Jar)
+        // Creates jar tasks and producer configurations for javadocs and sources.
+        // Producer configurations (javadocElements and sourcesElements) contain javadoc and source JARS. This makes
+        // them more akin to distElements than the source code configurations (javadocSourceElements and sourceElements)
+        project.java {
+            withJavadocJar()
+            withSourcesJar()
+        }
+        Jar sourcesJar = project.tasks.getByName('sourcesJar') as Jar
         sourcesJar.dependsOn(project.tasks.classes)
-        sourcesJar.classifier = 'sources'
-        sourcesJar.from(project.sourceSets.main.allSource)
+//        sourcesJar.classifier = 'sources'
+//        sourcesJar.from(project.sourceSets.main.allSource)
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             sourcesJar.from(project.configurations.additionalSources)
@@ -412,8 +415,8 @@ class BuildPlugin implements Plugin<Project>  {
                 // Don't need to create sources jar task since it is already created by the variant plugin
                 Jar variantSourcesJar = project.tasks.getByName(variant.taskName('sourcesJar')) as Jar
                 variantSourcesJar.dependsOn(project.tasks.getByName(variant.taskName('classes')))
-                variantSourcesJar.classifier = 'sources'
-                variantSourcesJar.from(project.sourceSets.getByName(variant.getSourceSetName('main')).allSource)
+//                variantSourcesJar.classifier = 'sources'
+//                variantSourcesJar.from(project.sourceSets.getByName(variant.getSourceSetName('main')).allSource)
                 variantSourcesJar.from(project.configurations.getByName(variant.configuration('additionalSources')))
                 project.getArtifacts().add(variant.configuration('distElements'), variantSourcesJar)
             }
@@ -471,23 +474,26 @@ class BuildPlugin implements Plugin<Project>  {
         }
 
         // Package up the javadocs into their own jar
-        Jar javadocJar = project.tasks.create('javadocJar', Jar)
-        javadocJar.classifier = 'javadoc'
-        javadocJar.from(project.tasks.javadoc)
+        Jar javadocJar = project.tasks.getByName('javadocJar') as Jar
+//        javadocJar.classifier = 'javadoc'
+//        javadocJar.from(project.tasks.javadoc)
         if (project != project.rootProject) {
             project.getArtifacts().add('distElements', javadocJar)
         }
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
-                Jar variantJavadocJar = project.tasks.create(variant.taskName('javadocJar'), Jar)
-                variantJavadocJar.classifier = 'javadoc'
-                variantJavadocJar.from(project.tasks.getByName(variant.taskName('javadoc')))
+                Jar variantJavadocJar = project.tasks.getByName(variant.taskName('javadocJar')) as Jar
+//                variantJavadocJar.classifier = 'javadoc'
+//                variantJavadocJar.from(project.tasks.getByName(variant.taskName('javadoc')))
                 project.getArtifacts().add(variant.configuration('distElements'), variantJavadocJar)
             }
         }
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
+        // TODO: Assemble is being configured to make javadoc and sources jars no matter what due to the withX() methods above. Is this even required in that case?
+        // The assemble task was previously configured to ignore javadoc and source tasks because they can be time consuming to generate when simply building the project.
+        // Probably better to just run them.
         Task pack = project.tasks.create('pack')
         pack.dependsOn(project.tasks.jar)
         pack.dependsOn(project.tasks.javadocJar)
