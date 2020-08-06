@@ -5,6 +5,7 @@ import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.gradle.api.Plugin
@@ -627,6 +628,12 @@ class BuildPlugin implements Plugin<Project>  {
                     connection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                     developerConnection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                 }
+                developers {
+                    developer {
+                        name = 'Elastic'
+                        url = 'https://www.elastic.co'
+                    }
+                }
             }
 
             groupId = "org.elasticsearch"
@@ -653,7 +660,7 @@ class BuildPlugin implements Plugin<Project>  {
                 itestJar.from(project.sourceSets.itest.output)
             }
 
-            Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
+            Test integrationTest = project.tasks.create('integrationTest', StandaloneRestIntegTestTask.class)
             integrationTest.dependsOn(itestJar)
 
             itestJar.configure { Jar jar ->
