@@ -11,11 +11,13 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
-    setDefaultVariant "spark20scala212", spark24Version, scala212MajorVersion
-    addFeatureVariant "spark20scala211", spark24Version, scala211MajorVersion
-    addFeatureVariant "spark20scala210", spark22Version, scala210MajorVersion
-    addFeatureVariant "spark13scala211", spark13Version, scala211MajorVersion
-    addFeatureVariant "spark13scala210", spark13Version, scala210MajorVersion
+    // FIXHERE: Not doing the 2.12 conversion yet. Will do soon.
+    setDefaultVariant "spark20scala211", spark24Version, scala211Version
+//    setDefaultVariant "spark20scala212", spark24Version, scala212Version
+//    addFeatureVariant "spark20scala211", spark24Version, scala211Version
+    addFeatureVariant "spark20scala210", spark22Version, scala210Version
+    addFeatureVariant "spark13scala211", spark13Version, scala211Version
+    addFeatureVariant "spark13scala210", spark13Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -40,14 +42,14 @@ sparkVariants {
         dependencies {
             add(variant.configuration('api'), "org.scala-lang:scala-library:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
-
-            add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
-            add(variant.configuration('implementation'), project(path: ":elasticsearch-hadoop-mr", configuration: "implementation"))
-
             add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
             }
+
+            add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
+
             add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.6.7.1")
             add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
             add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
@@ -56,8 +58,27 @@ sparkVariants {
 
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
             add(variant.configuration('test', 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+            add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
+                exclude group: 'javax.servlet'
+                exclude group: 'org.apache.hadoop'
+            }
 
             add(variant.configuration('itest', 'implementation'), project(":test:shared"))
+
+            if (variant.scalaMajorVersion == '2.10') {
+                add(variant.configuration('implementation'), "org.apache.spark:spark-unsafe_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+                add(variant.configuration('implementation'), "org.apache.avro:avro:1.7.7")
+                add(variant.configuration('implementation'), "log4j:log4j:1.2.17")
+                add(variant.configuration('implementation'), "com.google.code.findbugs:jsr305:2.0.1")
+                add(variant.configuration('implementation'), "org.json4s:json4s-ast_2.10:3.2.10")
+                add(variant.configuration('implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+                add(variant.configuration('compileOnly'), "org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
+                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+                if (variant.sparkVersion == spark22Version) {
+                    add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+                }
+            }
         }
     }
 }
