@@ -654,49 +654,28 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureIntegrationTestTask(Project project) {
         if (project != project.rootProject) {
-            // FIXHERE : Spark Restructure - Oh boy... IntegTests
-            TaskProvider<Task> itestJar = project.tasks.register('itestJar', Jar) { Jar itestJar ->
-                itestJar.dependsOn(project.tasks.getByName('jar'))
-                itestJar.getArchiveClassifier().set('testing')
+            SourceSetContainer sourceSets = project.sourceSets
+            SourceSet mainSourceSet = sourceSets.main
+            SourceSet itestSourceSet = sourceSets.itest
+            String itestJarTaskName = 'itestJar'
+            String jarTaskName = 'jar'
+            String itestJarClassifier = 'testing'
+            String itestTaskName = 'integrationTest'
 
-                // Add this project's classes to the testing uber-jar
-                itestJar.from(project.sourceSets.main.output)
-                itestJar.from(project.sourceSets.test.output)
-                itestJar.from(project.sourceSets.itest.output)
-            }
-
-            Test integrationTest = project.tasks.create('integrationTest', StandaloneRestIntegTestTask.class)
-            integrationTest.dependsOn(itestJar)
-
-            itestJar.configure { Jar jar ->
-                integrationTest.doFirst {
-                    integrationTest.systemProperty("es.hadoop.job.jar", jar.getArchiveFile().get().asFile.absolutePath)
+            createItestTask(project, mainSourceSet, itestSourceSet, itestJarTaskName, jarTaskName, itestJarClassifier, itestTaskName)
+            project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+                SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+                sparkVariants.featureVariants { SparkVariant variant ->
+                    createItestTask(project,
+                            sourceSets.getByName(variant.getSourceSetName('main')),
+                            sourceSets.getByName(variant.getSourceSetName('itest')),
+                            variant.taskName(itestJarTaskName),
+                            variant.taskName(jarTaskName),
+                            variant.getName() + "-" + itestJarClassifier,
+                            variant.itestTaskName()
+                    )
                 }
             }
-
-            integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
-            integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
-            integrationTest.excludes = ["**/Abstract*.class"]
-
-            integrationTest.ignoreFailures = false
-
-            integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
-            integrationTest.minHeapSize = "256m"
-            integrationTest.maxHeapSize = "2g"
-
-            integrationTest.testLogging {
-                displayGranularity 0
-                events "started", "failed" //, "standardOut", "standardError"
-                exceptionFormat "full"
-                showCauses true
-                showExceptions true
-                showStackTraces true
-                stackTraceFilters "groovy"
-                minGranularity 2
-                maxGranularity 2
-            }
-
-            integrationTest.reports.html.enabled = false
 
             // Only add cluster settings if it's not the root project
             project.logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
@@ -704,6 +683,59 @@ class BuildPlugin implements Plugin<Project>  {
             // There's probably a more elegant way to do this in Gradle
             project.plugins.apply("es.hadoop.cluster")
         }
+    }
+
+    private static Test createItestTask(Project project, SourceSet mainSourceSet, SourceSet itestSourceSet,
+                                        String itestJarTaskName, String jarTaskName, String itestJarClassifier,
+                                        String itestTaskName) {
+        TaskProvider<Task> itestJar = project.tasks.register(itestJarTaskName, Jar) { Jar itestJar ->
+            itestJar.dependsOn(project.tasks.getByName(jarTaskName))
+            itestJar.getArchiveClassifier().set(itestJarClassifier)
+
+            // Add this project's classes to the testing uber-jar
+            itestJar.from(mainSourceSet.output)
+            itestJar.from(itestSourceSet.output)
+        }
+
+        Test integrationTest = project.tasks.create(itestTaskName, StandaloneRestIntegTestTask.class)
+
+        itestJar.configure { Jar jar ->
+            integrationTest.doFirst {
+                integrationTest.systemProperty("es.hadoop.job.jar", jar.getArchiveFile().get().asFile.absolutePath)
+            }
+        }
+
+        integrationTest.dependsOn(itestJar)
+        integrationTest.testClassesDirs = itestSourceSet.output.classesDirs
+        integrationTest.classpath = itestSourceSet.runtimeClasspath
+        commonItestTaskConfiguration(project, integrationTest)
+        // TODO: Should this be the case? It is in Elasticsearch, but we may have to update some CI jobs?
+        project.tasks.check.dependsOn(integrationTest)
+        return integrationTest
+    }
+
+    private static void commonItestTaskConfiguration(Project project, Test integrationTest) {
+        integrationTest.excludes = ["**/Abstract*.class"]
+
+        integrationTest.ignoreFailures = false
+
+        integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+        integrationTest.minHeapSize = "256m"
+        integrationTest.maxHeapSize = "2g"
+
+        integrationTest.testLogging {
+            displayGranularity 0
+            events "started", "failed" //, "standardOut", "standardError"
+            exceptionFormat "full"
+            showCauses true
+            showExceptions true
+            showStackTraces true
+            stackTraceFilters "groovy"
+            minGranularity 2
+            maxGranularity 2
+        }
+
+        integrationTest.reports.html.enabled = false
     }
 
     private static void configurePrecommit(Project project) {
