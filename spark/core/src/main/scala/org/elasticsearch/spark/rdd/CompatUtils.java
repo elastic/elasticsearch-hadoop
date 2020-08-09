@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.util.TaskCompletionListener;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
@@ -30,6 +31,7 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import scala.Function0;
+import scala.Option;
 
 abstract class CompatUtils {
 
@@ -55,28 +57,37 @@ abstract class CompatUtils {
         boolean isSpark13Level = ObjectUtils.isClassPresent("org.apache.spark.sql.DataFrame", SparkConf.class.getClassLoader());
         boolean isSpark20Level = ObjectUtils.isClassPresent("org.apache.spark.sql.streaming.StreamingQuery", SparkConf.class.getClassLoader());
 
-        CompatibilityLevel compatibilityLevel = ObjectUtils.instantiate("org.elasticsearch.spark.sql.SparkSQLCompatibilityLevel", CompatUtils.class.getClassLoader());
+        try {
+            CompatibilityLevel compatibilityLevel = ObjectUtils.instantiate("org.elasticsearch.spark.sql.SparkSQLCompatibilityLevel", CompatUtils.class.getClassLoader());
+            boolean isEshForSpark20 = "20".equals(compatibilityLevel.versionId());
+            String esSupportedSparkVersion = compatibilityLevel.versionDescription();
 
-        boolean isEshForSpark20 = "20".equals(compatibilityLevel.versionId());
-        String esSupportedSparkVersion = compatibilityLevel.versionDescription();
+            String errorMessage = null;
 
-        String errorMessage = null;
+            if (!(isSpark13Level || isSpark20Level)) {
+                String sparkVersion = getSparkVersionOr("1.0-1.2");
+                errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with unsupported Spark version %s",
+                        esSupportedSparkVersion, sparkVersion);
+            } else if (isSpark20Level != isEshForSpark20) { // XOR can be applied as well but != increases readability
+                String sparkVersion = getSparkVersionOr(isSpark13Level ? "1.3-1.6" : "2.0+");
+                errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with Spark %s",
+                        esSupportedSparkVersion, sparkVersion);
+            }
 
-        if (!(isSpark13Level || isSpark20Level)) {
-            String sparkVersion = getSparkVersionOr("1.0-1.2");
-            errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with unsupported Spark version %s",
-                    esSupportedSparkVersion, sparkVersion);
-        } else if (isSpark20Level != isEshForSpark20) { // XOR can be applied as well but != increases readability
-            String sparkVersion = getSparkVersionOr(isSpark13Level ? "1.3-1.6" : "2.0+");
-            errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with Spark %s",
-                    esSupportedSparkVersion, sparkVersion);
-        }
-
-        if (errorMessage != null) {
+            if (errorMessage != null) {
+                if (throwOnIncompatible) {
+                    throw new EsHadoopIllegalStateException(errorMessage);
+                } else {
+                    LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").warn(errorMessage);
+                }
+            }
+        } catch (EsHadoopIllegalStateException noClass) {
+            // In the event that someone is using the core jar without sql support, (like in our tests) this will be logged instead.
+            String errorMessage = "Elasticsearch Spark SQL support could not be verified.";
             if (throwOnIncompatible) {
-                throw new EsHadoopIllegalStateException(errorMessage);
+                throw new EsHadoopIllegalStateException(errorMessage, noClass);
             } else {
-                LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").warn(errorMessage);
+                LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").info(errorMessage + " Continuing with core support.");
             }
         }
     }
