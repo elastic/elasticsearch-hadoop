@@ -21,8 +21,23 @@ sparkVariants {
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
+        String scalaCompileTaskName = project.sourceSets.getByName(variant.getSourceSetName("main")).getCompileTaskName("scala")
+
+        project.configurations { ConfigurationContainer c ->
+            c.create(variant.configuration('embedded')) {
+                transitive = false
+                canBeResolved = true
+            }
+            c.getByName(variant.configuration('implementation')) {
+                extendsFrom project.configurations.getByName(variant.configuration('embedded'))
+            }
+            if (variant.scalaMajorVersion != '2.10') {
+
+            }
+        }
+
         // Configure main compile task
-        project.getTasks().getByName(project.sourceSets.getByName(variant.getSourceSetName("main")).getCompileTaskName("scala")).configure { ScalaCompile compileScala ->
+        project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
                 jvmArgs = ['-XX:MaxPermSize=512m']
@@ -79,12 +94,59 @@ sparkVariants {
                     add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:${variant.sparkVersion}")
                 }
             }
+
+            add(variant.configuration('additionalSources'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('javadocSources'), project(":elasticsearch-hadoop-mr"))
+        }
+
+        def javaFilesOnly = { FileTreeElement spec ->
+            spec.file.name.endsWith('.java') || spec.isDirectory()
+        }
+
+        project.artifacts {
+            // Add java files from scala source set to javadocSourceElements.
+            project.fileTree("src/main/scala").include(javaFilesOnly).each {
+                javadocSourceElements(it)
+            }
+        }
+
+        if (variant.scalaMajorVersion != '2.10') {
+            // Configure java source generation for javadoc purposes
+            String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
+            project.configurations { ConfigurationContainer c ->
+                Configuration scalaCompilerPlugin = c.maybeCreate(variant.configuration('scalaCompilerPlugin'))
+                scalaCompilerPlugin.defaultDependencies { dependencies ->
+                    dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
+                }
+            }
+            ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
+            compileScala.scalaCompileOptions.with {
+                additionalParameters = [
+                        "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
+                        "-P:genjavadoc:out=$generatedJavaDirectory".toString()
+                ]
+            }
+            // Export generated Java code from the genjavadoc compiler plugin
+            artifacts {
+                add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
+                    builtBy compileScala
+                }
+            }
+            tasks.getByName(variant.taskName('javadoc')) {
+                dependsOn compileScala
+                source(generatedJavaDirectory)
+            }
+        }
+
+        scaladoc {
+            title = "${rootProject.description} ${version} API"
         }
     }
 }
 
 // deal with the messy conflicts out there
-configurations.all { Configuration conf ->
+// Ignore the scalaCompilerPlugin configurations since it is immediately resolved to configure the scala compiler tasks
+configurations.matching{ it.name.contains('CompilerPlugin') == false }.all { Configuration conf ->
     conf.resolutionStrategy {
         eachDependency { details ->
             // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
@@ -102,4 +164,17 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
+}
+
+sparkVariants {
+    all { SparkVariantPlugin.SparkVariant variant ->
+        tasks.getByName(variant.taskName('jar')) {
+            dependsOn(project.configurations.getByName(variant.configuration('embedded')))
+            from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
+                include "org/elasticsearch/**"
+                include "esh-build.properties"
+                include "META-INF/services/*"
+            }
+        }
+    }
 }

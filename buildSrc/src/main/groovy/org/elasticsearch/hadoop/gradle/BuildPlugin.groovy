@@ -146,7 +146,7 @@ class BuildPlugin implements Plugin<Project>  {
             Configuration additionalSources = createConfiguration(project, 'additionalSources', false, true, 'java-source', 'sources')
 
             // Export source configuration - different from 'sourcesElements' which contains sourceJars instead of source files
-            Configuration sourceElements = createConfiguration(project, 'sourceElements', true, false, 'java-source', 'source')
+            Configuration sourceElements = createConfiguration(project, 'sourceElements', true, false, 'java-source', 'sources')
             sourceElements.extendsFrom(additionalSources)
 
             // Import javadoc sources
@@ -166,7 +166,7 @@ class BuildPlugin implements Plugin<Project>  {
                 sparkVariants.featureVariants { SparkVariant variant ->
                     Configuration vAdditionalSources = createConfiguration(project, variant.configuration('additionalSources'), false, true, 'java-source', 'sources')
 
-                    Configuration vSourceElements = createConfiguration(project, variant.configuration('sourceElements'), true, false, 'java-source', 'source')
+                    Configuration vSourceElements = createConfiguration(project, variant.configuration('sourceElements'), true, false, 'java-source', 'sources')
                     vSourceElements.extendsFrom(vAdditionalSources)
 
                     createConfiguration(project, variant.configuration('javadocSources'), false, true, 'javadoc-source', 'sources')
@@ -463,12 +463,12 @@ class BuildPlugin implements Plugin<Project>  {
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             Javadoc javadoc = project.tasks.getByName('javadoc') as Javadoc
-            javadoc.source += project.files(project.configurations.javadocSources)
+            javadoc.source(project.configurations.javadocSources)
             project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
                 SparkVariantPluginExtension sparkVarients = project.getExtensions().getByType(SparkVariantPluginExtension.class)
                 sparkVarients.featureVariants { SparkVariant variant ->
                     Javadoc variantJavadoc = project.tasks.getByName(variant.taskName('javadoc')) as Javadoc
-                    variantJavadoc.source += project.files(project.configurations.getByName(variant.configuration('javadocSources')))
+                    variantJavadoc.source(project.configurations.getByName(variant.configuration('javadocSources')))
                 }
             }
         }
