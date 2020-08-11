@@ -2,8 +2,6 @@ import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
 description = "Elasticsearch Spark Core"
 
-evaluationDependsOn(':elasticsearch-hadoop-mr')
-
 apply plugin: 'java-library'
 apply plugin: 'scala'
 apply plugin: 'es.hadoop.build'
