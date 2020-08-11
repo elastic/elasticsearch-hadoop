@@ -23,16 +23,13 @@ sparkVariants {
 
         String scalaCompileTaskName = project.sourceSets.getByName(variant.getSourceSetName("main")).getCompileTaskName("scala")
 
-        project.configurations { ConfigurationContainer c ->
-            c.create(variant.configuration('embedded')) {
+        project.configurations {
+            create(variant.configuration('embedded')) {
                 transitive = false
                 canBeResolved = true
             }
-            c.getByName(variant.configuration('implementation')) {
+            getByName(variant.configuration('implementation')) {
                 extendsFrom project.configurations.getByName(variant.configuration('embedded'))
-            }
-            if (variant.scalaMajorVersion != '2.10') {
-
             }
         }
 
@@ -103,10 +100,10 @@ sparkVariants {
             spec.file.name.endsWith('.java') || spec.isDirectory()
         }
 
-        project.artifacts {
+        project.artifacts { ArtifactHandler a ->
             // Add java files from scala source set to javadocSourceElements.
             project.fileTree("src/main/scala").include(javaFilesOnly).each {
-                javadocSourceElements(it)
+                a.add(variant.configuration('javadocSourceElements'), it)
             }
         }
 
