@@ -19,14 +19,14 @@ ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
 
 ## Installation
 
-### Stable Release (currently `7.9.0`)
+### Stable Release (currently `7.9.1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>7.9.0</version>
+  <version>7.9.1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -38,7 +38,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>7.9.0-SNAPSHOT</version>
+  <version>7.9.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -243,10 +243,10 @@ val playlist = df.filter(df("category").equalTo("pikes").and(df("year").geq(2016
 Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on your `RDD`s:
 
 ```scala
-import org.elasticsearch.spark._        
+import org.elasticsearch.spark._
 
 val conf = ...
-val sc = new SparkContext(conf)         
+val sc = new SparkContext(conf)
 
 val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
 val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
@@ -271,11 +271,11 @@ In a Java environment, use the `org.elasticsearch.spark.rdd.java.api` package, i
 To read data from ES, create a dedicated `RDD` and specify the query as an argument.
 
 ```java
-import org.apache.spark.api.java.JavaSparkContext;   
+import org.apache.spark.api.java.JavaSparkContext;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf);   
+JavaSparkContext jsc = new JavaSparkContext(conf);
 
 JavaPairRDD<String, Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
 ```
@@ -297,7 +297,7 @@ import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);
 
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
 JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports));
