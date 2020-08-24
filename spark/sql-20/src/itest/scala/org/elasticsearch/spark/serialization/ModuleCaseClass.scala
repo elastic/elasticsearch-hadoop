@@ -16,19 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
 
-import org.elasticsearch.hadoop.fixtures.LocalEs;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+package org.elasticsearch.spark.serialization
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractScalaEsScalaSparkSQL.class })
-public class SparkSQLScalaSuite {
-
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+case class ModuleCaseClass(id: Integer, departure: String, var arrival: String) {
+  var l = math.Pi
 }

@@ -354,6 +354,9 @@ public class SparkVariantPlugin implements Plugin<Project> {
         SourceDirectorySet javaSourceSet = sourceSet.getJava();
         javaSourceSet.setSrcDirs(Collections.singletonList("src/" + sourceSetName + "/java"));
 
+        SourceDirectorySet resourcesSourceSet = sourceSet.getResources();
+        resourcesSourceSet.setSrcDirs(Collections.singletonList("src/" + sourceSetName + "/resources"));
+
         SourceDirectorySet scalaSourceSet = getScalaSourceSet(sourceSet).getScala();
         scalaSourceSet.setSrcDirs(Arrays.asList(
                 "src/" + sourceSetName + "/scala",

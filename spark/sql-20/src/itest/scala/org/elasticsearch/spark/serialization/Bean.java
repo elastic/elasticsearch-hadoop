@@ -16,19 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
+package org.elasticsearch.spark.serialization;
 
-import org.elasticsearch.hadoop.fixtures.LocalEs;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.io.Serializable;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractScalaEsScalaSparkSQL.class })
-public class SparkSQLScalaSuite {
+public class Bean implements Serializable {
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+	private String foo;
+	private Number id;
+	private boolean bool;
+
+	public Bean() {}
+	
+	public Bean(String foo, Number bar, boolean bool) {
+		this.foo = foo;
+		this.id = bar;
+		this.bool = bool;
+	}
+	public String getFoo() {
+		return foo;
+	}
+	public void setFoo(String foo) {
+		this.foo = foo;
+	}
+	public Number getId() {
+		return id;
+	}
+	public void setBar(Number bar) {
+		this.id = bar;
+	}
+	public boolean isBool() {
+		return bool;
+	}
 }

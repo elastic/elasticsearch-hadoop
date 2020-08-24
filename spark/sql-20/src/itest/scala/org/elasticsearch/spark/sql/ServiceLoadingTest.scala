@@ -16,19 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
 
-import org.elasticsearch.hadoop.fixtures.LocalEs;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+package org.elasticsearch.spark.sql
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractScalaEsScalaSparkSQL.class })
-public class SparkSQLScalaSuite {
+import java.util.ServiceLoader
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+import org.apache.spark.sql.sources.DataSourceRegister
+import org.junit.{Assert, Test}
+
+import scala.collection.JavaConverters._
+
+class ServiceLoadingTest {
+
+  @Test
+  def serviceLoadingTest(): Unit = {
+    val serviceLoader = ServiceLoader.load(classOf[DataSourceRegister], Thread.currentThread().getContextClassLoader)
+    if (serviceLoader.asScala.map(_.shortName()).exists(_.equals("es")) == false) {
+      Assert.fail("Cannot locate 'es' data source")
+    }
+  }
+
 }

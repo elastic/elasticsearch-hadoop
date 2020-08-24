@@ -1,4 +1,5 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
+import org.gradle.api.internal.provider.DefaultProvider
 
 description = "Elasticsearch Spark Core"
 
@@ -19,7 +20,9 @@ sparkVariants {
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
-        String scalaCompileTaskName = project.sourceSets.getByName(variant.getSourceSetName("main")).getCompileTaskName("scala")
+        String scalaCompileTaskName = project.sourceSets
+                .getByName(variant.getSourceSetName("main"))
+                .getCompileTaskName("scala")
 
         project.configurations {
             create(variant.configuration('embedded')) {
@@ -29,6 +32,22 @@ sparkVariants {
             getByName(variant.configuration('implementation')) {
                 extendsFrom project.configurations.getByName(variant.configuration('embedded'))
             }
+//            create(variant.configuration('testingElements')) {
+//                canBeConsumed = true
+//                canBeResolved = false
+//                transitive = false
+//                attributes {
+//                    attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'testing-classes'))
+//                }
+//            }
+//            create(variant.configuration('itestingElements')) {
+//                canBeConsumed = true
+//                canBeResolved = false
+//                transitive = false
+//                attributes {
+//                    attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'integration-testing-classes'))
+//                }
+//            }
         }
 
         // Configure main compile task
@@ -98,22 +117,33 @@ sparkVariants {
             spec.file.name.endsWith('.java') || spec.isDirectory()
         }
 
-        project.artifacts { ArtifactHandler a ->
-            // Add java files from scala source set to javadocSourceElements.
-            project.fileTree("src/main/scala").include(javaFilesOnly).each {
-                a.add(variant.configuration('javadocSourceElements'), it)
-            }
+        // Add java files from scala source set to javadocSourceElements.
+        project.fileTree("src/main/scala").include(javaFilesOnly).each {
+            project.artifacts.add(variant.configuration('javadocSourceElements'), it)
         }
 
+//        // Export the test classes
+//        SourceSet testSourceSet = project.sourceSets.getByName(variant.getSourceSetName('test'))
+//        project.artifacts.add(variant.configuration('testingElements'), testSourceSet.getOutput()) {
+//            builtBy(testSourceSet.getCompileTaskName('java'), testSourceSet.getCompileTaskName('scala'))
+//        }
+
+//        // Export itest classes
+//        SourceSet itestSourceSet = project.sourceSets.getByName(variant.getSourceSetName('itest'))
+//        itestSourceSet.getOutput().getClassesDirs().getFiles().each { File classDir ->
+//            project.artifacts.add(variant.configuration('itestingElements'), new DefaultProvider<Directory>({classDir})) {
+//                builtBy(itestSourceSet.getCompileTaskName('java'), itestSourceSet.getCompileTaskName('scala'))
+//            }
+//        }
+
+        // Configure java source generation for javadoc purposes
         if (variant.scalaMajorVersion != '2.10') {
-            // Configure java source generation for javadoc purposes
             String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
-            project.configurations { ConfigurationContainer c ->
-                Configuration scalaCompilerPlugin = c.maybeCreate(variant.configuration('scalaCompilerPlugin'))
-                scalaCompilerPlugin.defaultDependencies { dependencies ->
-                    dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
-                }
+            Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
+            scalaCompilerPlugin.defaultDependencies { dependencies ->
+                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
             }
+
             ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
             compileScala.scalaCompileOptions.with {
                 additionalParameters = [

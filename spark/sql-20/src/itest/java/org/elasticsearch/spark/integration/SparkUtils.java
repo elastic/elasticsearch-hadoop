@@ -18,17 +18,23 @@
  */
 package org.elasticsearch.spark.integration;
 
-import org.elasticsearch.hadoop.fixtures.LocalEs;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.esotericsoftware.kryo.Kryo;
+import org.apache.spark.SparkConf;
+import org.elasticsearch.hadoop.Provisioner;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractScalaEsScalaSparkSQL.class })
-public class SparkSQLScalaSuite {
+import java.lang.reflect.Constructor;
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+public abstract class SparkUtils {
+
+    public static final String[] ES_SPARK_TESTING_JAR = new String[] {Provisioner.ESHADOOP_TESTING_JAR};
+
+    public static Kryo sparkSerializer(SparkConf conf) throws Exception {
+        // reflection galore
+        Class<?> ks = Class.forName("org.apache.spark.serializer.KryoSerializer", true, conf.getClass().getClassLoader());
+        Constructor<?> ctr = ks.getDeclaredConstructor(SparkConf.class);
+        Object ksInstance = ctr.newInstance(conf);
+        Kryo kryo = ReflectionUtils.invoke(ReflectionUtils.findMethod(ks, "newKryo"), ksInstance);
+        return kryo;
+    }
 }
