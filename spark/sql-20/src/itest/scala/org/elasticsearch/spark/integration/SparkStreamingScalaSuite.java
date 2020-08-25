@@ -20,7 +20,6 @@ package org.elasticsearch.spark.integration;
 
 import org.elasticsearch.hadoop.fixtures.LocalEs;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
