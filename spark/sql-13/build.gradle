@@ -173,11 +173,12 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
 }
 
+// Embed the embedded dependencies in the final jar after all configuration is complete
 sparkVariants {
     all { SparkVariantPlugin.SparkVariant variant ->
-
         tasks.getByName(variant.taskName('jar')) {
             dependsOn(project.configurations.getByName(variant.configuration('embedded')))
+            // TODO: Is there a way to do this lazily? This looks like it resolves the configuration.
             from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
                 include "org/elasticsearch/**"
                 include "esh-build.properties"
