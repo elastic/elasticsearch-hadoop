@@ -92,38 +92,38 @@ sparkVariants {
             d.add(v.configuration("test", "implementation"), "junit:junit:4.12")
         }
 
-        Closure variantJarNameFixer = { Jar jar ->
-            // Add the scala version to the base name
-            jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
-            // Default variant jars won't need sanitizing since they won't have the variant name added to them.
-            if (!v.isDefaultVariant() && jar.archiveClassifier.get() != null) {
-                String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
-                sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
-                if (sanitizedClassifier.size() > 0) {
-                    archiveClassifier = sanitizedClassifier
-                } else {
-                    archiveClassifier = null
-                }
-            }
-        }
-
-        project.tasks.getByName(v.taskName("jar"), variantJarNameFixer)
-        project.tasks.getByName(v.taskName("javadocJar"), variantJarNameFixer)
-        project.tasks.getByName(v.taskName("sourcesJar"), variantJarNameFixer)
-
-        // embed dependent projects into the jar
-        // Todo: Look into using the Shadow Plugin for this.
-        project.tasks.getByName(v.taskName("jar")) { Jar jar ->
-            // The default variant jar from core aligns with the default variant here. Don't expect a classifier on it. 
-            String expected = "core-1.0${v.isDefaultVariant() ? "" : "-" + v.getName()}.jar"
-
-            Configuration embedded = project.getConfigurations().getByName(v.configuration("embedded"))
-            jar.dependsOn(embedded)
-            File coreJar = embedded.getFiles().find {expected.equals(it.name)}
-            jar.from(project.zipTree(coreJar)) {
-                include "org/elasticsearch/**"
-                include "META-INF/services/*"
-            }
-        }
+//        Closure variantJarNameFixer = { Jar jar ->
+//            // Add the scala version to the base name
+//            jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
+//            // Default variant jars won't need sanitizing since they won't have the variant name added to them.
+//            if (!v.isDefaultVariant() && jar.archiveClassifier.get() != null) {
+//                String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
+//                sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
+//                if (sanitizedClassifier.size() > 0) {
+//                    archiveClassifier = sanitizedClassifier
+//                } else {
+//                    archiveClassifier = null
+//                }
+//            }
+//        }
+//
+//        project.tasks.getByName(v.taskName("jar"), variantJarNameFixer)
+//        project.tasks.getByName(v.taskName("javadocJar"), variantJarNameFixer)
+//        project.tasks.getByName(v.taskName("sourcesJar"), variantJarNameFixer)
+//
+//        // embed dependent projects into the jar
+//        // Todo: Look into using the Shadow Plugin for this.
+//        project.tasks.getByName(v.taskName("jar")) { Jar jar ->
+//            // The default variant jar from core aligns with the default variant here. Don't expect a classifier on it.
+//            String expected = "core-1.0${v.isDefaultVariant() ? "" : "-" + v.getName()}.jar"
+//
+//            Configuration embedded = project.getConfigurations().getByName(v.configuration("embedded"))
+//            jar.dependsOn(embedded)
+//            File coreJar = embedded.getFiles().find {expected.equals(it.name)}
+//            jar.from(project.zipTree(coreJar)) {
+//                include "org/elasticsearch/**"
+//                include "META-INF/services/*"
+//            }
+//        }
     }
 }

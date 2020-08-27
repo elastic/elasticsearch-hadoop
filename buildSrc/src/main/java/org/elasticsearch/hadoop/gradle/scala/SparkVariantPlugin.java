@@ -48,8 +48,10 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskCollection;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.scala.ScalaDoc;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.util.ConfigureUtil;
@@ -288,9 +290,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
         Configuration runtimeElements = configurations.getByName(RUNTIME_ELEMENTS_CONFIGURATION_NAME);
         runtimeElements.getOutgoing().capability(capability);
 
-        SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
-        SourceSet testSourceSet = sourceSets.getByName(sparkVariant.getSourceSetName(TEST_SOURCE_SET_NAME));
-        registerAdditionalVariant(javaPluginExtension, sparkVariant, "test", testSourceSet, project.getVersion());
+        configureScalaJarClassifiers(project, sparkVariant);
     }
 
     private static void configureVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
@@ -314,6 +314,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
         createVariantTestTask(tasks, sparkVariant, test);
         configureVariantJar(tasks, sparkVariant);
         registerVariantScaladoc(project, tasks, sparkVariant, main);
+        configureScalaJarClassifiers(project, sparkVariant);
     }
 
     public static SourceSet configureAdditionalVariantSourceSet(Project project, SparkVariant sparkVariant, String sourceSetName) {
@@ -434,5 +435,26 @@ public class SparkVariantPlugin implements Plugin<Project> {
             scalaDoc.setClasspath(scaladocClasspath);
             scalaDoc.setSource(getScalaSourceSet(main).getScala());
         });
+    }
+
+    private static void correctScalaJarClassifiers(Jar jar, SparkVariant sparkVariant) {
+        if (sparkVariant.isDefaultVariant() == false) {
+            String classifier = jar.getArchiveClassifier().get();
+            classifier = classifier.replace(sparkVariant.name, "");
+            if (classifier.startsWith("-")) {
+                classifier = classifier.substring(1);
+            }
+            jar.getArchiveClassifier().set(classifier);
+        }
+        String baseName = jar.getArchiveBaseName().get();
+        baseName = baseName + "_" + sparkVariant.scalaMajorVersion;
+        jar.getArchiveBaseName().set(baseName);
+    }
+
+    private static void configureScalaJarClassifiers(Project project, final SparkVariant sparkVariant) {
+        TaskCollection<Jar> jars = project.getTasks().withType(Jar.class);
+        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("jar")), sparkVariant);
+        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("javadocJar")), sparkVariant);
+        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("sourcesJar")), sparkVariant);
     }
 }

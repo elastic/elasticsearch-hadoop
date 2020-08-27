@@ -10,28 +10,30 @@ import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
-import org.gradle.api.artifacts.maven.MavenPom
-import org.gradle.api.artifacts.maven.MavenResolver
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.MavenPlugin
-import org.gradle.api.plugins.MavenPluginConvention
 import org.gradle.api.plugins.scala.ScalaPlugin
+import org.gradle.api.provider.Provider
+import org.gradle.api.publish.maven.MavenPom
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -40,6 +42,9 @@ import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.w3c.dom.NodeList
+
+import javax.inject.Inject
 
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariant
@@ -48,6 +53,13 @@ class BuildPlugin implements Plugin<Project>  {
 
     public static final String SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedTestImplementation"
     public static final String SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedItestImplementation"
+
+    private final SoftwareComponentFactory softwareComponentFactory
+
+    @Inject
+    BuildPlugin(SoftwareComponentFactory softwareComponentFactory) {
+        this.softwareComponentFactory = softwareComponentFactory
+    }
 
     @Override
     void apply(Project project) {
@@ -76,9 +88,6 @@ class BuildPlugin implements Plugin<Project>  {
         // IDE Support
         project.getPluginManager().apply(IdeaPlugin.class)
         project.getPluginManager().apply(EclipsePlugin.class)
-
-        // Maven Support
-        project.getPluginManager().apply(MavenPlugin.class)
     }
 
     /** Return the configuration name used for finding transitive deps of the given dependency. */
@@ -402,8 +411,6 @@ class BuildPlugin implements Plugin<Project>  {
         }
         Jar sourcesJar = project.tasks.getByName('sourcesJar') as Jar
         sourcesJar.dependsOn(project.tasks.classes)
-//        sourcesJar.classifier = 'sources'
-//        sourcesJar.from(project.sourceSets.main.allSource)
         // TODO: Remove when root project does not handle distribution
         if (project != project.rootProject) {
             sourcesJar.from(project.configurations.additionalSources)
@@ -415,8 +422,6 @@ class BuildPlugin implements Plugin<Project>  {
                 // Don't need to create sources jar task since it is already created by the variant plugin
                 Jar variantSourcesJar = project.tasks.getByName(variant.taskName('sourcesJar')) as Jar
                 variantSourcesJar.dependsOn(project.tasks.getByName(variant.taskName('classes')))
-//                variantSourcesJar.classifier = 'sources'
-//                variantSourcesJar.from(project.sourceSets.getByName(variant.getSourceSetName('main')).allSource)
                 variantSourcesJar.from(project.configurations.getByName(variant.configuration('additionalSources')))
                 project.getArtifacts().add(variant.configuration('distElements'), variantSourcesJar)
             }
@@ -475,8 +480,6 @@ class BuildPlugin implements Plugin<Project>  {
 
         // Package up the javadocs into their own jar
         Jar javadocJar = project.tasks.getByName('javadocJar') as Jar
-//        javadocJar.classifier = 'javadoc'
-//        javadocJar.from(project.tasks.javadoc)
         if (project != project.rootProject) {
             project.getArtifacts().add('distElements', javadocJar)
         }
@@ -484,8 +487,6 @@ class BuildPlugin implements Plugin<Project>  {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
                 Jar variantJavadocJar = project.tasks.getByName(variant.taskName('javadocJar')) as Jar
-//                variantJavadocJar.classifier = 'javadoc'
-//                variantJavadocJar.from(project.tasks.getByName(variant.taskName('javadoc')))
                 project.getArtifacts().add(variant.configuration('distElements'), variantJavadocJar)
             }
         }
@@ -562,89 +563,185 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
-    private static void configureMaven(Project project) {
-        // FIXHERE : Spark Restructure - Will need poms for each variant - is this even compatible with it?
-        // Declare a publication for each variant
-        // Looks at a "component"
-        Task writePom = project.getTasks().create('writePom')
-        writePom.doLast {
-            MavenPluginConvention convention = project.getConvention().getPlugins().get('maven') as MavenPluginConvention
-            MavenPom pom = customizePom(convention.pom(), project)
-            pom.writeTo("${project.buildDir}/distributions/${project.archivesBaseName}-${project.version}.pom")
+    private void configureMaven(Project project) {
+        project.getPluginManager().apply("maven-publish")
+
+        // Configure Maven publication
+        project.publishing {
+            publications {
+                main(MavenPublication) {
+                    from project.components.java
+                    suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
+                }
+            }
+            repositories {
+                maven {
+                    name = 'build'
+                    url = "file://${project.buildDir}/repo"
+                }
+            }
         }
 
-        // Write the pom when building a distribution.
-        Task distribution = project.getTasks().getByName('distribution')
-        distribution.dependsOn(writePom)
+        // Configure Maven Pom
+        configurePom(project, project.publishing.publications.main)
 
-        // Get the task that installs to local maven repo. Instruct the installation resolver to use our custom pom.
-        Upload mavenInstallTask = project.getTasks().getByName('install') as Upload
-        MavenResolver installResolver = mavenInstallTask.repositories.mavenInstaller as MavenResolver
-        installResolver.setPom(customizePom(installResolver.getPom(), project))
-    }
+        // Disable the publishing tasks since we only need the pom generation tasks.
+        // If we are working with a project that has a scala variant (see below), we need to modify the pom's
+        // artifact id which the publish task does not like (it fails validation when run).
+        project.getTasks().withType(PublishToMavenRepository) { PublishToMavenRepository m ->
+            m.enabled = false
+        }
 
-    /**
-     * Given a maven pom, customize it for our project's using the information provided by the given project.
-     * @param pom
-     * @param gradleProject
-     * @return
-     */
-    private static MavenPom customizePom(MavenPom pom, Project gradleProject) {
-        // Maven does most of the lifting to translate a Project into a MavenPom
-        // Run this closure after that initial boilerplate configuration is done
-        pom.whenConfigured { MavenPom generatedPom ->
+        // Configure Scala Variants if present
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            // Publishing gets weird when you introduce variants into the project.
+            // By default, when adding a spark/scala variant, its outgoing configurations are added to the main java components.
+            // The maven publish plugin will take all these variants, smoosh them and their dependencies together, and create
+            // one big pom file full of version conflicts. Since spark variants are mutually exclusive, we need to perform a
+            // workaround to materialize multiple poms for the different scala variants.
+            // TODO: Should this adhoc component configuration work be done in the SparkVariantPlugin?
 
-            // eliminate test-scoped dependencies (no need in maven central poms)
-            generatedPom.dependencies.removeAll { dep ->
-                dep.scope == 'test' || dep.artifactId == 'elasticsearch-hadoop-mr'
+            SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
+            def javaComponent = project.components.java
+
+            // Main variant needs the least configuration on its own, since it is the default publication created above.
+            sparkVariants.defaultVariant { SparkVariant variant ->
+                updateVariantPomLocationAndArtifactId(project, project.publishing.publications.main, variant)
             }
 
-            // Storm hosts their jars outside of maven central.
-            boolean storm = generatedPom.dependencies.any { it.groupId == 'org.apache.storm' }
+            // For each spark variant added, we need to do a few things:
+            sparkVariants.featureVariants { SparkVariant variant ->
+                // Collect all the outgoing configurations that are compatible with publication
+                def variantConfigurationsToExcludeFromMain = [
+                        variant.configuration("apiElements"),
+                        variant.configuration("runtimeElements"),
+                        variant.configuration('javadocElements'),
+                        variant.configuration('sourcesElements'),
+                        variant.configuration('test', 'apiElements'),
+                        variant.configuration('test', 'runtimeElements'),
+                        variant.configuration('itest', 'apiElements'),
+                        variant.configuration('itest', 'runtimeElements')
+                ]
 
-            if (storm)
-                generatedPom.project {
-                    repositories {
-                        repository {
-                            id = 'clojars.org'
-                            url = 'https://clojars.org/repo'
+                // Remove each of those outgoing configurations from the default java component.
+                // This will keep the default variant from being smooshed together with conflicting artifacts/dependencies.
+                variantConfigurationsToExcludeFromMain.each {
+                    javaComponent.withVariantsFromConfiguration(project.configurations.getByName(it)) {
+                        skip()
+                    }
+                }
+
+                // Create an adhoc component for the variant
+                def variantComponent = softwareComponentFactory.adhoc("${variant.getName()}Component")
+                // Add it to the list of components that this project declares
+                project.components.add(variantComponent)
+                // Register the variant's outgoing configurations for publication
+                variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("apiElements"))) {
+                    it.mapToMavenScope("compile")
+                }
+                variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("runtimeElements"))) {
+                    it.mapToMavenScope("runtime")
+                }
+                variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("javadocElements"))) {
+                    it.mapToMavenScope("runtime")
+                }
+                variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("sourcesElements"))) {
+                    it.mapToMavenScope("runtime")
+                }
+
+                // Create a publication for this adhoc component to create pom generation and publishing tasks
+                project.publishing {
+                    publications {
+                        MavenPublication variantPublication = create(variant.getName(), MavenPublication) {
+                            from variantComponent
+                            suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
+                        }
+                        configurePom(project, variantPublication)
+                        updateVariantPomLocationAndArtifactId(project, variantPublication, variant)
+                    }
+                }
+            }
+        }
+
+        // Set the pom generation tasks as required for the distribution task.
+        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
+            project.getTasks().getByName('distribution').dependsOn(pom)
+        }
+    }
+
+    private static void configurePom(Project project, MavenPublication publication) {
+        // Set the pom's destination to the distribution directory
+        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
+            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
+                pom.destination = project.provider({"${project.buildDir}/distributions/${project.archivesBaseName}-${project.getVersion()}.pom"})
+            }
+        }
+
+        // add all items necessary for publication
+        Provider<String> descriptionProvider = project.provider({ project.getDescription() })
+        MavenPom pom = publication.getPom()
+        pom.name = descriptionProvider
+        pom.description = descriptionProvider
+        pom.url = 'http://github.com/elastic/elasticsearch-hadoop'
+        pom.organization {
+            name = 'Elastic'
+            url = 'https://www.elastic.co/'
+        }
+        pom.licenses {
+            license {
+                name = 'The Apache Software License, Version 2.0'
+                url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution = 'repo'
+            }
+        }
+        pom.scm {
+            url = 'https://github.com/elastic/elasticsearch-hadoop'
+            connection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
+            developerConnection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
+        }
+        pom.developers {
+            developer {
+                name = 'Elastic'
+                url = 'https://www.elastic.co'
+            }
+        }
+
+        publication.getPom().withXml { XmlProvider xml ->
+            // add all items necessary for publication
+            Node root = xml.asNode()
+
+            // If we have embedded configuration on the project, remove its dependencies from the dependency nodes
+            NodeList dependenciesNode = root.get("dependencies") as NodeList
+            Configuration embedded = project.getConfigurations().findByName('embedded')
+            if (embedded != null) {
+                embedded.getAllDependencies().all { Dependency dependency ->
+                    Iterator<Node> dependenciesIterator = dependenciesNode.get(0).children().iterator()
+                    while (dependenciesIterator.hasNext()) {
+                        Node dependencyNode = dependenciesIterator.next()
+                        String artifact = dependencyNode.get("artifactId").text()
+                        if (artifact == dependency.getName()) {
+                            dependenciesIterator.remove()
+                            break
                         }
                     }
                 }
-
-            // add all items necessary for publication
-            generatedPom.project {
-                name = gradleProject.description
-                description = gradleProject.description
-                url = 'http://github.com/elastic/elasticsearch-hadoop'
-                organization {
-                    name = 'Elastic'
-                    url = 'https://www.elastic.co/'
-                }
-                licenses {
-                    license {
-                        name = 'The Apache Software License, Version 2.0'
-                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution = 'repo'
-                    }
-                }
-                scm {
-                    url = 'https://github.com/elastic/elasticsearch-hadoop'
-                    connection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
-                    developerConnection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
-                }
-                developers {
-                    developer {
-                        name = 'Elastic'
-                        url = 'https://www.elastic.co'
-                    }
-                }
             }
-
-            groupId = "org.elasticsearch"
-            artifactId = gradleProject.archivesBaseName
         }
-        return pom
+    }
+
+    private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
+        // Fix the pom name
+        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
+            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
+                pom.destination = project.provider({"${project.buildDir}/distributions/${project.archivesBaseName}_${variant.scalaMajorVersion}-${project.getVersion()}.pom"})
+            }
+        }
+        // Fix the artifactId. Note: The publishing task does not like this happening. Hence it is disabled.
+        publication.getPom().withXml { XmlProvider xml ->
+            Node root = xml.asNode()
+            Node artifactId = (root.get('artifactId') as NodeList).get(0) as Node
+            artifactId.setValue("${project.archivesBaseName}_${variant.scalaMajorVersion}")
+        }
     }
 
     /**
