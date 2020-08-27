@@ -31,8 +31,3 @@ include 'test:fixtures:minikdc'
 
 include 'qa'
 include 'qa:kerberos'
-
-include 'gtest'
-include 'gtest:core'
-include 'gtest:sql13'
-include 'gtest:sql20'
