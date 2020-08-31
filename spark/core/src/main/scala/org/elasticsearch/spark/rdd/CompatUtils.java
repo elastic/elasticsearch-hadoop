@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.util.TaskCompletionListener;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
@@ -31,7 +30,6 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import scala.Function0;
-import scala.Option;
 
 abstract class CompatUtils {
 

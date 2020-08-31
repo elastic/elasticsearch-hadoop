@@ -1,0 +1,26 @@
+{
+  "_scroll_id": "c2NhbjswOzE7dG90YWxfaGl0czoxOw==",
+  "took": 18,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 0.0,
+    "hits": [
+      {
+        "_index": "hive",
+        "_type": "date-as-long",
+        "_id": "1",
+        "_score": 0.0,
+        "_source": {
+          "type": 1,
+          "&t": 1407239910771
+        }
+      }
+    ]
+  }
+}
