@@ -981,7 +981,9 @@ public class ScrollReader implements Closeable {
         Object array = reader.createArray(mapping(fieldMapping, parser));
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
-        content.add(value);
+        if (null != value) {
+            content.add(value);
+        }
         array = reader.addToArray(array, content);
         return array;
     }
