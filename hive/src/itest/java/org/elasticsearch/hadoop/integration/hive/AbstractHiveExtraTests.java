@@ -20,7 +20,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import java.util.List;
 
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;

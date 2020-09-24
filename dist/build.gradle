@@ -1,0 +1,148 @@
+import org.elasticsearch.gradle.ConcatFilesTask
+import org.elasticsearch.gradle.DependenciesInfoTask
+
+apply plugin: 'es.hadoop.build'
+
+description = "Elasticsearch for Apache Hadoop"
+project.archivesBaseName = 'elasticsearch-hadoop'
+
+configurations {
+    embedded {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+    }
+    javadocDependencies {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+    compileClasspath {
+        extendsFrom javadocDependencies
+    }
+    dist {
+        canBeResolved = true
+        canBeConsumed = false
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'packaging'))
+        }
+    }
+}
+
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig",
+                    ":elasticsearch-spark-20", ":elasticsearch-storm"]
+distProjects.each { distProject ->
+    dependencies {
+        // This is only going to pull in each project's regular jar to create the project-wide uberjar.
+        embedded(project(distProject))
+        // To squash Javadoc warnings.
+        javadocDependencies(project(distProject))
+        // This will pull all java sources (including generated) for the project-wide javadoc.
+        javadocSources(project(distProject))
+        // This will pull all non-generated sources for the project-wide source jar.
+        additionalSources(project(distProject))
+        // This will pull in the regular jar, javadoc jar, and source jar to be packaged in the distribution.
+        dist(project(distProject))
+    }
+}
+
+dependencies {
+    // For Uber pom (and Javadoc to a lesser extent)
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("commons-httpclient:commons-httpclient:3.0.1")
+    implementation("commons-codec:commons-codec:1.4")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    implementation("org.apache.hive:hive-exec:$hiveVersion")
+    implementation("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("org.apache.pig:pig:$pigVersion:h2")
+    implementation("org.apache.spark:spark-core_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.apache.spark:spark-yarn_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.apache.spark:spark-sql_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.apache.spark:spark-streaming_${project.ext.scala211MajorVersion}:$spark20Version") {
+        exclude group: 'org.apache.hadoop'
+    }
+    implementation("org.scala-lang:scala-library:$scala211Version")
+    implementation("org.scala-lang:scala-reflect:$scala211Version")
+    implementation("org.apache.storm:storm-core:$stormVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    implementation(project.ext.hadoopClient)
+    implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
+    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
+    implementation("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    implementation("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    implementation("joda-time:joda-time:$jodaVersion")
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
+}
+
+// Configure uber jar
+jar {
+    dependsOn(project.configurations.embedded)
+
+    manifest {
+        attributes['Implementation-Title'] = 'elasticsearch-hadoop'
+    }
+
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+
+    // Each integration will be copying it's entire jar contents into this master jar.
+    // There will be lots of duplicates since they all package up the core code inside of them.
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+javadoc {
+    options {
+        header = "elasticsearch-hadoop"
+    }
+}
+
+// Name of the directory under the root of the zip file that will contain the zip contents
+String zipContentDir = "elasticsearch-hadoop-${project.version}"
+
+// Create a zip task for creating the distribution
+task('distZip', type: Zip) {
+    group = 'Distribution'
+    description = "Builds zip archive, containing all jars and docs, suitable for download page."
+
+    dependsOn(tasks.pack)
+
+    from(project.rootDir) {
+        include('README.md')
+        include('LICENSE.txt')
+        include('NOTICE.txt')
+        into(zipContentDir)
+    }
+
+    into("$zipContentDir/dist") {
+        from(project.configurations.dist)
+        from(tasks.jar)
+        from(tasks.javadocJar)
+        from(tasks.sourcesJar)
+    }
+}
+
+distribution {
+    dependsOn(distZip)
+}
+
+// Add a task in the root project that collects all the dependencyReport data for each project
+// Concatenates the dependencies CSV files into a single file
+task generateDependenciesReport(type: ConcatFilesTask) {
+    dependsOn rootProject.allprojects.collect { it.tasks.withType(DependenciesInfoTask) }
+    files = fileTree(dir: project.rootDir,  include: '**/dependencies.csv' )
+    headerLine = "name,version,url,license"
+    target = new File(System.getProperty('csv')?: "${project.buildDir}/reports/dependencies/es-hadoop-dependencies.csv")
+}

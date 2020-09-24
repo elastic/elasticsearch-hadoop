@@ -54,7 +54,7 @@ class IntegrationBuildPlugin implements Plugin<Project> {
             // Configure root javadoc process to compile and consume this project's javadocs
             Javadoc rootJavadoc = project.rootProject.getTasks().getByName("javadoc") as Javadoc
             Javadoc subJavadoc = project.getTasks().getByName('javadoc') as Javadoc
-            rootJavadoc.setSource(subJavadoc.source)
+            rootJavadoc.source += subJavadoc.source
             rootJavadoc.classpath += project.files(project.sourceSets.main.compileClasspath)
         }
     }
@@ -65,15 +65,18 @@ class IntegrationBuildPlugin implements Plugin<Project> {
      */
     private static void configureProjectZip(Project project) {
         // We do this after evaluation since the scala projects may change around what the final archive name is.
+        // TODO: Swap this out with exposing those jars as artifacts to be consumed in a dist project.
         project.afterEvaluate {
             Zip rootDistZip = project.rootProject.getTasks().getByName('distZip') as Zip
             rootDistZip.dependsOn(project.getTasks().pack)
 
-            project.getTasks().withType(Jar.class).each { Jar jarTask ->
+            project.getTasks().withType(Jar.class) { Jar jarTask ->
                 // Add jar output under the dist directory
-                rootDistZip.from(jarTask.archivePath) { CopySpec copySpecification ->
-                    copySpecification.into("${project.rootProject.ext.folderName}/dist")
-                    copySpecification.setDuplicatesStrategy(DuplicatesStrategy.WARN)
+                if (jarTask.name != "itestJar") {
+                    rootDistZip.from(jarTask.archiveFile) { CopySpec copySpecification ->
+                        copySpecification.into("${project.rootProject.ext.folderName}/dist")
+                        copySpecification.setDuplicatesStrategy(DuplicatesStrategy.WARN)
+                    }
                 }
             }
         }
@@ -84,36 +87,15 @@ class IntegrationBuildPlugin implements Plugin<Project> {
      * @param project to be configured
      */
     private static void configureRootProjectDependencies(Project project) {
-        // We do this in an after evaluate so that we pick up all dependencies set after the plugin was configured.
-        // If this becomes a problem, we could see if there's a way to listen for new dependencies and add them
-        // to root at the same time.
-        project.afterEvaluate {
-            project.getConfigurations().getByName('compile').getAllDependencies()
-                    .withType(ExternalDependency.class)
-                    .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
+        project.getConfigurations().getByName('api').getAllDependencies()
+                .withType(ExternalDependency.class) { Dependency dependency ->
+                    // Set API dependencies as implementation in the uberjar so that not everything is compile scope
+                    project.rootProject.getDependencies().add('implementation', dependency)
                 }
 
-            project.getConfigurations().getByName('provided').getAllDependencies()
-                .withType(ExternalDependency.class)
-                .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
+        project.getConfigurations().getByName('implementation').getAllDependencies()
+                .withType(ExternalDependency.class) { Dependency dependency ->
+                    project.rootProject.getDependencies().add('implementation', dependency)
                 }
-
-            project.getConfigurations().getByName('optional').getAllDependencies()
-                .withType(ExternalDependency.class)
-                .each { Dependency dependency ->
-                    // Convert the scope to optional on the root project - it will have every integration in it, and
-                    // users may not need every dependency (except hadoop and jackson)
-                    String scope = (dependency.group in ['org.apache.hadoop', 'org.codehaus.jackson'] ? 'provided' : 'optional')
-                    project.rootProject.getDependencies().add(scope, dependency)
-                }
-        }
     }
 }

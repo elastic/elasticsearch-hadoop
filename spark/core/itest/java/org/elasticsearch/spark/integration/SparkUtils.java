@@ -18,44 +18,17 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Arrays;
 
 import org.apache.spark.SparkConf;
-import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import com.esotericsoftware.kryo.Kryo;
 
 public abstract class SparkUtils {
 
-    public static final String[] ES_SPARK_TESTING_JAR;
-
-    static {
-        // init ES-Hadoop JAR
-        // expect the jar under build\libs
-        try {
-            File folder = new File(".." + File.separator + ".." + File.separator + "build" + File.separator + "libs" + File.separator).getCanonicalFile();
-            System.out.println(folder.getAbsolutePath());
-            // find proper jar
-            File[] files = folder.listFiles(new FileFilter() {
-
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.getName().contains("-testing.jar");
-                }
-            });
-            Assert.isTrue(files != null && files.length == 1,
-                    String.format("Cannot find elasticsearch spark jar (too many or no file found);%s", Arrays.toString(files)));
-            ES_SPARK_TESTING_JAR = new String[] { files[0].getAbsoluteFile().toURI().toString() };
-
-        } catch (IOException ex) {
-            throw new RuntimeException("Cannot find required files", ex);
-        }
-    }
+    public static final String[] ES_SPARK_TESTING_JAR = new String[] {Provisioner.ESHADOOP_TESTING_JAR};
 
     public static Kryo sparkSerializer(SparkConf conf) throws Exception {
         // reflection galore

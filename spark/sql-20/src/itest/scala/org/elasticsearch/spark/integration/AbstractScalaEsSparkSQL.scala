@@ -52,7 +52,6 @@ import org.apache.spark.storage.StorageLevel.DISK_ONLY
 import org.apache.spark.storage.StorageLevel.DISK_ONLY_2
 import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
@@ -88,13 +87,15 @@ import org.junit.runners.Parameterized.Parameters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
-
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.EsAssume
+import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.mr.EsAssume
+import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.serialization.JsonUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.junit.Assert._
+import org.junit.ClassRule
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf()
@@ -107,6 +108,8 @@ object AbstractScalaEsScalaSparkSQL {
 
   @transient var keywordType: String = "keyword"
   @transient var textType: String = "text"
+
+  @transient @ClassRule val testData = new TestData()
 
   @BeforeClass
   def setup() {
@@ -698,7 +701,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testEsDataFrame3WriteWithRichMapping() {
-    val path = Paths.get(TestUtils.sampleArtistsDatUri())
+    val path = Paths.get(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
     // because Windows... 
     val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
 
@@ -788,7 +791,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   private def artistsAsDataFrame = {
-    val data = readAsRDD(TestUtils.sampleArtistsDatUri())
+    val data = readAsRDD(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
 
     val schema = StructType(Seq(StructField("id", IntegerType, false),
       StructField("name", StringType, false),
@@ -1052,11 +1055,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_starts_with")
     var filter = df.filter(df("airport").startsWith("O"))
 
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
-
     if (!keepHandledFilters) {
       // term query pick field with multi values
       assertEquals(2, filter.count())
@@ -1072,11 +1070,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown10EndsWith() {
     val df = esDataSource("pd_ends_with")
     var filter = df.filter(df("airport").endsWith("O"))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     if (!keepHandledFilters) {
       // term query pick field with multi values
@@ -1101,11 +1094,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown12And() {
     val df = esDataSource("pd_and")
     var filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))

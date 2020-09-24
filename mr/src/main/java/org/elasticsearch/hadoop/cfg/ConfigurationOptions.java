@@ -114,7 +114,7 @@ public interface ConfigurationOptions {
 
     /** Scroll size */
     String ES_SCROLL_SIZE = "es.scroll.size";
-    String ES_SCROLL_SIZE_DEFAULT = "50";
+    String ES_SCROLL_SIZE_DEFAULT = "1000";
 
     /** Scroll limit */
     String ES_SCROLL_LIMIT = "es.scroll.limit";

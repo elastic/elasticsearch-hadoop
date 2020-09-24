@@ -496,7 +496,6 @@ Whether the connector is used against an {es} instance in a cloud/restricted env
 Note that in this mode, performance is _highly_  affected.
 
 added[2.2]
-[float]
 `es.nodes.resolve.hostname` (default depends)::
 Whether the connector should resolve the nodes hostnames to IP addresses or not. By default it is +true+ unless +wan+ mode is enabled (see above) in which case it will default to false.
 
@@ -511,8 +510,8 @@ available {es} node (based on the declaration of `es.nodes`, followed by the dis
 `es.scroll.keepalive` (default 10m)::
 The maximum duration of result scrolls between query requests.
 
-`es.scroll.size` (default 50)::
-Number of results/items returned by each individual per request.
+`es.scroll.size` (default 1000)::
+Number of results/items/documents returned per scroll request on each executor/worker/task.
 
 added[2.2]
 `es.scroll.limit` (default -1)::

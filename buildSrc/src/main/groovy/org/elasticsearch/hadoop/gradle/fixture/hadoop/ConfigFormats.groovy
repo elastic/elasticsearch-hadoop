@@ -19,11 +19,13 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 class ConfigFormats {
 
     static Closure<String> hadoopXML() {
-        return { Map conf ->
-            String props = conf.collect { key, value ->
+        return { FileSettings conf ->
+            String props = conf.resolve().collect { key, value ->
                 "<property>\n\t\t<name>${key}</name>\n\t\t<value>${value}</value>\n\t</property>"
             }.join("\n\t")
             return "<configuration>\n\t${props}\n</configuration>"
@@ -31,16 +33,16 @@ class ConfigFormats {
     }
 
     static Closure<String> propertyFile() {
-        return { Map conf ->
-            conf.collect { key, value ->
+        return { FileSettings conf ->
+            conf.resolve().collect { key, value ->
                 "${key}=${value}"
             }.join("\n")
         }
     }
 
     static Closure<String> whiteSpaced() {
-        return { Map conf ->
-            conf.collect { key, value ->
+        return { FileSettings conf ->
+            conf.resolve().collect { key, value ->
                 "${key}   ${value}"
             }.join("\n")
         }

@@ -46,6 +46,9 @@ class ScalaVariantPlugin implements Plugin<Project> {
                     properties.put('localRepo', 'true')
                 }
 
+                Map<String, String> systemProperties = new HashMap<>()
+                systemProperties.put('build.snapshot', System.getProperty('build.snapshot', 'true'))
+
                 if (OperatingSystem.current().isWindows()) {
                     crossBuildForVariant.executable('gradlew.bat')
                 } else {
@@ -54,6 +57,7 @@ class ScalaVariantPlugin implements Plugin<Project> {
 
                 crossBuildForVariant.args(distribution.getPath())
                 crossBuildForVariant.args(properties.collect { key, val -> "-P${key}=${val}" })
+                crossBuildForVariant.args(systemProperties.collect { key, val -> "-D${key}=${val}" })
                 crossBuildForVariant.args('-S')
                 if (project.logger.isDebugEnabled()) {
                     crossBuildForVariant.args('--debug')

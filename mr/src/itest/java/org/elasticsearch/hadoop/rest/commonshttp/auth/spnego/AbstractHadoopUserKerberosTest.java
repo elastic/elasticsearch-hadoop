@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.mr.security.HadoopUser;
+import org.elasticsearch.hadoop.security.UgiUtil;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;

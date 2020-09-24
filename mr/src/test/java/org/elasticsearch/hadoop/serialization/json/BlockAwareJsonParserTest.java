@@ -176,4 +176,34 @@ public class BlockAwareJsonParserTest {
         blockParser.exitBlock();
         assertThat(parser.currentToken(), nullValue());
     }
+
+    /**
+     * We increment the level of nesting in the parser when getting the next token. If that token starts an array or object,
+     * the "open" counter is incremented. If we then call `skipChildren` instead of iterating to the end of the object, make
+     * sure that the open counter is decremented.
+     */
+    @Test
+    public void testExitBlockAfterSkippingChildren() {
+        String data = "{\"nested\":{\"array\":[\"test\"],\"scalar\":1}}";
+        //                         ^          !        |-------------^
+        // ! = skipChildren
+        Parser parser = new JacksonJsonParser(data.getBytes(Charset.defaultCharset()));
+        assertThat(parser.nextToken(), equalTo(Parser.Token.START_OBJECT));
+        assertThat(parser.nextToken(), equalTo(Parser.Token.FIELD_NAME));
+        assertThat(parser.text(), equalTo("nested"));
+        assertThat(parser.nextToken(), equalTo(Parser.Token.START_OBJECT));
+        BlockAwareJsonParser blockAwareJsonParser = new BlockAwareJsonParser(parser);
+        assertThat(blockAwareJsonParser.getLevel(), equalTo(1));
+        assertThat(blockAwareJsonParser.nextToken(), equalTo(Parser.Token.FIELD_NAME));
+        assertThat(blockAwareJsonParser.text(), equalTo("array"));
+        assertThat(blockAwareJsonParser.nextToken(), equalTo(Parser.Token.START_ARRAY));
+        assertThat(blockAwareJsonParser.getLevel(), equalTo(2));
+        blockAwareJsonParser.skipChildren();
+        assertThat(blockAwareJsonParser.currentToken(), equalTo(Parser.Token.END_ARRAY));
+        assertThat(blockAwareJsonParser.getLevel(), equalTo(1));
+        blockAwareJsonParser.exitBlock();
+        assertThat(parser.currentToken(), equalTo(Parser.Token.END_OBJECT));
+        assertThat(parser.nextToken(), equalTo(Parser.Token.END_OBJECT));
+        assertThat(parser.nextToken(), nullValue());
+    }
 }

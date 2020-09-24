@@ -19,6 +19,7 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -38,7 +39,7 @@ abstract class ProcessConfiguration {
         this.project = project
     }
 
-    private final Project project
+    protected final Project project
     private Map<String, String> systemProperties = new HashMap<>()
     private Map<String, String> environmentVariables = new HashMap<>()
     private SettingsContainer settingsContainer = new SettingsContainer()
@@ -46,8 +47,10 @@ abstract class ProcessConfiguration {
     private LinkedHashMap<String, Object[]> setupCommands = new LinkedHashMap<>()
     private List<Object> dependencies = new ArrayList<>()
     private List<Task> clusterTasks = new ArrayList<>()
+    private String javaHome = null
     private String jvmArgs = ''
     private boolean debug = false
+    private ElasticsearchCluster elasticsearchCluster = null
 
     void addSystemProperty(String key, String value) {
         systemProperties.put(key, value)
@@ -77,7 +80,7 @@ abstract class ProcessConfiguration {
         return combined
     }
 
-    void addSetting(String key, String value) {
+    void addSetting(String key, Object value) {
         settingsContainer.addSetting(key, value)
     }
 
@@ -145,6 +148,23 @@ abstract class ProcessConfiguration {
         return combined
     }
 
+    void setJavaHome(String javaHome) {
+        this.javaHome = javaHome
+    }
+
+    String getJavaHome() {
+        if (this.javaHome != null) {
+            return this.javaHome
+        } else {
+            ProcessConfiguration parent = parent()
+            if (parent != null) {
+                return parent.getJavaHome()
+            } else {
+                return null
+            }
+        }
+    }
+
     void setJvmArgs(String jvmArgs) {
         this.jvmArgs = jvmArgs
     }
@@ -176,6 +196,23 @@ abstract class ProcessConfiguration {
         }
         // No parent, return value (which should be false)
         return debug
+    }
+
+    void useElasticsearchCluster(ElasticsearchCluster elasticsearchCluster) {
+        this.elasticsearchCluster = elasticsearchCluster
+    }
+
+    ElasticsearchCluster getElasticsearchCluster() {
+        if (this.elasticsearchCluster != null) {
+            return this.elasticsearchCluster
+        } else {
+            ProcessConfiguration parent = parent()
+            if (parent != null) {
+                return parent.getElasticsearchCluster()
+            } else {
+                return null
+            }
+        }
     }
 
     Task createClusterTask(Map<String, ?> options) throws InvalidUserDataException {

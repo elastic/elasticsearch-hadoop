@@ -45,7 +45,6 @@ import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
@@ -70,13 +69,13 @@ import org.junit.runners.MethodSorters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
-
-import org.apache.commons.logging.impl.NoOpLog
 import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.apache.spark.sql.types.DoubleType
-import org.elasticsearch.hadoop.mr.EsAssume
-import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.elasticsearch.hadoop.EsAssume
+import org.elasticsearch.hadoop.TestData
+import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
+import org.junit.ClassRule
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -89,6 +88,8 @@ object AbstractScalaEsScalaSparkSQL {
 
   @transient var keywordType: String = "keyword"
   @transient var textType: String = "text"
+
+  @transient @ClassRule val testData = new TestData()
 
   @BeforeClass
   def setup() {
@@ -201,7 +202,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
                 "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
   val version = TestUtils.getEsClusterInfo.getMajorVersion
-  val datInput = TestUtils.sampleArtistsDat()
+  val datInput = AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri().toString
   val keyword = AbstractScalaEsScalaSparkSQL.keywordType
   val text = AbstractScalaEsScalaSparkSQL.textType
 
@@ -997,11 +998,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_starts_with")
     var filter = df.filter(df("airport").startsWith("O"))
 
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
-
     if (!keepHandledFilters) {
       // term query pick field with multi values
       assertEquals(2, filter.count())
@@ -1017,11 +1013,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown10EndsWith() {
     val df = esDataSource("pd_ends_with")
     var filter = df.filter(df("airport").endsWith("O"))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     if (!keepHandledFilters) {
       // term query pick field with multi values
@@ -1046,11 +1037,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown12And() {
     val df = esDataSource("pd_and")
     var filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
-
-    if (strictPushDown) {
-      assertEquals(0, filter.count())
-      return
-    }
 
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))

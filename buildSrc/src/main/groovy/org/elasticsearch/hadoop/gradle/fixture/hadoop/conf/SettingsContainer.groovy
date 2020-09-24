@@ -19,28 +19,51 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
+
 /**
  * Performs organization and addition of settings for a collection of settings files
  */
 class SettingsContainer {
 
     static class FileSettings {
-        private Map<String, String> settings = [:]
+        private Map<String, Object> settings
 
-        void addSetting(String key, String value) {
+        FileSettings() {
+            this([:])
+        }
+
+        FileSettings(Map<String, Object> settings) {
+            this.settings = settings
+        }
+
+        void addSetting(String key, Object value) {
             settings.put(key, value)
         }
 
-        void settings(Map<String, String> values) {
+        void settings(Map<String, Object> values) {
             settings.putAll(values)
         }
 
-        Map<String, String> getSettings() {
-            return settings
+        void putIfAbsent(String key, Object value) {
+            settings.putIfAbsent(key, value)
+        }
+
+        Map<String, String> resolve() {
+            return settings.collectEntries { String k, Object v -> [(k): unapplyString(v)]} as Map<String, String>
+        }
+
+        String get(String key) {
+            Object value = settings.get(key)
+            return unapplyString(value)
+        }
+
+        String getOrDefault(String key, Object value) {
+            return unapplyString(settings.getOrDefault(key, value))
         }
     }
 
-    private Map<String, String> globalSettings
+    private Map<String, Object> globalSettings
     private Map<String, FileSettings> settingsFiles
 
     SettingsContainer() {
@@ -48,11 +71,11 @@ class SettingsContainer {
         this.settingsFiles = [:]
     }
 
-    void addSetting(String key, String value) {
+    void addSetting(String key, Object value) {
         globalSettings.put(key, value)
     }
 
-    Map<String, String> getSettings() {
+    Map<String, Object> getSettings() {
         return globalSettings
     }
 
@@ -70,13 +93,13 @@ class SettingsContainer {
         }
     }
 
-    Map<String, String> flattenFile(String filename) {
-        Map<String, String> flattened = [:]
+    FileSettings flattenFile(String filename) {
+        Map<String, Object> flattened = [:]
         flattened.putAll(globalSettings)
         FileSettings fileSettings = settingsFiles.get(filename)
         if (fileSettings != null) {
-            flattened.putAll(fileSettings.getSettings())
+            flattened.putAll(fileSettings.settings)
         }
-        return flattened
+        return new FileSettings(flattened)
     }
 }

@@ -29,7 +29,9 @@ import java.{util => ju}
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
+import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
@@ -40,11 +42,10 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_JOIN
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
-import org.elasticsearch.hadoop.mr.EsAssume
-import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestUtils.resource
 import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
-import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
+import org.elasticsearch.hadoop.rest.RestUtils
+import org.elasticsearch.hadoop.rest.RestUtils.ExtendedRestClient
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.hadoop.util.StringUtils
@@ -73,6 +74,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Assume.assumeNoException
 import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -88,6 +90,8 @@ object AbstractScalaEsScalaSpark {
               .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
+
+  @ClassRule @transient val testData = new TestData()
 
   @BeforeClass
   def setup() {
@@ -143,8 +147,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   
   @Test
   def testBasicRead() {
-    val input = TestUtils.sampleArtistsDatUri()
-    val data = readAsRDD(input).cache();
+    val input = AbstractScalaEsScalaSpark.testData.sampleArtistsDatUri()
+    val data = readAsRDD(input).cache()
 
     assertTrue(data.count > 300)
   }
@@ -804,10 +808,16 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val typename = "alias"
     val target = resource(index, typename, version)
 
+    val indexPattern = "spark-template-*"
+    val patternMatchField = if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+      s""""index_patterns":["$indexPattern"],"""
+    } else {
+      s""""template": "$indexPattern","""
+    }
 
     val template = s"""
         |{
-        |"template" : "spark-template-*",
+        |$patternMatchField
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
@@ -823,7 +833,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         |}""".stripMargin
     RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
 
-    val rdd = readAsRDD(TestUtils.sampleArtistsJsonUri())
+    val rdd = readAsRDD(AbstractScalaEsScalaSpark.testData.sampleArtistsJsonUri())
     EsSpark.saveJsonToEs(rdd, target)
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)

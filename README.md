@@ -19,14 +19,14 @@ ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
 
 ## Installation
 
-### Stable Release (currently `7.4.1`)
+### Stable Release (currently `7.9.2`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>7.4.1</version>
+  <version>7.9.2</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -52,7 +52,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 </repositories>
 ```
 
-or [build](#building-the-source) the project yourself. 
+or [build](#building-the-source) the project yourself.
 
 We do build and test the code on _each_ commit.
 
@@ -75,7 +75,7 @@ The latest reference documentation is available online on the project [home page
 ### Configuration Properties
 
 All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
-The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used. 
+The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used.
 
 ### Required
 ```
@@ -105,7 +105,7 @@ To read data from ES, configure the `EsInputFormat` on your job configuration al
 ```java
 JobConf conf = new JobConf();
 conf.setInputFormat(EsInputFormat.class);
-conf.set("es.resource", "radio/artists"); 
+conf.set("es.resource", "radio/artists");
 conf.set("es.query", "?q=me*");             // replace this with the relevant query
 ...
 JobClient.runJob(conf);
@@ -124,7 +124,7 @@ JobClient.runJob(conf);
 ### Reading
 ```java
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists"); 
+conf.set("es.resource", "radio/artists");
 conf.set("es.query", "?q=me*");             // replace this with the relevant query
 Job job = new Job(conf)
 job.setInputFormatClass(EsInputFormat.class);
@@ -178,7 +178,7 @@ TBLPROPERTIES('es.resource' = 'radio/artists');
 
 Any data passed to the table is then passed down to Elasticsearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to Elasticsearch like this:
 ```SQL
-INSERT OVERWRITE TABLE artists 
+INSERT OVERWRITE TABLE artists
     SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
 ```
 
@@ -243,10 +243,10 @@ val playlist = df.filter(df("category").equalTo("pikes").and(df("year").geq(2016
 Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on your `RDD`s:
 
 ```scala
-import org.elasticsearch.spark._        
+import org.elasticsearch.spark._
 
 val conf = ...
-val sc = new SparkContext(conf)         
+val sc = new SparkContext(conf)
 
 val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
 val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
@@ -271,11 +271,11 @@ In a Java environment, use the `org.elasticsearch.spark.rdd.java.api` package, i
 To read data from ES, create a dedicated `RDD` and specify the query as an argument.
 
 ```java
-import org.apache.spark.api.java.JavaSparkContext;   
-import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
+import org.apache.spark.api.java.JavaSparkContext;
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf);   
+JavaSparkContext jsc = new JavaSparkContext(conf);
 
 JavaPairRDD<String, Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
 ```
@@ -292,15 +292,15 @@ DataFrame playlist = df.filter(df.col("category").equalTo("pikes").and(df.col("y
 
 Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
 ```java
-import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf); 
+JavaSparkContext jsc = new JavaSparkContext(conf);
 
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
-JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports)); 
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports));
 JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 ```
 
@@ -319,7 +319,7 @@ ES-Hadoop provides native integration with Storm: for reading a dedicated `Spout
 ### Reading
 To read data from ES, use `EsSpout`:
 ```java
-import org.elasticsearch.storm.EsSpout; 
+import org.elasticsearch.storm.EsSpout;
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("es-spout", new EsSpout("storm/docs", "?q=me*"), 5);
@@ -330,7 +330,7 @@ builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
 To index data to ES, use `EsBolt`:
 
 ```java
-import org.elasticsearch.storm.EsBolt; 
+import org.elasticsearch.storm.EsBolt;
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("spout", new RandomSentenceSpout(), 10);

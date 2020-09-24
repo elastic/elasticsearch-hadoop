@@ -47,11 +47,10 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
     private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HADOOP, HIVE, PIG, SPARK]
                     .collectEntries { [(it.id()): it] }
 
-    private static final ProcessConfiguration END = new EndProcessConfiguration()
-
     private final Project project
     private final String name
     private final List<Task> clusterTasks
+    private final ProcessConfiguration defaultConfiguration
     private final Map<String, ServiceConfiguration> serviceConfigurations
     private final List<ServiceConfiguration> serviceCreationOrder
 
@@ -60,6 +59,7 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
         this.project = project
         this.name = name
         this.clusterTasks = []
+        this.defaultConfiguration = new EndProcessConfiguration(project)
         this.serviceConfigurations = [:]
         this.serviceCreationOrder = []
     }
@@ -126,6 +126,6 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
 
     @Override
     protected ProcessConfiguration parent() {
-        return END
+        return defaultConfiguration
     }
 }

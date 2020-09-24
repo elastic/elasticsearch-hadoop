@@ -53,7 +53,7 @@ import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.SessionHandle;
 import org.apache.hive.service.server.HiveServer2;
 import org.elasticsearch.hadoop.HdpBootstrap;
-import org.elasticsearch.hadoop.mr.NTFSLocalFileSystem;
+import org.elasticsearch.hadoop.fs.NTFSLocalFileSystem;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;

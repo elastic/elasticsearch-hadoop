@@ -26,7 +26,6 @@ CREATE EXTERNAL TABLE IF NOT EXISTS es_artist_data (
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES(
   'es.resource' = 'qa_kerberos_hive_data',
-  'es.nodes' = 'localhost:9500',
   'es.security.authentication' = 'kerberos',
   'es.net.spnego.auth.elasticsearch.principal' = 'HTTP/build.elastic.co@BUILD.ELASTIC.CO'
 );

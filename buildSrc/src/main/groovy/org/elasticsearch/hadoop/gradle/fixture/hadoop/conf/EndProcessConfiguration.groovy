@@ -19,6 +19,9 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
+import org.gradle.api.Project
+
 /**
  * Provides defaults and can be slotted in as the last parent configuration in a chain.
  *
@@ -29,8 +32,8 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
  */
 class EndProcessConfiguration extends ProcessConfiguration {
 
-    EndProcessConfiguration() {
-        super(null)
+    EndProcessConfiguration(Project project) {
+        super(project)
     }
 
     @Override
@@ -69,6 +72,11 @@ class EndProcessConfiguration extends ProcessConfiguration {
     }
 
     @Override
+    String getJavaHome() {
+        return project.runtimeJavaHome
+    }
+
+    @Override
     String getJvmArgs() {
         return ""
     }
@@ -76,5 +84,10 @@ class EndProcessConfiguration extends ProcessConfiguration {
     @Override
     boolean getDebug() {
         return false
+    }
+
+    @Override
+    ElasticsearchCluster getElasticsearchCluster() {
+        return null
     }
 }

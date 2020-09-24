@@ -26,11 +26,11 @@ import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.scheduler.{StreamingListenerOutputOperationCompleted, _}
 import org.apache.spark.streaming.{Seconds, StreamingContext, StreamingContextState}
 import org.apache.spark.{SparkConf, SparkContext, SparkException}
+import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.mr.EsAssume
-import org.elasticsearch.hadoop.mr.RestUtils
+import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.util.TestUtils.resource
 import org.elasticsearch.hadoop.util.TestUtils.docEndpoint

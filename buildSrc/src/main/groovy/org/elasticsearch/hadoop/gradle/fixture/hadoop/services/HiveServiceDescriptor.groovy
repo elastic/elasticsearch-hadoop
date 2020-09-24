@@ -26,16 +26,10 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
-import org.gradle.api.GradleException
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 class HiveServiceDescriptor implements ServiceDescriptor {
-
-    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
-    static {
-        VERSION_MAP.put(new Version(1, 2, 2),
-                ['SHA-256' : '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1'])
-    }
 
     static RoleDescriptor HIVESERVER = RoleDescriptor.requiredProcess('hiveserver')
 
@@ -65,12 +59,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        Version version = configuration.getVersion()
-        task.packagePath = 'hive'
-        task.packageName = 'hive'
-        task.artifactFileName = "apache-hive-${version}-bin.tar.gz"
-        task.version = "${version}"
+    String getDependencyCoordinates(ServiceConfiguration configuration) {
+        return "hive:hive-${configuration.getVersion()}:${artifactName(configuration)}@tar.gz"
     }
 
     @Override
@@ -82,15 +72,6 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     String artifactName(ServiceConfiguration configuration) {
         Version version = configuration.getVersion()
         return "apache-hive-${version}-bin"
-    }
-
-    @Override
-    Map<String, String> packageHashVerification(Version version) {
-        Map<String, String> hashVerifications = VERSION_MAP.get(version)
-        if (hashVerifications == null) {
-            throw new GradleException("Unsupported version [$version] - No download hash configured")
-        }
-        return hashVerifications
     }
 
     @Override
@@ -114,8 +95,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
-        Map<String, String> hiveSite = configuration.getSettingsContainer().flattenFile('hive-site.xml')
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
+        FileSettings hiveSite = configuration.getSettingsContainer().flattenFile('hive-site.xml')
         return ['hive-site.xml' : hiveSite]
     }
 
@@ -125,7 +106,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (HIVESERVER.equals(configuration.roleDescriptor)) {
             return null
         }

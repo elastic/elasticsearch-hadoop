@@ -26,12 +26,30 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 class HiveBeeline extends AbstractClusterTask {
 
     File script
     List<File> libJars = []
     String hivePrincipal
-    Map<String, String> env = [:]
+
+    void libJars(File... files) {
+        libJars.addAll(files)
+    }
+
+    @Override
+    InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration) {
+        return clusterConfiguration
+                .service(HadoopClusterConfiguration.HIVE)
+                .role(HiveServiceDescriptor.HIVESERVER)
+                .instance(0)
+    }
+
+    @Override
+    Map<String, String> taskEnvironmentVariables() {
+        return [:]
+    }
 
     @TaskAction
     void runBeeline() {
@@ -41,10 +59,7 @@ class HiveBeeline extends AbstractClusterTask {
         }
 
         // Gateway conf
-        InstanceConfiguration hiveServer = clusterConfiguration
-                .service(HadoopClusterConfiguration.HIVE)
-                .role(HiveServiceDescriptor.HIVESERVER)
-                .instance(0)
+        InstanceConfiguration hiveServer = getInstance()
 
         File baseDir = hiveServer.getBaseDir()
         File homeDir = new File(baseDir, hiveServer.getServiceDescriptor().homeDirName(hiveServer))
@@ -63,10 +78,7 @@ class HiveBeeline extends AbstractClusterTask {
             commandLine.addAll(['-f', finalScript.toString()])
         }
 
-        // Use the service descriptor to pick up HADOOP_HOME=<hadoopHome>
-        Map<String, String> environment = hiveServer.getEnvironmentVariables()
-        hiveServer.getServiceDescriptor().finalizeEnv(environment, hiveServer)
-        environment.putAll(env)
+        Map<String, String> environment = collectEnvVars()
 
         project.logger.info("Using Environment: $environment")
         project.exec { ExecSpec spec ->
@@ -76,7 +88,7 @@ class HiveBeeline extends AbstractClusterTask {
     }
 
     static String getConnectionString(InstanceConfiguration hiveServer, String hivePrincipal) {
-        Map<String, String> hiveconf = hiveServer
+        FileSettings hiveconf = hiveServer
                 .getServiceDescriptor()
                 .collectConfigFilesContents(hiveServer)
                 .get('hive-site.xml')

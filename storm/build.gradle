@@ -5,41 +5,44 @@ description = "Elasticsearch Storm"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
-dependencies {
-    provided(project(":elasticsearch-hadoop-mr"))
-    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
+configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
+}
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+dependencies {
+    embedded(project(":elasticsearch-hadoop-mr"))
+
+    api("org.apache.storm:storm-core:$stormVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("commons-codec:commons-codec:1.4")
+
+    testImplementation(project(":test:shared"))
+
+    itestImplementation(project(":test:shared"))
+    itestImplementation("com.google.guava:guava:16.0.1")
+    itestImplementation("com.twitter:carbonite:1.4.0")
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
 }
-
-javadoc {
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
-}
-
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
-}
-
-dependencies {
-    provided("org.apache.storm:storm-core:$stormVersion") {
-        exclude module: "log4j-slf4j-impl"
-    }
-
-    itestCompile "com.google.guava:guava:16.0.1"
-    itestRuntime "com.twitter:carbonite:1.4.0"
-}
-
-// add itest to Eclipse
-//eclipse.classpath.plusConfigurations += [configurations.itestCompile]
 
 tasks.getByName('integrationTest').enabled = false

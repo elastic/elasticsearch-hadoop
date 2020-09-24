@@ -26,16 +26,10 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
-import org.gradle.api.GradleException
+
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 class PigServiceDescriptor implements ServiceDescriptor {
-
-    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
-    static {
-        VERSION_MAP.put(new Version(0, 17, 0),
-                ['MD5': 'da76998409fe88717b970b45678e00d4'])
-    }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('pig', [])
 
@@ -65,11 +59,8 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        task.setPackagePath('pig')
-        task.setPackageName('pig')
-        task.setVersion(configuration.getVersion().toString())
-        task.setArtifactFileName("${artifactName(configuration)}.tar.gz")
+    String getDependencyCoordinates(ServiceConfiguration configuration) {
+        return "pig:pig-${configuration.getVersion()}:${artifactName(configuration)}@tar.gz"
     }
 
     @Override
@@ -80,15 +71,6 @@ class PigServiceDescriptor implements ServiceDescriptor {
     @Override
     String artifactName(ServiceConfiguration configuration) {
         return "pig-${configuration.getVersion()}"
-    }
-
-    @Override
-    Map<String, String> packageHashVerification(Version version) {
-        Map<String, String> hashVerifications = VERSION_MAP.get(version)
-        if (hashVerifications == null) {
-            throw new GradleException("Unsupported version [$version] - No download hash configured")
-        }
-        return hashVerifications
     }
 
     @Override
@@ -112,7 +94,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
         return ['pig.properties' : configuration.getSettingsContainer().flattenFile('pig.properties')]
     }
 
@@ -122,7 +104,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (GATEWAY.equals(configuration.roleDescriptor)) {
             return null
         }

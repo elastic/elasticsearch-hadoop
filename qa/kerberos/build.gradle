@@ -17,12 +17,11 @@
  * under the License.
  */
 
-
 import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopFixturePlugin
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
@@ -34,6 +33,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
 apply plugin: 'es.hadoop.build'
 apply plugin: 'scala'
+apply plugin: HadoopFixturePlugin
 
 configurations {
     kdcFixture
@@ -47,23 +47,39 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
 
-dependencies {
-    compile project(":elasticsearch-hadoop-mr")
-    compile project(":elasticsearch-storm")
+// Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be 
+// used in other projects instead of requiring a jar operation to happen. Kerberos depends on the spark integration to 
+// compile some code, but due to how the current spark compilation works it's likely that the classes directory in the 
+// spark projects do not exist anymore when the kerberos compilation happens during a distribution build.
+// TODO: Clean this up when we get to variants, they should persist their classes dirs in a sane way
+configurations {
+    compileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+}
 
-    compile 'org.scala-lang:scala-library:2.12.10'
-    compile project(":elasticsearch-spark-20")
+dependencies {
+    implementation(project(":elasticsearch-hadoop-mr"))
+    implementation(project(":elasticsearch-storm"))
+
+    implementation('org.scala-lang:scala-library:2.12.10')    
+    implementation('org.scala-lang:scala-reflect:2.12.10')
+    implementation(project(":elasticsearch-spark-20"))
     
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
     compileOnly("org.slf4j:slf4j-api:1.7.6")
 
-    compile("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
-    compile("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
+    implementation("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
+    implementation("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
 
-    compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
-    compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
+    implementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    implementation(project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath)
 
     kdcFixture project(':test:fixtures:minikdc')
 
@@ -97,8 +113,8 @@ if (disableTests) {
     
     // Build uber storm jar for testing Storm remotely (es-hadoop + es-storm + qa tests)
     Jar qaKerberosStormJar = project.tasks.create('kerberosStormJar', Jar)
-    qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('jar'))
-    qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('hadoopTestingJar'))
+    qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('jar'))
+    qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('itestJar'))
     qaKerberosStormJar.classifier = 'storm-testing'
     
     // Add projects to the storm testing uber-jar
@@ -150,7 +166,7 @@ if (disableTests) {
     // Configure MiniKDC
     AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
         dependsOn project.configurations.kdcFixture
-        executable = new File(project.compilerJavaHome, 'bin/java')
+        executable = new File(project.runtimeJavaHome, 'bin/java')
         env 'CLASSPATH', "${ -> project.configurations.kdcFixture.asPath }"
         waitCondition = { fixture, ant ->
             // the kdc wrapper writes the ports file when
@@ -217,7 +233,8 @@ if (disableTests) {
 
         extraConfigFile('es.keytab', esKeytab.toFile())
     }
-    
+    def esAddress = "${-> testClusters.integTest.getAllHttpSocketURI().get(0)}"
+
     // Configure Integration Test Task
     Test integrationTest = project.tasks.findByName('integrationTest') as Test
     integrationTest.dependsOn(kdcFixture)
@@ -231,8 +248,14 @@ if (disableTests) {
     
     // Fixtures will be depending on the jar and test jar artifacts
     def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
-    def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-    
+    def kerberosItestJar = project.tasks.findByName('itestJar') as Jar
+    def mrJar = project(':elasticsearch-hadoop-mr').tasks.getByName('jar') as Jar
+    def mrItestJar = project(':elasticsearch-hadoop-mr').tasks.getByName('itestJar') as Jar
+    def hiveItestJar = project(':elasticsearch-hadoop-hive').tasks.getByName('itestJar') as Jar
+    def pigItestJar = project(':elasticsearch-hadoop-pig').tasks.getByName('itestJar') as Jar
+    def sparkItestJar = project(':elasticsearch-spark-20').tasks.getByName('itestJar') as Jar
+    def stormItestJar = project(':elasticsearch-storm').tasks.getByName('itestJar') as Jar
+
     // Need these for SSL items, test data, and scripts
     File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
     File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
@@ -241,9 +264,10 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         doLast {
             project.javaexec {
+                executable = project.runtimeJavaHome.toString() + "/bin/java"
                 main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
                 classpath = sourceSets.main.runtimeClasspath
-                systemProperty('es.nodes', 'localhost:9500')
+                systemProperty('es.nodes', esAddress)
                 systemProperty('es.net.http.auth.user', 'test_admin')
                 systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
                 systemProperty('principals', "$clientPrincipal$realm")
@@ -259,101 +283,109 @@ if (disableTests) {
     // =============================================================================
     
     // Project instance available implicitly
-    String prefix = "hadoopFixture"
-    HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
-    
-    // Hadoop cluster depends on KDC Fixture being up and running
-    config.addDependency(kdcFixture)
-    
-    config.service('hadoop') { ServiceConfiguration s ->
-        s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
-        // Core Site Config
-        s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
-            // Enable Security
-            f.addSetting("hadoop.security.authentication", "kerberos")
-            f.addSetting("hadoop.security.authorization", "true")
-            f.addSetting("hadoop.rpc.protection", "authentication")
-            f.addSetting("hadoop.ssl.require.client.cert", "false")
-            f.addSetting("hadoop.ssl.hostname.verifier", "DEFAULT")
-            f.addSetting("hadoop.ssl.keystores.factory.class", "org.apache.hadoop.security.ssl.FileBasedKeyStoresFactory")
-            f.addSetting("hadoop.ssl.server.conf", "ssl-server.xml")
-            f.addSetting("hadoop.ssl.client.conf", "ssl-client.xml")
-            f.addSetting("hadoop.proxyuser.hive.hosts", "*")
-            f.addSetting("hadoop.proxyuser.hive.groups", "*")
-    
-            // Add ES Security settings here because without them Spark will not obtain tokens
-            f.addSetting('es.security.authentication', 'kerberos')
-            f.addSetting('es.net.spnego.auth.elasticsearch.principal', "${esPrincipal}${realm}")
-        }
-        // SSL Server Config
-        s.settingsFile('ssl-server.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("ssl.server.keystore.type", "jks")
-            f.addSetting("ssl.server.keystore.location", "${resourceDir.getAbsolutePath()}/ssl/server.jks")
-            f.addSetting("ssl.server.keystore.password", "bigdata")
-            f.addSetting("ssl.server.keystore.keypassword", "bigdata")
-        }
-        // HDFS Site Config
-        s.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("dfs.http.policy", "HTTPS_ONLY")
-            f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co$realm")
-            f.addSetting("dfs.web.authentication.kerberos.keytab", "$hadoopKeytab")
-            f.addSetting("dfs.block.access.token.enable", "true")
-            f.addSetting("dfs.namenode.kerberos.principal", "$namenodePrincipal$realm")
-            f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
-            f.addSetting("dfs.datanode.data.dir.perm", "700")
-            f.addSetting("dfs.datanode.kerberos.principal", "$datanodePrincipal$realm")
-            f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.encrypt.data.transfer", "false")
-            f.addSetting("dfs.data.transfer.protection", "authentication")
-        }
-        // Yarn Site Config
-        s.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
-            f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
-            f.addSetting("yarn.nodemanager.principal", "$nodeManagerPrincipal$realm")
-            f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
-        }
-        // Mapred Site Config
-        s.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("mapreduce.framework.name", "yarn")
-            f.addSetting("mapreduce.shuffle.ssl.enabled", "false")
-            f.addSetting("mapreduce.jobhistory.principal", "$historyServerPrincipal$realm")
-            f.addSetting("mapreduce.jobhistory.keytab", "$hadoopKeytab")
-            f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
-        }
-    
-        // Add the ES-Hadoop jar to the resource manager classpath so that it can load the token renewer implementation
-        // for ES tokens. Otherwise, tokens may not be cancelled at the end of the job.
-        s.role('resourcemanager') { RoleConfiguration r ->
-            r.addEnvironmentVariable('YARN_USER_CLASSPATH', testingJar.archivePath.toString())
-            r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
-                // Add settings specifically for ES Node to allow for cancelling the tokens
-                f.addSetting('es.nodes', 'localhost:9500')
+    HadoopClusterConfiguration config = project.hadoop.cluster("hadoopFixture") { HadoopClusterConfiguration config ->
+        // Hadoop cluster depends on KDC Fixture being up and running
+        config.addDependency(kdcFixture)
+        config.useElasticsearchCluster(testClusters.integTest)
+
+        config.service('hadoop') { ServiceConfiguration s ->
+            s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+            // Core Site Config
+            s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
+                // Enable Security
+                f.addSetting("hadoop.security.authentication", "kerberos")
+                f.addSetting("hadoop.security.authorization", "true")
+                f.addSetting("hadoop.rpc.protection", "authentication")
+                f.addSetting("hadoop.ssl.require.client.cert", "false")
+                f.addSetting("hadoop.ssl.hostname.verifier", "DEFAULT")
+                f.addSetting("hadoop.ssl.keystores.factory.class", "org.apache.hadoop.security.ssl.FileBasedKeyStoresFactory")
+                f.addSetting("hadoop.ssl.server.conf", "ssl-server.xml")
+                f.addSetting("hadoop.ssl.client.conf", "ssl-client.xml")
+                f.addSetting("hadoop.proxyuser.hive.hosts", "*")
+                f.addSetting("hadoop.proxyuser.hive.groups", "*")
+
+                // Add ES Security settings here because without them Spark will not obtain tokens
+                f.addSetting('es.security.authentication', 'kerberos')
+                f.addSetting('es.net.spnego.auth.elasticsearch.principal', "${esPrincipal}${realm}")
+            }
+            // SSL Server Config
+            s.settingsFile('ssl-server.xml') { SettingsContainer.FileSettings f ->
+                f.addSetting("ssl.server.keystore.type", "jks")
+                f.addSetting("ssl.server.keystore.location", "${resourceDir.getAbsolutePath()}/ssl/server.jks")
+                f.addSetting("ssl.server.keystore.password", "bigdata")
+                f.addSetting("ssl.server.keystore.keypassword", "bigdata")
+            }
+            // HDFS Site Config
+            s.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+                f.addSetting("dfs.http.policy", "HTTPS_ONLY")
+                f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co$realm")
+                f.addSetting("dfs.web.authentication.kerberos.keytab", "$hadoopKeytab")
+                f.addSetting("dfs.block.access.token.enable", "true")
+                f.addSetting("dfs.namenode.kerberos.principal", "$namenodePrincipal$realm")
+                f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
+                f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
+                f.addSetting("dfs.datanode.data.dir.perm", "700")
+                f.addSetting("dfs.datanode.kerberos.principal", "$datanodePrincipal$realm")
+                f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
+                f.addSetting("dfs.encrypt.data.transfer", "false")
+                f.addSetting("dfs.data.transfer.protection", "authentication")
+            }
+            // Yarn Site Config
+            s.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
+                f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
+                f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
+                f.addSetting("yarn.nodemanager.principal", "$nodeManagerPrincipal$realm")
+                f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
+            }
+            // Mapred Site Config
+            s.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
+                f.addSetting("mapreduce.framework.name", "yarn")
+                f.addSetting("mapreduce.shuffle.ssl.enabled", "false")
+                f.addSetting("mapreduce.jobhistory.principal", "$historyServerPrincipal$realm")
+                f.addSetting("mapreduce.jobhistory.keytab", "$hadoopKeytab")
+                f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
+            }
+
+            // Add the ES-Hadoop jar to the resource manager classpath so that it can load the token renewer implementation
+            // for ES tokens. Otherwise, tokens may not be cancelled at the end of the job.
+            s.role('resourcemanager') { RoleConfiguration r ->
+                r.addEnvironmentVariable('YARN_USER_CLASSPATH', testingJar.archivePath.toString())
+                r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
+                    // Add settings specifically for ES Node to allow for cancelling the tokens
+                    f.addSetting('es.nodes', esAddress)
+                }
             }
         }
+        config.service('spark')
+        config.service('hive') { ServiceConfiguration s ->
+            s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+            s.addSetting('hive.server2.authentication', 'kerberos')
+            s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
+            s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
+            //    s.addSetting('hive.server2.logging.operation.level', "VERBOSE")
+            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('es.nodes', esAddress)
+        }
+        config.service('pig') { ServiceConfiguration s ->
+            s.addSetting('java.security.krb5.conf', krb5Conf.toString())
+            s.addSetting('hadoop.security.krb5.principal', "$clientPrincipal$realm")
+            s.addSetting('hadoop.security.krb5.keytab', clientKeytab.toString())
+            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('es.nodes', esAddress)
+        }
+        config.addDependency(jar)
+        config.addDependency(kerberosItestJar)
+        config.addDependency(mrJar)
+        config.addDependency(mrItestJar)
+        config.addDependency(hiveItestJar)
+        config.addDependency(pigItestJar)
+        config.addDependency(sparkItestJar)
+        config.addDependency(stormItestJar)
     }
-    config.service('spark')
-    config.service('hive') { ServiceConfiguration s ->
-        s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
-        s.addSetting('hive.server2.authentication', 'kerberos')
-        s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
-        s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
-    //    s.addSetting('hive.server2.logging.operation.level', "VERBOSE")
-        s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-        s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-        s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-    }
-    config.service('pig') { ServiceConfiguration s ->
-        s.addSetting('java.security.krb5.conf', krb5Conf.toString())
-        s.addSetting('hadoop.security.krb5.principal', "$clientPrincipal$realm")
-        s.addSetting('hadoop.security.krb5.keytab', clientKeytab.toString())
-        s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-        s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-        s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-    }
-    config.addDependency(jar)
-    config.addDependency(testingJar)
 
     // We need to create a tmp directory in hadoop before history server does, because history server will set permissions
     // wrong.
@@ -416,7 +448,6 @@ if (disableTests) {
                 "test.krb5.keytab": clientKeytab.toString(),
                 "java.security.krb5.conf": krb5Conf.toString()
         ])
-        environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
         args = ['-copyFromLocal', project.file(new File(mrItestResourceDir, 'artists.dat')), "/data/artists/artists.dat"]
     }
     
@@ -427,20 +458,21 @@ if (disableTests) {
     // Run the MR job to load data to ES. Ensure Kerberos settings are available.
     HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(copyData, setupUsers)
         jobJar = jar.archivePath
-        libJars.add(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, mrItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
-        jobSettings = [
+        jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
-                'es.nodes': 'localhost:9500',
+                'es.nodes': esAddress,
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'load.field.names': 'number,name,url,picture,@timestamp,tag',
                 'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
-        ]
+        ])
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
                 "test.krb5.keytab": clientKeytab.toString(),
@@ -453,19 +485,20 @@ if (disableTests) {
     // Run the MR job to read data out of ES. Ensure Kerberos settings are available.
     HadoopMRJob mrReadData = config.createClusterTask('mrReadData', HadoopMRJob.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(mrLoadData)
         jobJar = jar.archivePath
-        libJars.add(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, mrItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
-        jobSettings = [
+        jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
-                'es.nodes': 'localhost:9500',
+                'es.nodes': esAddress,
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
-        ]
+        ])
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
                 "test.krb5.keytab": clientKeytab.toString(),
@@ -482,16 +515,17 @@ if (disableTests) {
     // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
     SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(copyData)
     //    deployModeCluster()
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
         jobJar = jar.archivePath
-        libJars.add(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, sparkItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
-                'spark.es.nodes': 'localhost:9500',
+                'spark.es.nodes': esAddress,
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'spark.load.field.names': 'number,name,url,picture,@timestamp,tag',
@@ -499,7 +533,7 @@ if (disableTests) {
                 'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
-        env.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
+        environmentVariables.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                 "-Dtest.krb5.principal=$clientPrincipal$realm " +
                 "-Dtest.krb5.keytab=${clientKeytab.toString()}")
         args = ['/data/artists/artists.dat']
@@ -509,23 +543,24 @@ if (disableTests) {
     // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
     SparkApp sparkReadData = config.createClusterTask('sparkReadData', SparkApp.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(sparkLoadData)
     //    deployModeCluster()
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
         jobJar = jar.archivePath
-        libJars.add(testingJar.archivePath)
+        libJars(kerberosItestJar.archivePath, sparkItestJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
-                'spark.es.nodes': 'localhost:9500',
+                'spark.es.nodes': esAddress,
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'spark.yarn.am.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
-        env.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
+        environmentVariables.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                 "-Dtest.krb5.principal=$clientPrincipal$realm " +
                 "-Dtest.krb5.keytab=${clientKeytab.toString()}")
         args = ['/data/output/spark']
@@ -552,11 +587,12 @@ if (disableTests) {
     
     HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(jar, setupUsers, copyData, patchBeeline)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/load_to_es.sql')
-        libJars.add(testingJar.archivePath)
-        env.putAll([
+        libJars(kerberosItestJar.archivePath, hiveItestJar.archivePath)
+        environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                         "-Dtest.krb5.principal=$clientPrincipal$realm " +
@@ -568,11 +604,12 @@ if (disableTests) {
     
     HiveBeeline hiveReadData = config.createClusterTask('hiveReadData', HiveBeeline.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(hiveLoadData)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/read_from_es.sql')
-        libJars.add(testingJar.archivePath)
-        env.putAll([
+        libJars(kerberosItestJar.archivePath, hiveItestJar.archivePath)
+        environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                                 "-Dtest.krb5.principal=$clientPrincipal$realm " +
@@ -588,23 +625,25 @@ if (disableTests) {
     
     PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(jar, setupUsers, copyData)
         script = new File(resourceDir, 'pig/load_to_es.pig')
-        libJars.add(testingJar.archivePath)
-        env = [
+        libJars(kerberosItestJar.archivePath, pigItestJar.archivePath)
+        environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
-        ]
+        ])
     }
     integrationTest.dependsOn(pigLoadData)
     
     PigScript pigReadData = config.createClusterTask('pigReadData', PigScript.class) {
         clusterConfiguration = config
+        useCluster(testClusters.integTest)
         dependsOn(pigLoadData)
         script = new File(resourceDir, 'pig/read_from_es.pig')
-        libJars.add(testingJar.archivePath)
-        env = [
+        libJars(kerberosItestJar.archivePath, pigItestJar.archivePath)
+        environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
-        ]
+        ])
     }
     integrationTest.dependsOn(pigReadData)
     
@@ -643,7 +682,6 @@ if (disableTests) {
                     "test.krb5.keytab": clientKeytab.toString(),
                     "java.security.krb5.conf": krb5Conf.toString()
             ])
-            environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
             args = ['-copyToLocal', "/data/output/$integrationName", outputDataDir]
         }
         // Integration test needs to depend on copy output tasks
@@ -651,7 +689,4 @@ if (disableTests) {
         // disk
         integrationTest.dependsOn(copyOutputTask)
     }
-    
-    // Finish cluster setup
-    HadoopClusterFormationTasks.setup(project, config)
 }

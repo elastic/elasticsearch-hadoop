@@ -22,13 +22,15 @@ import java.util.Collection;
 
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
-import org.elasticsearch.hadoop.mr.EsAssume;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.EsAssume;
+import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.LazyTempFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -46,9 +48,12 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     private boolean readMetadata;
     private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
+    @ClassRule
+    public static LazyTempFolder tempFolder = new LazyTempFolder();
+
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.params();
+        return new QueryTestParams(tempFolder).params();
     }
 
     private final String query;

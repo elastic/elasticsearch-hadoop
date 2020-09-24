@@ -5,42 +5,46 @@ description = "Elasticsearch Hadoop Hive"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
-dependencies {
-    provided(project(":elasticsearch-hadoop-mr"))
-    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
+configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
+}
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+dependencies {
+    embedded(project(":elasticsearch-hadoop-mr"))
+
+    implementation("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    implementation("org.apache.hive:hive-exec:$hiveVersion")
+    implementation("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+
+    testImplementation(project(":test:shared"))
+
+    itestImplementation(project(":test:shared"))
+    itestImplementation("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    itestImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
-    from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
-    }
-}
-
-javadoc {
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
-}
-
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
-}
-
-dependencies {
-    provided("org.apache.hive:hive-service:$hiveVersion") {
-        exclude module: "log4j-slf4j-impl"
-    }
-    provided("org.apache.hive:hive-exec:$hiveVersion")
-    provided("org.apache.hive:hive-metastore:$hiveVersion")
-
-    itestRuntime("org.apache.hive:hive-service:$hiveVersion") {
-        exclude module: "log4j-slf4j-impl"
-    }
-    itestRuntime("org.apache.hive:hive-jdbc:$hiveVersion") {
-        exclude module: "log4j-slf4j-impl"
     }
 }
