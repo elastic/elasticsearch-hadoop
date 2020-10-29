@@ -9,6 +9,8 @@ This section summarizes the changes in each release.
 [[release-notes-7]]
 ===== 7.x
 
+* <<eshadoop-7.9.3>>
+* <<eshadoop-7.9.2>>
 * <<eshadoop-7.9.1>>
 * <<eshadoop-7.9.0>>
 * <<eshadoop-7.8.1>>
@@ -85,6 +87,8 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/7.9.3.adoc[]
+include::release-notes/7.9.2.adoc[]
 include::release-notes/7.9.1.adoc[]
 include::release-notes/7.9.0.adoc[]
 include::release-notes/7.8.1.adoc[]
