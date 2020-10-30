@@ -30,13 +30,13 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         // Optionally allow user to disable the fixture
         def useFixture = Boolean.parseBoolean(project.findProperty("tests.fixture.es.enable") ?: "true")
 
-        def integrationTestTask = project.tasks.withType(StandaloneRestIntegTestTask)
+        def integrationTestTasks = project.tasks.withType(StandaloneRestIntegTestTask)
         if (useFixture) {
             // Depends on project already containing an "integrationTest"
             // task, as well as javaHome+runtimeJavaHome configured
-            createClusterFor(integrationTestTask, project, version)
+            createClusterFor(integrationTestTasks, project, version)
         } else {
-            integrationTestTask.systemProperty("test.disable.local.es", "true")
+            integrationTestTasks.systemProperty("test.disable.local.es", "true")
         }
     }
 

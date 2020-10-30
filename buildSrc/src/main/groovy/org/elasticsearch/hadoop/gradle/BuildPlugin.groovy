@@ -31,6 +31,7 @@ import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
@@ -519,25 +520,23 @@ class BuildPlugin implements Plugin<Project>  {
         Task distribution = project.tasks.create('distribution')
         distribution.dependsOn(pack)
         // Co-locate all build artifacts into distributions subdir for easier build automation
-        distribution.doLast {
-            project.copy { CopySpec spec ->
-                spec.from(project.tasks.jar.archivePath)
-                spec.from(project.tasks.javadocJar.archivePath)
-                spec.from(project.tasks.sourcesJar.archivePath)
-                spec.into("${project.buildDir}/distributions")
-            }
-        }
+        Copy collectArtifacts = project.tasks.create('collectArtifacts', Copy)
+        collectArtifacts.from(project.tasks.jar)
+        collectArtifacts.from(project.tasks.javadocJar)
+        collectArtifacts.from(project.tasks.sourcesJar)
+        collectArtifacts.into("${project.buildDir}/distributions")
+        collectArtifacts.dependsOn(pack)
+        distribution.dependsOn(collectArtifacts)
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
-                distribution.doLast {
-                    project.copy { CopySpec spec ->
-                        spec.from(project.tasks.getByName(variant.taskName('jar')).archivePath)
-                        spec.from(project.tasks.getByName(variant.taskName('javadocJar')).archivePath)
-                        spec.from(project.tasks.getByName(variant.taskName('sourcesJar')).archivePath)
-                        spec.into("${project.buildDir}/distributions")
-                    }
-                }
+                Copy variantCollectArtifacts = project.tasks.create('collectArtifacts' + variant.getName(), Copy)
+                variantCollectArtifacts.from(project.tasks.getByName(variant.taskName('jar')))
+                variantCollectArtifacts.from(project.tasks.getByName(variant.taskName('javadocJar')))
+                variantCollectArtifacts.from(project.tasks.getByName(variant.taskName('sourcesJar')))
+                variantCollectArtifacts.into("${project.buildDir}/distributions")
+                variantCollectArtifacts.dependsOn(pack)
+                distribution.dependsOn(variantCollectArtifacts)
             }
         }
     }
