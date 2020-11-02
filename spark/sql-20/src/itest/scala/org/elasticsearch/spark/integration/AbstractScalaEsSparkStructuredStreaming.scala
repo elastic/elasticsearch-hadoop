@@ -25,8 +25,9 @@ import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import java.{lang => jl}
 import java.{util => ju}
-import javax.xml.bind.DatatypeConverter
 
+import javax.xml.bind.DatatypeConverter
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.internal.SQLConf
@@ -54,15 +55,9 @@ import org.elasticsearch.spark.sql.streaming.StreamingQueryTestHarness
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
 import org.hamcrest.Matchers.not
-import org.junit.AfterClass
-import org.junit.Assert
+import org.junit.{AfterClass, Assert, Assume, BeforeClass, ClassRule, FixMethodOrder, Rule, Test}
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.FixMethodOrder
-import org.junit.Rule
-import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
@@ -474,12 +469,20 @@ class AbstractScalaEsSparkStructuredStreaming(prefix: String, something: Boolean
     val target = wrapIndex(resource("test-tech-{name}", "data", version))
     val test = new StreamingQueryTestHarness[Record](spark)
 
+    // Spark passes the checkpoint name to Hadoop's Path class, which encodes the curly braces.
+    // The HDFS client doesn't seem to encode this path consistently. It creates the un-encoded
+    // file, encodes path name, then checks for the file existing, which fails because the name
+    // is different.
+    val checkpointName = checkpoint(target.replace("{", "").replace("}", ""))
+    Assume.assumeTrue("Checkpoint path is encoded improperly",
+      checkpointName.equals(new Path(checkpointName).toUri.toString))
+
     test.withInput(Record(1, "spark"))
       .withInput(Record(2, "hadoop"))
       .runTest {
         test.stream
           .writeStream
-          .option("checkpointLocation", checkpoint(target))
+          .option("checkpointLocation", checkpointName)
           .format("es")
           .start(target)
       }

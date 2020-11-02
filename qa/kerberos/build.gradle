@@ -68,7 +68,12 @@ dependencies {
 
     implementation('org.scala-lang:scala-library:2.11.12')
     implementation('org.scala-lang:scala-reflect:2.11.12')
-    implementation(project(":elasticsearch-spark-20"))
+    implementation(project(":elasticsearch-spark-20")) {
+        capabilities {
+            // Spark 2.x on Scala 2.11
+            requireCapability("org.elasticsearch.spark.sql.variant:spark20scala211:$project.version")
+        }
+    }
     
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")

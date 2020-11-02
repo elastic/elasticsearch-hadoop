@@ -7,6 +7,10 @@ project(":hive").name = "elasticsearch-hadoop-hive"
 include 'pig'
 project(":pig").name = "elasticsearch-hadoop-pig"
 
+include 'spark-core'
+project(":spark-core").projectDir = new File(settingsDir, "spark/core")
+project(":spark-core").name = "elasticsearch-spark"
+
 include 'sql-13'
 project(":sql-13").projectDir = new File(settingsDir, "spark/sql-13")
 project(":sql-13").name = "elasticsearch-spark-13"
