@@ -37,7 +37,7 @@ import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
 import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings}
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata._
-import org.elasticsearch.spark.serialization.{Bean, ReflectionUtils}
+import org.elasticsearch.spark.serialization.{Bean, Garbage, ModuleCaseClass, ReflectionUtils, Trip}
 import org.elasticsearch.spark.streaming._
 import org.hamcrest.Matchers._
 import org.junit.Assert._
@@ -170,7 +170,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   def testEsRDDWriteCaseClass(): Unit = {
     val javaBean = new Bean("bar", 1, true)
     val caseClass1 = Trip("OTP", "SFO")
-    val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass(1, "OTP", "MUC")
+    val caseClass2 = ModuleCaseClass(1, "OTP", "MUC")
 
     val vals = ReflectionUtils.caseClassValues(caseClass2)
 
