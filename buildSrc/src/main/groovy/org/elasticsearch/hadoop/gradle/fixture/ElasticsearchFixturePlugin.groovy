@@ -37,7 +37,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             // task, as well as javaHome+runtimeJavaHome configured
             createClusterFor(integrationTestTasks, project, version)
         } else {
-            integrationTestTasks.systemProperty("test.disable.local.es", "true")
+            integrationTestTasks.all { systemProperty("test.disable.local.es", "true") }
         }
     }
 
