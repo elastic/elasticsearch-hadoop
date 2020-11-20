@@ -2,9 +2,9 @@ package org.elasticsearch.hadoop.gradle
 
 import org.elasticsearch.gradle.DependenciesInfoPlugin
 import org.elasticsearch.gradle.info.BuildParams
-import org.elasticsearch.gradle.precommit.DependencyLicensesTask
-import org.elasticsearch.gradle.precommit.LicenseHeadersTask
-import org.elasticsearch.gradle.precommit.UpdateShasTask
+import org.elasticsearch.gradle.internal.precommit.DependencyLicensesTask
+import org.elasticsearch.gradle.internal.precommit.LicenseHeadersTask
+import org.elasticsearch.gradle.internal.precommit.UpdateShasTask
 import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.gradle.api.Plugin
