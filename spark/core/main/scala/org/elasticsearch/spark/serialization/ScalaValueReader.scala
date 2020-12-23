@@ -61,6 +61,7 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.unit.Booleans
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 class ScalaValueReader extends AbstractValueReader with SettingsAware {
 
@@ -127,30 +128,30 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
   protected def parseText(value:String, parser: Parser) = { value }
 
   def byteValue(value: String, parser: Parser) = { checkNull (parseByte, value, parser) }
-  protected def parseByte(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.intValue().toByte else value.toByte }
+  protected def parseByte(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.intValue().toByte else value.toByte }.getOrElse(0.toByte)
 
   def shortValue(value: String, parser:Parser) = { checkNull (parseShort, value, parser) }
-  protected def parseShort(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.shortValue().toShort else value.toShort }
+  protected def parseShort(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.shortValue().toShort else value.toShort }.getOrElse(0.toShort)
 
   def intValue(value: String, parser:Parser) = { checkNull(parseInt, value, parser) }
-  protected def parseInt(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.intValue().toInt else value.toInt }
+  protected def parseInt(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.intValue().toInt else value.toInt }.getOrElse(0)
 
   def longValue(value: String, parser:Parser) = { checkNull(parseLong, value, parser) }
-  protected def parseLong(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.longValue().toLong else value.toLong }
+  protected def parseLong(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.longValue().toLong else value.toLong }.getOrElse(0L)
 
   def floatValue(value: String, parser:Parser) = { checkNull(parseFloat, value, parser) }
-  protected def parseFloat(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.floatValue().toFloat else value.toFloat }
+  protected def parseFloat(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.floatValue().toFloat else value.toFloat }.getOrElse(0.0)
 
   def doubleValue(value: String, parser:Parser) = { checkNull(parseDouble, value, parser) }
-  protected def parseDouble(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.doubleValue().toDouble else value.toDouble }
+  protected def parseDouble(value: String, parser:Parser) = Try { if (parser.currentToken()== VALUE_NUMBER) parser.doubleValue().toDouble else value.toDouble }.getOrElse(0.toDouble)
 
   def booleanValue(value: String, parser:Parser) = { checkNull(parseBoolean, value, parser) }
-  protected def parseBoolean(value: String, parser:Parser) = {
+  protected def parseBoolean(value: String, parser:Parser) = Try {
     if (parser.currentToken()== VALUE_NULL) nullValue()
     else if (parser.currentToken()== VALUE_BOOLEAN) parser.booleanValue()
     else if (parser.currentToken()== VALUE_NUMBER) parser.intValue() != 0
     else Booleans.parseBoolean(value)
-  }
+  }.getOrElse(false)
 
   def binaryValue(value: Array[Byte]) = {
     Option(value) collect {
@@ -162,14 +163,14 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
 
   def date(value: String, parser: Parser) = { checkNull(parseDate, value, parser) }
 
-  protected def parseDate(value: String, parser:Parser) = {
+  protected def parseDate(value: String, parser:Parser) = Try {
     if (parser.currentToken()== VALUE_NUMBER) {
      if (richDate) createDate(parser.longValue()) else parser.longValue()
     }
     else {
      if (richDate) createDate(value) else value
     }
-  }
+  }.getOrElse(0L)
 
   protected def createDate(value: Long):Any = {
     new Date(value)
