@@ -1,6 +1,6 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
-description = "Elasticsearch Spark (for Spark 2.X)"
+description = "Elasticsearch Spark (for Spark 3.X)"
 
 apply plugin: 'java-library'
 apply plugin: 'scala'
@@ -9,8 +9,7 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.sql.variant'
-    setDefaultVariant "spark20scala211", spark24Version, scala211Version
-    addFeatureVariant "spark20scala210", spark22Version, scala210Version
+    setDefaultVariant "spark30scala212", spark30Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -82,18 +81,6 @@ sparkVariants {
             add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:3.2.11")
             add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:$variant.sparkVersion")
 
-            if ('2.10' == scalaMajorVersion) {
-                add(variant.configuration('implementation'), "org.apache.spark:spark-unsafe_${variant.scalaMajorVersion}:$variant.sparkVersion")
-                add(variant.configuration('implementation'), "org.apache.avro:avro:1.7.7")
-                add(variant.configuration('implementation'), "log4j:log4j:1.2.17")
-                add(variant.configuration('implementation'), "com.google.code.findbugs:jsr305:2.0.1")
-                add(variant.configuration('implementation'), "org.json4s:json4s-ast_2.10:3.2.10")
-                add(variant.configuration('implementation'), "com.esotericsoftware.kryo:kryo:2.21")
-                add(variant.configuration('compileOnly'), "org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-            }
-
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
             add(variant.configuration('test', 'implementation'), "org.elasticsearch:securemock:1.2")
             add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:$variant.sparkVersion") {
@@ -136,31 +123,29 @@ sparkVariants {
             project.artifacts.add(variant.configuration('javadocSourceElements'), it)
         }
 
-        if (variant.scalaMajorVersion != '2.10') {
-            // Configure java source generation for javadoc purposes
-            String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
-            Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
-            scalaCompilerPlugin.defaultDependencies { dependencies ->
-                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
-            }
+        // Configure java source generation for javadoc purposes
+        String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
+        Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
+        scalaCompilerPlugin.defaultDependencies { dependencies ->
+            dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
+        }
 
-            ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
-            compileScala.scalaCompileOptions.with {
-                additionalParameters = [
-                        "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
-                        "-P:genjavadoc:out=$generatedJavaDirectory".toString()
-                ]
+        ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
+        compileScala.scalaCompileOptions.with {
+            additionalParameters = [
+                    "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
+                    "-P:genjavadoc:out=$generatedJavaDirectory".toString()
+            ]
+        }
+        // Export generated Java code from the genjavadoc compiler plugin
+        artifacts {
+            add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
+                builtBy compileScala
             }
-            // Export generated Java code from the genjavadoc compiler plugin
-            artifacts {
-                add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
-                    builtBy compileScala
-                }
-            }
-            tasks.getByName(variant.taskName('javadoc')) {
-                dependsOn compileScala
-                source(generatedJavaDirectory)
-            }
+        }
+        tasks.getByName(variant.taskName('javadoc')) {
+            dependsOn compileScala
+            source(generatedJavaDirectory)
         }
 
         scaladoc {
