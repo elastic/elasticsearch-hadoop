@@ -22,13 +22,12 @@ package org.elasticsearch.spark.deploy.yarn.security
 import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.UUID
-
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
-import org.apache.spark.deploy.yarn.security.ServiceCredentialProvider
+import org.apache.spark.security.HadoopDelegationTokenProvider
 import org.elasticsearch.hadoop.cfg.CompositeSettings
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager
 import org.elasticsearch.hadoop.mr.security.EsTokenIdentifier
@@ -60,7 +59,7 @@ import org.elasticsearch.spark.cfg.SparkSettingsManager
  * the worker nodes will regularly poll to get updated tokens. If the job is launched
  * in client mode, the client will also receive updated tokens.
  */
-class EsServiceCredentialProvider extends ServiceCredentialProvider {
+class EsServiceCredentialProvider extends HadoopDelegationTokenProvider {
 
   private[this] val LOG = LogFactory.getLog(classOf[EsServiceCredentialProvider])
 
@@ -75,23 +74,23 @@ class EsServiceCredentialProvider extends ServiceCredentialProvider {
   override def serviceName: String = "elasticsearch"
 
   /**
-    *  Given a configuration, check to see if tokens would be required.
-    *
-    * @param hadoopConf the current Hadoop configuration
-    * @return true if tokens should be gathered, false if they should not be
-    */
-  override def credentialsRequired(hadoopConf: Configuration): Boolean = {
+   * Given a configuration, check to see if tokens would be required.
+   *
+   * @param hadoopConf the current Hadoop configuration
+   * @return true if tokens should be gathered, false if they should not be
+   */
+  def credentialsRequired(hadoopConf: Configuration): Boolean = {
     credentialsRequired(null, hadoopConf)
   }
 
   /**
-    *  Given a configuration, check to see if tokens would be required.
-    *
-    * @param sparkConf the current Spark configuration - used by Cloudera's CDS Spark fork (#1301)
-    * @param hadoopConf the current Hadoop configuration
-    * @return true if tokens should be gathered, false if they should not be
-    */
-  def credentialsRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean = {
+   * Given a configuration, check to see if tokens would be required.
+   *
+   * @param sparkConf the current Spark configuration - used by Cloudera's CDS Spark fork (#1301)
+   * @param hadoopConf the current Hadoop configuration
+   * @return true if tokens should be gathered, false if they should not be
+   */
+  override def credentialsRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean = {
     val settings = if (sparkConf != null) {
       new CompositeSettings(util.Arrays.asList(
         new SparkSettingsManager().load(sparkConf),
