@@ -96,11 +96,8 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
-<<<<<<< HEAD
 include::release-notes/7.11.0.adoc[]
-=======
 include::release-notes/7.10.2.adoc[]
->>>>>>> upstream/7.11
 include::release-notes/7.10.1.adoc[]
 include::release-notes/7.10.0.adoc[]
 include::release-notes/7.9.3.adoc[]
