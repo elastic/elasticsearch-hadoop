@@ -48,6 +48,7 @@ private [sql] class EsStreamQueryWriter(serializedSettings: String,
   override protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[DataFrameFieldExtractor]
 
   private val encoder: ExpressionEncoder[Row] = RowEncoder(schema).resolveAndBind()
+  private val deserializer: ExpressionEncoder.Deserializer[Row] = encoder.createDeserializer()
 
   override def write(taskContext: TaskContext, data: Iterator[InternalRow]): Unit = {
     // Keep clients from using this method, doesn't return task commit information.
@@ -68,7 +69,7 @@ private [sql] class EsStreamQueryWriter(serializedSettings: String,
   }
 
   override protected def processData(data: Iterator[InternalRow]): Any = {
-    val row = encoder.fromRow(data.next())
+    val row = deserializer.apply(data.next())
     commitProtocol.recordSeen()
     (row, schema)
   }
