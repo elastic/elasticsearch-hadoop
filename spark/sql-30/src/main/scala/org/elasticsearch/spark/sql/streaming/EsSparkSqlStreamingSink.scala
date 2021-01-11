@@ -59,7 +59,8 @@ class EsSparkSqlStreamingSink(sparkSession: SparkSession, settings: Settings) ex
       val queryExecution = data.queryExecution
       val schema = data.schema
 
-      SQLExecution.withNewExecutionId(sparkSession, queryExecution) {
+      SQLExecution.withNewExecutionId(queryExecution) {
+        val sparkSession = queryExecution.sparkSession
         val queryName = SparkSqlStreamingConfigs.getQueryName(settings).getOrElse(UUID.randomUUID().toString)
         val jobState = JobState(queryName, batchId)
         commitProtocol.initJob(jobState)
