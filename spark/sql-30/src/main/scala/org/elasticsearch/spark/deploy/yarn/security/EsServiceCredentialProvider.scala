@@ -76,21 +76,11 @@ class EsServiceCredentialProvider extends HadoopDelegationTokenProvider {
   /**
    * Given a configuration, check to see if tokens would be required.
    *
-   * @param hadoopConf the current Hadoop configuration
-   * @return true if tokens should be gathered, false if they should not be
-   */
-  def credentialsRequired(hadoopConf: Configuration): Boolean = {
-    credentialsRequired(null, hadoopConf)
-  }
-
-  /**
-   * Given a configuration, check to see if tokens would be required.
-   *
    * @param sparkConf the current Spark configuration - used by Cloudera's CDS Spark fork (#1301)
    * @param hadoopConf the current Hadoop configuration
    * @return true if tokens should be gathered, false if they should not be
    */
-  override def credentialsRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean = {
+  override def delegationTokensRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean = {
     val settings = if (sparkConf != null) {
       new CompositeSettings(util.Arrays.asList(
         new SparkSettingsManager().load(sparkConf),
@@ -115,7 +105,7 @@ class EsServiceCredentialProvider extends HadoopDelegationTokenProvider {
    * @param creds The credentials object that will be shared between all workers
    * @return The expiration time for the token
    */
-  override def obtainCredentials(hadoopConf: Configuration, sparkConf: SparkConf, creds: Credentials): Option[Long] = {
+  override def obtainDelegationTokens(hadoopConf: Configuration, sparkConf: SparkConf, creds: Credentials): Option[Long] = {
     val settings = new CompositeSettings(util.Arrays.asList(
       new SparkSettingsManager().load(sparkConf),
       new HadoopSettingsManager().load(hadoopConf)
