@@ -1,5 +1,7 @@
 [[eshadoop-7.10.2]]
 == Elasticsearch for Apache Hadoop version 7.10.2
 
+coming::[7.10.2]
+
 ES-Hadoop 7.10.2 is a version compatibility release, tested specifically against
 Elasticsearch 7.10.2.
