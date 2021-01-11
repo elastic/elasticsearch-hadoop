@@ -21,6 +21,7 @@ package org.elasticsearch.spark.sql.streaming.api.java;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -80,7 +81,11 @@ public class JavaStreamingQueryTestHarness<S extends Serializable> {
         Function0<StreamingQuery> runFunction = new AbstractFunction0<StreamingQuery>() {
             @Override
             public StreamingQuery apply() {
-                return writer.start();
+                try {
+                    return writer.start();
+                } catch (TimeoutException e) {
+                    throw new RuntimeException("Could not start streaming query", e);
+                }
             }
         };
         return harness.startTest(runFunction);
@@ -100,7 +105,11 @@ public class JavaStreamingQueryTestHarness<S extends Serializable> {
         Function0<StreamingQuery> runFunction = new AbstractFunction0<StreamingQuery>() {
             @Override
             public StreamingQuery apply() {
-                return writer.start();
+                try {
+                    return writer.start();
+                } catch (TimeoutException e) {
+                    throw new RuntimeException("Could not start streaming query", e);
+                }
             }
         };
         harness.runTest(runFunction);
