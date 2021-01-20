@@ -122,6 +122,23 @@ sparkVariants {
         scaladoc {
             title = "${rootProject.description} ${version} API"
         }
+
+        // The core project is strange since there are multiple variants with the same scala version present. They
+        // should be differentiated so they don't over write each other
+        def correctScalaJarClassifiers = { Jar jar ->
+            String classifier = jar.getArchiveClassifier().get()
+            if (classifier == null || classifier.isEmpty()) {
+                classifier = variant.name
+            } else {
+                classifier = "${variant.name}-${classifier}"
+            }
+            jar.getArchiveClassifier().set(classifier)
+        }
+
+        TaskCollection<Jar> jars = project.getTasks().withType(Jar.class)
+        correctScalaJarClassifiers(jars.getByName(variant.taskName("jar")))
+        correctScalaJarClassifiers(jars.getByName(variant.taskName("javadocJar")))
+        correctScalaJarClassifiers(jars.getByName(variant.taskName("sourcesJar")))
     }
 }
 
