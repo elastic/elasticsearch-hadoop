@@ -869,7 +869,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val (target, _) = makeTargets(index, "data")
     val table = wrapIndex("sqlbasicread2")
 
-    val options = s"""path '$target' , readMetadata "true" """
+    val options = s"""resource '$target' , readMetadata "true" """
     val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(table)}" +
       " USING es " +
       s" OPTIONS ($options)")
@@ -1242,7 +1242,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       s"USING org.elasticsearch.spark.sql " +
       s"OPTIONS ($options)");
 
-    val insertRDD = sqc.sql(s"INSERT INTO TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    val insertRDD = sqc.sql(s"INSERT INTO TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', 12345, ''")
     val df = sqc.table(wrapTableName(table))
     println(df.count)
     assertTrue(df.count > 100)
@@ -1269,7 +1269,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var df = sqc.table(wrapTableName(table))
     assertTrue(df.count > 1)
-    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', 12345, ''")
     df = sqc.table(wrapTableName(table))
     assertEquals(1, df.count)
   }
