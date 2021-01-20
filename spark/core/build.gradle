@@ -9,10 +9,10 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
-    setDefaultVariant "spark20scala211", spark24Version, scala211Version
-    addFeatureVariant "spark20scala210", spark22Version, scala210Version
-    addFeatureVariant "spark13scala211", spark13Version, scala211Version
-    addFeatureVariant "spark13scala210", spark13Version, scala210Version
+    setCoreDefaultVariant "spark20scala211", spark24Version, scala211Version
+    addCoreFeatureVariant "spark20scala210", spark22Version, scala210Version
+    addCoreFeatureVariant "spark13scala211", spark13Version, scala211Version
+    addCoreFeatureVariant "spark13scala210", spark13Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -122,23 +122,6 @@ sparkVariants {
         scaladoc {
             title = "${rootProject.description} ${version} API"
         }
-
-        // The core project is strange since there are multiple variants with the same scala version present. They
-        // should be differentiated so they don't over write each other
-        def correctScalaJarClassifiers = { Jar jar ->
-            String classifier = jar.getArchiveClassifier().get()
-            if (classifier == null || classifier.isEmpty()) {
-                classifier = variant.name
-            } else {
-                classifier = "${variant.name}-${classifier}"
-            }
-            jar.getArchiveClassifier().set(classifier)
-        }
-
-        TaskCollection<Jar> jars = project.getTasks().withType(Jar.class)
-        correctScalaJarClassifiers(jars.getByName(variant.taskName("jar")))
-        correctScalaJarClassifiers(jars.getByName(variant.taskName("javadocJar")))
-        correctScalaJarClassifiers(jars.getByName(variant.taskName("sourcesJar")))
     }
 }
 
