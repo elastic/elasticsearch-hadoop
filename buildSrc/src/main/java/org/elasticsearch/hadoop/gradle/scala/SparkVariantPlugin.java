@@ -81,19 +81,21 @@ public class SparkVariantPlugin implements Plugin<Project> {
         private final String scalaVersion;
         private final String scalaMajorVersion;
         private final String capability;
+        private final boolean classifySparkVersion;
 
         public SparkVariant(String name) {
             throw new GradleException("Cannot create variant named [" + name + "]. Do not instantiate objects directly. " +
                     "You must configure this via the SparkVariantPluginExtension.");
         }
 
-        public SparkVariant(CharSequence name, boolean isDefaultVariant, String sparkVersion, String scalaVersion, String capability) {
+        public SparkVariant(CharSequence name, boolean isDefaultVariant, String sparkVersion, String scalaVersion, String capability, boolean classifySparkVersion) {
             this.name = name;
             this.isDefaultVariant = isDefaultVariant;
             this.sparkVersion = sparkVersion;
             this.scalaVersion = scalaVersion;
             this.scalaMajorVersion = scalaVersion.substring(0, scalaVersion.lastIndexOf('.'));
             this.capability = capability;
+            this.classifySparkVersion = classifySparkVersion;
         }
 
         public String getName() {
@@ -122,6 +124,10 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
         public String getCapability() {
             return capability;
+        }
+
+        public boolean shouldClassifySparkVersion() {
+            return classifySparkVersion;
         }
 
         public String getSourceSetName(String sourceSetName) {
@@ -184,22 +190,38 @@ public class SparkVariantPlugin implements Plugin<Project> {
         }
 
         public SparkVariant setDefaultVariant(String variantName, String sparkVersion, String scalaVersion) {
+            return setDefaultVariant(variantName, sparkVersion, scalaVersion, false);
+        }
+
+        public SparkVariant setCoreDefaultVariant(String variantName, String sparkVersion, String scalaVersion) {
+            return setDefaultVariant(variantName, sparkVersion, scalaVersion, true);
+        }
+
+        public SparkVariant setDefaultVariant(String variantName, String sparkVersion, String scalaVersion, boolean classifySparkVersion) {
             if (defaultVariant != null) {
                 throw new GradleException("Cannot set default variant multiple times");
             }
             if (capability == null) {
                 throw new GradleException("Must set capability group before adding variant definitions");
             }
-            defaultVariant = new SparkVariant(variantName, true, sparkVersion, scalaVersion, capability);
+            defaultVariant = new SparkVariant(variantName, true, sparkVersion, scalaVersion, capability, classifySparkVersion);
             variants.add(defaultVariant);
             return defaultVariant;
         }
 
         public SparkVariant addFeatureVariant(String variantName, String sparkVersion, String scalaVersion) {
+            return addFeatureVariant(variantName, sparkVersion, scalaVersion, false);
+        }
+
+        public SparkVariant addCoreFeatureVariant(String variantName, String sparkVersion, String scalaVersion) {
+            return addFeatureVariant(variantName, sparkVersion, scalaVersion, true);
+        }
+
+        public SparkVariant addFeatureVariant(String variantName, String sparkVersion, String scalaVersion, boolean classifySparkVersion) {
             if (capability == null) {
                 throw new GradleException("Must set capability group before adding variant definitions");
             }
-            SparkVariant variant = new SparkVariant(variantName, false, sparkVersion, scalaVersion, capability);
+            SparkVariant variant = new SparkVariant(variantName, false, sparkVersion, scalaVersion, capability, classifySparkVersion);
             variants.add(variant);
             return variant;
         }
@@ -437,7 +459,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
         });
     }
 
-    private static void correctScalaJarClassifiers(Jar jar, SparkVariant sparkVariant) {
+    private static void removeVariantNameFromClassifier(Jar jar, SparkVariant sparkVariant) {
+        // the default variant doesn't have classifiers on it to remove
         if (sparkVariant.isDefaultVariant() == false) {
             String classifier = jar.getArchiveClassifier().get();
             classifier = classifier.replace(sparkVariant.name, "");
@@ -446,6 +469,12 @@ public class SparkVariantPlugin implements Plugin<Project> {
             }
             jar.getArchiveClassifier().set(classifier);
         }
+    }
+
+    private static void correctScalaJarClassifiers(Jar jar, SparkVariant sparkVariant) {
+        if (sparkVariant.shouldClassifySparkVersion() == false) {
+            removeVariantNameFromClassifier(jar, sparkVariant);
+        }
         String baseName = jar.getArchiveBaseName().get();
         baseName = baseName + "_" + sparkVariant.scalaMajorVersion;
         jar.getArchiveBaseName().set(baseName);
@@ -453,8 +482,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
     private static void configureScalaJarClassifiers(Project project, final SparkVariant sparkVariant) {
         TaskCollection<Jar> jars = project.getTasks().withType(Jar.class);
-        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("jar")), sparkVariant);
-        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("javadocJar")), sparkVariant);
-        correctScalaJarClassifiers(jars.getByName(sparkVariant.taskName("sourcesJar")), sparkVariant);
+        jars.named(sparkVariant.taskName("jar"), (Jar jar) -> correctScalaJarClassifiers(jar, sparkVariant));
+        jars.named(sparkVariant.taskName("javadocJar"), (Jar jar) -> correctScalaJarClassifiers(jar, sparkVariant));
+        jars.named(sparkVariant.taskName("sourcesJar"), (Jar jar) -> correctScalaJarClassifiers(jar, sparkVariant));
     }
 }
