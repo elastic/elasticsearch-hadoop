@@ -9,10 +9,10 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
-    setDefaultVariant "spark20scala211", spark24Version, scala211Version
-    addFeatureVariant "spark20scala210", spark22Version, scala210Version
-    addFeatureVariant "spark13scala211", spark13Version, scala211Version
-    addFeatureVariant "spark13scala210", spark13Version, scala210Version
+    setCoreDefaultVariant "spark20scala211", spark24Version, scala211Version
+    addCoreFeatureVariant "spark20scala210", spark22Version, scala210Version
+    addCoreFeatureVariant "spark13scala211", spark13Version, scala211Version
+    addCoreFeatureVariant "spark13scala210", spark13Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
