@@ -729,10 +729,13 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
+        // Add variant classifier to the pom file name if required
+        String classifier = variant.shouldClassifySparkVersion() && variant.isDefaultVariant() == false ? "-${variant.getName()}" : ''
+        String filename = "${project.archivesBaseName}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
         // Fix the pom name
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                pom.destination = project.provider({"${project.buildDir}/distributions/${project.archivesBaseName}_${variant.scalaMajorVersion}-${project.getVersion()}.pom"})
+                pom.destination = project.provider({"${project.buildDir}/distributions/${filename}.pom"})
             }
         }
         // Fix the artifactId. Note: The publishing task does not like this happening. Hence it is disabled.
