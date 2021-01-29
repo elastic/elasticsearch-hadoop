@@ -55,7 +55,14 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 4)
+        return new Version(3, 0, 1)
+    }
+
+    String hadoopVersionCompatibility() {
+        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
+        // This version is not always a version that Hadoop still distributes.
+//        return "3.2"
+        return "2.7"
     }
 
     @Override
@@ -70,10 +77,8 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String artifactName(ServiceConfiguration configuration) {
-        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
         Version version = configuration.getVersion()
-        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP).getVersion()
-        return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
+        return "spark-$version-bin-hadoop${hadoopVersionCompatibility()}"
     }
 
     @Override

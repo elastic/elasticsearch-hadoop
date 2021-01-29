@@ -61,7 +61,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 7, 7)
+        return new Version(2, 10, 1)
     }
 
     @Override
