@@ -185,6 +185,7 @@ sparkVariants {
             // TODO: Is there a way to do this lazily? This looks like it resolves the configuration.
             from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
                 include "org/elasticsearch/**"
+                include "org/apache/**"
                 include "esh-build.properties"
                 include "META-INF/services/*"
             }

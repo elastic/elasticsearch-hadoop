@@ -87,6 +87,16 @@ task generateGitHash {
     }
 }
 
+jar {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
 eclipse.classpath.file {
     whenMerged { cp ->
         // export all jars (to be used upstream by dependent projects)  <-- for some reason Gradle removes all jars

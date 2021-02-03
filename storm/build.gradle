@@ -40,6 +40,7 @@ jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
