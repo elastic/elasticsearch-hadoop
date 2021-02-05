@@ -82,6 +82,14 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // It's nice all these projects have example data, but we'll scrap it all for now. I don't think we'll need to
+        // run anything on kubernetes for a while. Might bring R back in if we ever deem it necessary to test on.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/data/", "$rootName/examples/", "$rootName/kubernetes/", "$rootName/R/"]
+    }
+
+    @Override
     String homeDirName(InstanceConfiguration configuration) {
         return artifactName(configuration.getServiceConf())
     }

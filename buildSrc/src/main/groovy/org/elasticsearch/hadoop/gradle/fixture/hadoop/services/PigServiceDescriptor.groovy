@@ -74,6 +74,13 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // Seems like Pig has a ton of extra stuff in it that we don't really need.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/docs/", "$rootName/ivy/", "$rootName/src/", "$rootName/test/", "$rootName/tutorial/"]
+    }
+
+    @Override
     String homeDirName(InstanceConfiguration configuration) {
         return artifactName(configuration.getServiceConf())
     }

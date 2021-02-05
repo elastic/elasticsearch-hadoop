@@ -75,6 +75,12 @@ interface ServiceDescriptor {
     String artifactName(ServiceConfiguration configuration)
 
     /**
+     * Returns a collection of directories/files that can be excluded when extracting an archive. Some distributions
+     * include entire directories full of things we do not need in the fixture like documentation and example code.
+     */
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration)
+
+    /**
      * The name of the directory under the base dir that contains the package contents.
      */
     String homeDirName(InstanceConfiguration configuration)

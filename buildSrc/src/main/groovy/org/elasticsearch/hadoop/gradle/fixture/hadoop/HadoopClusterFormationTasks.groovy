@@ -313,6 +313,7 @@ class HadoopClusterFormationTasks {
             from {
                 project.tarTree(project.resources.gzip(distributionConfiguration.files.first()))
             }
+            exclude(node.config.serviceDescriptor.excludeFromArchiveExtraction(node.config))
             into node.baseDir
         }
     }

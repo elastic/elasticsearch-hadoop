@@ -75,6 +75,13 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // Don't need the examples dir, thanks
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/examples/"]
+    }
+
+    @Override
     String homeDirName(InstanceConfiguration configuration) {
         return artifactName(configuration.getServiceConf())
     }

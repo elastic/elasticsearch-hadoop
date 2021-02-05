@@ -81,6 +81,15 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // The share/doc directory has like 20k files in it that just do not have any business being extracted.
+        // Switching back to the IDE after a test causes it to choke from the crazy number of FS updates because of
+        // this dir.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/share/doc/"]
+    }
+
+    @Override
     String homeDirName(InstanceConfiguration configuration) {
         return artifactName(configuration.getServiceConf())
     }
