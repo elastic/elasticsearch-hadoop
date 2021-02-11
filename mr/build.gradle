@@ -12,6 +12,13 @@ configurations {
     implementation {
         extendsFrom project.configurations.embedded
     }
+    itestEmbedded {
+        transitive = false
+        canBeResolved = true
+    }
+    itestImplementation {
+        extendsFrom project.configurations.itestEmbedded
+    }
     // Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be
     // used in other projects instead of requiring a jar operation to happen. We have artifacts that are being shaded into
     // a third-party jar that this depends on, which inherently means there is no classes output to share for compilation.
@@ -55,8 +62,8 @@ dependencies {
     testImplementation(project(":test:shared"))
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
-    
-    itestImplementation(project(":test:shared"))
+
+    itestEmbedded(project(":test:shared"))
     itestImplementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
@@ -90,6 +97,23 @@ task generateGitHash {
 jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+itestJar {
+    dependsOn(project.configurations.embedded)
+    dependsOn(project.configurations.itestEmbedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+    from(project.configurations.itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "org/apache/**"
         include "esh-build.properties"

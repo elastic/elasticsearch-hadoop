@@ -77,7 +77,7 @@ public abstract class HadoopIOUtils {
             FileSystem fs = p.getFileSystem(conf);
             return fs.open(p);
         } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot open stream for resource %s", resource), ex);
         }
     }
 }

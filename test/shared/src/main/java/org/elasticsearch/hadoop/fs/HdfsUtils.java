@@ -44,7 +44,6 @@ public class HdfsUtils {
                 Path src = new Path(localPath);
                 Path dst = new Path(destination);
                 fs.copyFromLocalFile(false, true, src, dst);
-                System.out.println(String.format("Copying [%s] to [%s]", src, dst));
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
