@@ -13,6 +13,13 @@ configurations {
     implementation {
         extendsFrom project.configurations.embedded
     }
+    itestEmbedded {
+        transitive = false
+        canBeResolved = true
+    }
+    itestImplementation {
+        extendsFrom project.configurations.itestEmbedded
+    }
 }
 
 ext.pigClassifier = "h2"
@@ -31,7 +38,7 @@ dependencies {
     testImplementation("com.google.guava:guava:11.0")
     testImplementation("jline:jline:0.9.94")
 
-    itestImplementation(project(":test:shared"))
+    itestEmbedded(project(":test:shared"))
     itestImplementation("dk.brics.automaton:automaton:1.11-8")
 
     additionalSources(project(":elasticsearch-hadoop-mr"))
@@ -41,6 +48,23 @@ dependencies {
 jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+itestJar {
+    dependsOn(project.configurations.embedded)
+    dependsOn(project.configurations.itestEmbedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+    from(project.configurations.itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "org/apache/**"
         include "esh-build.properties"

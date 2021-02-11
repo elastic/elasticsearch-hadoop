@@ -20,7 +20,8 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import com.google.common.collect.Lists;
-import org.elasticsearch.hadoop.Provisioner;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.EsAssume;
 import org.elasticsearch.hadoop.rest.RestUtils;
@@ -28,6 +29,7 @@ import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.LazyTempFolder;
@@ -74,11 +76,19 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
 
     private String scriptHead;
 
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        // we do this just here since the configuration doesn't get used in Pig scripts.
+        new QueryTestParams(tempFolder).provisionQueries(AbstractPigTests.testConfiguration);
+    }
+
     @Before
     public void before() throws Exception {
         RestUtils.refresh("json-pig*");
 
-        this.scriptHead = "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+        this.scriptHead =
+//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"','es.output.json=true');";
     }
 
@@ -328,6 +338,9 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     }
 
     private static String tmpPig() {
-        return "tmp-pig/json-read-" + testInstance;
+        return new Path("tmp-pig/read-json-" + testInstance)
+                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path("/"))
+                .toUri()
+                .toString();
     }
 }
