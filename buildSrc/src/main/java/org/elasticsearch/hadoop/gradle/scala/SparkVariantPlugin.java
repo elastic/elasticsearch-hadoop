@@ -60,10 +60,10 @@ import static org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP;
 import static org.gradle.api.plugins.JavaBasePlugin.VERIFICATION_GROUP;
 import static org.gradle.api.plugins.JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME;
-import static org.gradle.api.plugins.JavaPlugin.COMPILE_CONFIGURATION_NAME;
+// import static org.gradle.api.plugins.JavaPlugin.COMPILE_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME;
-import static org.gradle.api.plugins.JavaPlugin.RUNTIME_CONFIGURATION_NAME;
+// import static org.gradle.api.plugins.JavaPlugin.RUNTIME_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.TEST_TASK_NAME;
@@ -282,9 +282,9 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
     // TODO: address deprecated configuration names
     private static List<String> TEST_CONFIGURATIONS_EXTENDED = Arrays.asList(
-            COMPILE_CONFIGURATION_NAME,
+           // TODO compile only
             IMPLEMENTATION_CONFIGURATION_NAME,
-            RUNTIME_CONFIGURATION_NAME,
+            // RUNTIME_CONFIGURATION_NAME,
             RUNTIME_ONLY_CONFIGURATION_NAME
     );
 
