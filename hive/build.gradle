@@ -1,3 +1,4 @@
+import org.elasticsearch.gradle.info.BuildParams
 
 apply plugin: 'es.hadoop.build.integration'
 
@@ -12,6 +13,14 @@ configurations {
     }
     implementation {
         extendsFrom project.configurations.embedded
+    }
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.apache.hadoop') {
+            details.useVersion project.ext.hadoopVersion
+        }
     }
 }
 
@@ -35,12 +44,30 @@ dependencies {
     itestImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
+    itestImplementation("org.apache.tez:tez-dag:0.9.1")
 
     additionalSources(project(":elasticsearch-hadoop-mr"))
     javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "org/apache/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+def hiveSiteProperties = ['testSeed': BuildParams.testSeed]
+processItestResources {
+    filesMatching("**/hive-site.xml") {
+        expand(hiveSiteProperties)
+    }
+}
+
+itestJar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"

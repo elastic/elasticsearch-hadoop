@@ -25,9 +25,11 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DateWritable;
+import org.apache.hadoop.hive.serde2.io.DateWritableV2;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
+import org.apache.hadoop.hive.serde2.io.TimestampWritableV2;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
@@ -79,6 +81,14 @@ public class HiveWritableValueWriter extends WritableValueWriter {
         else if (writable != null && HiveConstants.CHAR_WRITABLE.equals(writable.getClass().getName())) {
             generator.writeString(StringUtils.trim(writable.toString()));
         }
+        // TimestampWritableV2 - Hive 2.0+
+        else if (writable != null && HiveConstants.TIMESTAMP_WRITABLE_V2.equals(writable.getClass().getName())) {
+            generator.writeString(TimestampV2Writer.toES(writable));
+        }
+        // DateWritableV2 - Hive 2.0+
+        else if (writable != null && HiveConstants.DATE_WRITABLE_V2.equals(writable.getClass().getName())) {
+            generator.writeString(DateWritableWriterV2.toES(writable));
+        }
         else {
             return super.write(writable, generator);
         }
@@ -93,6 +103,27 @@ public class HiveWritableValueWriter extends WritableValueWriter {
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(dw.get().getTime());
             return DatatypeConverter.printDate(cal);
+        }
+    }
+
+    // use nested class to efficiently get a hold of the underlying Date object (w/o doing reparsing, etc...)
+    private static abstract class DateWritableWriterV2 {
+        static String toES(Object dateWritable) {
+            DateWritableV2 dw = (DateWritableV2) dateWritable;
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(dw.get().toEpochMilli());
+            return DatatypeConverter.printDate(cal);
+        }
+    }
+
+    // use nested class to get a hold of the underlying long timestamp
+    private static abstract class TimestampV2Writer {
+        static String toES(Object tsWriteableV2) {
+            TimestampWritableV2 ts = (TimestampWritableV2) tsWriteableV2;
+            long t = ts.getTimestamp().toEpochMilli();
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(t);
+            return DatatypeConverter.printDateTime(cal);
         }
     }
 }
