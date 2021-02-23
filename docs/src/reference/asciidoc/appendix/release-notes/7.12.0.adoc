@@ -5,7 +5,7 @@
 === Enhancements
 
 Build::
-Update Gradle wrapper to version 6.8
+- Update Gradle wrapper to version 6.8
 https://github.com/elastic/elasticsearch-hadoop/pull/1578[#1578]
 
 Spark::
@@ -18,5 +18,5 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1589[#1589]
 === Bug Fixes
 
 Build::
-Add properties for pulling Java versions from the environment variables
+- Add properties for pulling Java versions from the environment variables
 https://github.com/elastic/elasticsearch-hadoop/pull/1584[#1584]
