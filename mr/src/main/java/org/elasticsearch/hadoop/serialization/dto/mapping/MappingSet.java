@@ -101,6 +101,10 @@ public class MappingSet implements Serializable {
                 // Attempt to resolve field type conflicts by upcasting fields to a common "super type"
                 FieldType resolvedType = resolveTypeConflict(fullName, previousField.type(), field.type());
                 // If successful, update the previous field entry with the updated field type
+                if (resolvedType == null) {
+                   fieldTable.remove(fullName);
+                   return;
+                }
                 if (!previousField.type().equals(resolvedType)) {
                     previousField = new Field(previousField.name(), resolvedType, previousField.properties());
                     entry[0] = previousField;
@@ -139,9 +143,10 @@ public class MappingSet implements Serializable {
             }
         }
         // If none of the above options succeed, the fields are conflicting
-        throw new EsHadoopIllegalArgumentException("Incompatible types found in multi-mapping: " +
-                "Field ["+fullName+"] has conflicting types of ["+existing+"] and ["+
-                incoming+"].");
+        //throw new EsHadoopIllegalArgumentException("Incompatible types found in multi-mapping: " +
+          //      "Field ["+fullName+"] has conflicting types of ["+existing+"] and ["+
+            //    incoming+"].");
+       return null;
     }
 
     @SuppressWarnings("unchecked")
