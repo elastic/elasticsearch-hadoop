@@ -1,0 +1,22 @@
+[[eshadoop-7.12.0]]
+== Elasticsearch for Apache Hadoop version 7.12.0
+
+[[new-7.12.0]]
+=== Enhancements
+
+Build::
+Update Gradle wrapper to version 6.8
+https://github.com/elastic/elasticsearch-hadoop/pull/1578[#1578]
+
+Spark::
+- Add support for Spark 3.0 
+https://github.com/elastic/elasticsearch-hadoop/pull/1592[#1592]
+- Add support for Spark integration on Scala 2.12
+https://github.com/elastic/elasticsearch-hadoop/pull/1589[#1589]
+
+[[bugs-7.12.0]]
+=== Bug Fixes
+
+Build::
+Add properties for pulling Java versions from the environment variables
+https://github.com/elastic/elasticsearch-hadoop/pull/1584[#1584]
