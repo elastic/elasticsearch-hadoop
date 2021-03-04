@@ -23,6 +23,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.SetupTaskFactory
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
@@ -159,6 +160,11 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
         // HADOOP_CONF_DIR -> ...../etc/hadoop/
         env.put('HADOOP_CONF_DIR', confDir.toString())
+    }
+
+    @Override
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
+
     }
 
     @Override

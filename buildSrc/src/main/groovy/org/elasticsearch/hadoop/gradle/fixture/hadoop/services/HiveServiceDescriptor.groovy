@@ -21,11 +21,15 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.services
 
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.SetupTaskFactory
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Delete
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
@@ -55,7 +59,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(1, 2, 2)
+        return new Version(3, 1, 2)
     }
 
     @Override
@@ -123,7 +127,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         // We specify the hive root logger to print to console via the hiveconf override.
-        return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
+        return ['hiveserver2', '--hiveconf', 'hive.root.logger=DEBUG,console']
     }
 
     @Override
@@ -157,7 +161,38 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
+        // Hive 3 "supports" Hadoop 3 only if you patch out the broken Guava library.
+        // When HiveServer loads up Hadoop's Configuration object to start building job definitions, it cannot set
+        // properties on that config when using Hadoop 3. In the latest stable Hadoop 3 distribution, it relies on new
+        // Guava assertion api's (27.0) that are absent from Hive's Guava library (19.0). To fix this, we need to remove
+        // the Hive guava version and replace it with the Hadoop one.
+        InstanceConfiguration hadoopGatewayInstance = configuration.getClusterConf()
+                .service(HadoopClusterConfiguration.HADOOP)
+                .role(HadoopServiceDescriptor.GATEWAY)
+                .instance(0)
+
+        ServiceDescriptor hadoop = hadoopGatewayInstance.getServiceDescriptor()
+        ServiceDescriptor hive = configuration.getServiceDescriptor()
+
+        String hadoopGuavaLib = "${-> hadoopGatewayInstance.getBaseDir().toPath().resolve(hadoop.homeDirName(hadoopGatewayInstance)).resolve('share').resolve('hadoop').resolve('common').resolve('lib').resolve('guava-27.0-jre.jar').toString()}"
+        String hiveLibDir = "${-> configuration.getBaseDir().toPath().resolve(hive.homeDirName(configuration)).resolve('lib').toString()}"
+        String hiveGuavaLib = "${-> configuration.getBaseDir().toPath().resolve(hive.homeDirName(configuration)).resolve('lib').resolve('guava-19.0.jar').toString()}"
+
+        taskFactory.createServiceSetupTask('replaceHiveGuavaVersion', Copy.class, { Copy copyTask ->
+            copyTask.from(hadoopGuavaLib)
+            copyTask.into(hiveLibDir)
+            copyTask.setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+        })
+        taskFactory.createServiceSetupTask('removeOldHiveGuavaVersion', Delete.class, { Delete deleteTask ->
+            deleteTask.delete(hiveGuavaLib)
+        })
+    }
+
+    @Override
     Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration) {
-        return [:] // None for now. Hive may require a schema tool to be run in the future though.
+        return [
+                "schematool": ["bin/schematool", "-dbType", "derby", "-initSchema"].toArray()
+        ]
     }
 }

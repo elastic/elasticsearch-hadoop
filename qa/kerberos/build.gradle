@@ -364,6 +364,9 @@ if (disableTests) {
         config.service('spark')
         config.service('hive') { ServiceConfiguration s ->
             s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+            s.addSetting('hive.execution.engine', 'mr')
+            // Hive attempts to establish a tez session at start up, but there are no Tez libraries distributed with Hive.
+            s.addSetting('hive.server2.active.passive.ha.enable', 'true')
             s.addSetting('hive.server2.authentication', 'kerberos')
             s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
             s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
@@ -584,10 +587,10 @@ if (disableTests) {
         InstanceConfiguration i = config.service('hive').role('hiveserver').instance(0)
         ServiceDescriptor hive = i.getServiceDescriptor()
         Object lazyEvalBeelineScript = "${->i.getBaseDir().toPath().resolve(hive.homeDirName(i)).resolve(hive.scriptDir(i)).resolve('ext').toString()}"
-        String patchedBeeline = resourceDir.toPath().resolve('hive').resolve('patches').resolve('1.2.2').resolve('beeline.sh').toString()
+        String lazyPatchedBeeline = "${->resourceDir.toPath().resolve('hive').resolve('patches').resolve(i.getServiceConf().getVersion().toString()).resolve('beeline.sh').toString()}"
         // Just in case any of the directories in Hive are shifted around, before running the fixture, we resolve
         // the path to the beeline ext script lazily.
-        from patchedBeeline
+        from lazyPatchedBeeline
         into lazyEvalBeelineScript
         setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
     }
