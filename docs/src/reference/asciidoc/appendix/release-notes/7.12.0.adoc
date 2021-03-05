@@ -13,6 +13,8 @@ Spark::
 https://github.com/elastic/elasticsearch-hadoop/pull/1592[#1592]
 - Add support for Spark integration on Scala 2.12
 https://github.com/elastic/elasticsearch-hadoop/pull/1589[#1589]
+- Distinguish core Spark artifacts from each other
+https://github.com/elastic/elasticsearch-hadoop/pull/1586[#1586]
 
 [[bugs-7.12.0]]
 === Bug Fixes
