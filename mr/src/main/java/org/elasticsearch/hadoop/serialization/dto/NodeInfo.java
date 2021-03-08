@@ -58,8 +58,8 @@ public class NodeInfo implements Serializable {
             this.isIngest = false;
         } else {
             List<String> roles = (List<String>) map.get("roles");
-            this.isClient = roles.contains("data") == false;
-            this.isData = roles.contains("data");
+            this.isData = roles.stream().anyMatch(role -> role.contains("data"));
+            this.isClient = !this.isData;
             this.isIngest = roles.contains("ingest");
         }
         Map<String, Object> httpMap = (Map<String, Object>) map.get("http");
