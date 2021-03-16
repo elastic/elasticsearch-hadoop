@@ -36,6 +36,12 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation(project(":test:shared"))
+    testImplementation("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    testImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
 
     itestImplementation(project(":test:shared"))
     itestImplementation("org.apache.hive:hive-service:$hiveVersion") {
@@ -54,7 +60,6 @@ jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
@@ -71,7 +76,6 @@ itestJar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }

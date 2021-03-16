@@ -3,12 +3,15 @@ plugins {
     id 'es.hadoop.build'
 }
 
-description = "Elasticsearch Hadoop Third-Party Libraries"
+description = "Elasticsearch Hadoop Shaded Third-Party Libraries"
 
 configurations {
     shaded {
         transitive = false
         canBeResolved = true
+    }
+    implementation {
+        extendsFrom shaded
     }
 }
 
@@ -23,5 +26,5 @@ dependencies {
 
 shadowJar {
     configurations = [project.configurations.shaded]
-//    relocate 'org.apache', 'org.elasticsearch.thirdparty.apache'
+    relocate 'org.apache.commons.httpclient', 'org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient'
 }

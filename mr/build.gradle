@@ -58,7 +58,7 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     implementation("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-    
+
     testImplementation(project(":test:shared"))
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
@@ -98,7 +98,6 @@ jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
@@ -109,13 +108,11 @@ itestJar {
     dependsOn(project.configurations.itestEmbedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
     from(project.configurations.itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
