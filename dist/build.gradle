@@ -1,5 +1,7 @@
 import org.elasticsearch.gradle.ConcatFilesTask
 import org.elasticsearch.gradle.DependenciesInfoTask
+import org.elasticsearch.gradle.internal.precommit.DependencyLicensesTask
+import org.elasticsearch.hadoop.gradle.BuildPlugin
 
 apply plugin: 'es.hadoop.build'
 
@@ -28,7 +30,18 @@ configurations {
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'packaging'))
         }
     }
+    thirdPartyShaded {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+    }
+    licenseChecks {
+        extendsFrom thirdPartyShaded
+        extendsFrom runtimeClasspath
+    }
 }
+
+BuildPlugin.disableTransitiveDependencies(project, project.configurations.thirdPartyShaded)
 
 def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig",
                     ":elasticsearch-spark-20", ":elasticsearch-storm"]
@@ -57,8 +70,9 @@ distProjects.each { distProject ->
 
 dependencies {
     // For Uber pom (and Javadoc to a lesser extent)
+    thirdPartyShaded("commons-httpclient:commons-httpclient:3.0.1")
+
     implementation("commons-logging:commons-logging:1.1.1")
-    implementation("commons-httpclient:commons-httpclient:3.0.1")
     implementation("commons-codec:commons-codec:1.4")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.apache.hive:hive-service:$hiveVersion") {
@@ -175,4 +189,10 @@ task generateDependenciesReport(type: ConcatFilesTask) {
     files = fileTree(dir: project.rootDir,  include: '**/dependencies.csv' )
     headerLine = "name,version,url,license"
     target = new File(System.getProperty('csv')?: "${project.buildDir}/reports/dependencies/es-hadoop-dependencies.csv")
+}
+
+project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
+    it.dependencies = project.configurations.licenseChecks.fileCollection {
+        !(it instanceof ProjectDependency)
+    }
 }

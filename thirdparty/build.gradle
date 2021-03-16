@@ -1,3 +1,5 @@
+import org.elasticsearch.hadoop.gradle.BuildPlugin
+
 plugins {
     id 'com.github.johnrengelman.shadow'
     id 'es.hadoop.build'
@@ -14,6 +16,8 @@ configurations {
         extendsFrom shaded
     }
 }
+
+BuildPlugin.disableTransitiveDependencies(project, configurations.shaded)
 
 dependencies {
     shaded("commons-httpclient:commons-httpclient:3.0.1")
