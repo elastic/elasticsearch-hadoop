@@ -20,10 +20,13 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.EsAssume;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -37,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -52,6 +56,8 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     private static String previousQuery;
     private boolean readMetadata;
     private EsMajorVersion testVersion;
+    private static Configuration testConfiguration = HdpBootstrap.hadoopConfig();
+    private static String workingDir = HadoopCfgUtils.isLocal(testConfiguration) ? Paths.get("").toAbsolutePath().toString() : "/";
 
     @ClassRule
     public static LazyTempFolder tempFolder = new LazyTempFolder();
@@ -339,7 +345,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
 
     private static String tmpPig() {
         return new Path("tmp-pig/read-json-" + testInstance)
-                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path("/"))
+                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path(workingDir))
                 .toUri()
                 .toString();
     }

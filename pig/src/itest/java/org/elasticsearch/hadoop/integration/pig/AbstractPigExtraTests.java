@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
 import static org.elasticsearch.hadoop.util.TestUtils.resource;
@@ -47,6 +48,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     private EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
     private static String PIG_DATA_DIR = "/pig-data/";
     private static Configuration testConfiguration = HdpBootstrap.hadoopConfig();
+    private static String workingDir = HadoopCfgUtils.isLocal(testConfiguration) ? Paths.get("").toAbsolutePath().toString() : "/";
 
     @ClassRule
     public static TestData testData = new TestData();
@@ -174,7 +176,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
 
     private static String tmpPig() {
         return new Path("tmp-pig/extra")
-                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path("/"))
+                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path(workingDir))
                 .toUri()
                 .toString();
     }
