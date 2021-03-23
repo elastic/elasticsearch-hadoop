@@ -12,9 +12,13 @@ For clarity, we always list any breaking changes at the top of the
 
 //NOTE: The notable-breaking-changes tagged regions are re-used in the
 //Installation and Upgrade Guide
+////
 // tag::notable-v7-breaking-changes[]
 
+There are no breaking changes in {minor-version}.
+
 // end::notable-v7-breaking-changes[]
+////
 
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
