@@ -25,11 +25,11 @@ import java.util.Deque;
 import java.util.LinkedList;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonEncoding;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonFactory;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class JacksonJsonGenerator implements Generator {
