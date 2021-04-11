@@ -175,7 +175,7 @@ class BaseBuildPlugin implements Plugin<Project> {
         for (String repo : ['snapshots', 'artifacts']) {
             project.repositories.ivy {
                 url "https://${repo}.elastic.co/downloads"
-                layout "pattern", {
+                patternLayout {
                     artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
                 }
             }

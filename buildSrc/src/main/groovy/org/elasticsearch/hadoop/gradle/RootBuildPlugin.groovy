@@ -68,13 +68,13 @@ class RootBuildPlugin implements Plugin<Project> {
         Zip distZip = project.getTasks().create('distZip', Zip.class)
         distZip.dependsOn(project.getTasks().getByName('pack'))
         distZip.setGroup('Distribution')
-        distZip.setDescription("Builds -${distZip.getClassifier()} archive, containing all jars and docs, suitable for download page.")
+        distZip.setDescription("Builds -${distZip.archiveClassifier.get()} archive, containing all jars and docs, suitable for download page.")
 
         Task distribution = project.getTasks().getByName('distribution')
         distribution.dependsOn(distZip)
 
         // Location of the zip dir
-        project.rootProject.ext.folderName = "${distZip.baseName}" + "-" + "${project.version}"
+        project.rootProject.ext.folderName = "${distZip.archiveBaseName.get()}" + "-" + "${project.version}"
 
         // Copy root directory files to zip
         distZip.from(project.rootDir) { CopySpec spec ->

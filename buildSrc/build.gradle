@@ -66,16 +66,16 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
+    compileOnly gradleApi()
+    compileOnly localGroovy()
 
     if (localRepo) {
-        compile name: "build-tools-${buildToolsVersion}"
+        implementation name: "build-tools-${buildToolsVersion}"
         // Required for dependency licenses task (explicitly added in case of localRepo missing transitive dependencies)
-        compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
-        compile group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
+        implementation group: 'commons-codec', name: 'commons-codec', version: '1.12'
+        implementation group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
     } else {
-        compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
+        implementation group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
 }
 
