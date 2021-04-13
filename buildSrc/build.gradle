@@ -53,9 +53,8 @@ props.put("elasticsearch", esVersion)
 props.put("build-tools", buildToolsVersion)
 
 repositories {
-    jcenter()
+    gradlePluginPortal()
     mavenCentral()
-
     // For Elasticsearch snapshots.
     if (localRepo) {
         // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
