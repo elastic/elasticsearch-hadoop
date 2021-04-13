@@ -127,7 +127,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         // We specify the hive root logger to print to console via the hiveconf override.
-        return ['hiveserver2', '--hiveconf', 'hive.root.logger=DEBUG,console']
+        return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
     }
 
     @Override
@@ -162,6 +162,11 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
+        // ***********************************
+        // * WARNING WARNING WARNING WARNING *
+        // ***********************************
+        // - In the future, when Hive finally does upgrade their version of Guava, this likely will no longer be needed!
+        //
         // Hive 3 "supports" Hadoop 3 only if you patch out the broken Guava library.
         // When HiveServer loads up Hadoop's Configuration object to start building job definitions, it cannot set
         // properties on that config when using Hadoop 3. In the latest stable Hadoop 3 distribution, it relies on new

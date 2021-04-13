@@ -94,7 +94,6 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         RestUtils.refresh("json-pig*");
 
         this.scriptHead =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"','es.output.json=true');";
     }
 

@@ -118,7 +118,6 @@ jar {
 
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/**"
-        include "org/apache/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }

@@ -79,13 +79,11 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     @Test
     public void testJoin() throws Exception {
         String script =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "PARENT = LOAD '" + resourceFile("/parent.txt") + "' using PigStorage('|') as (parent_name: chararray, parent_value: chararray);" +
                 "CHILD = LOAD '" + resourceFile("/child.txt") + "' using PigStorage('|') as (child_name: chararray, parent_name: chararray, child_value: long);" +
                 "STORE PARENT into '"+ resource("pig-test-parent", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage();" +
                 "STORE CHILD into '"+resource("pig-test-child", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage();";
        String script2 =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "ES_PARENT = LOAD '"+resource("pig-test-parent", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage() as (parent_name: chararray, parent_value: chararray);" +
                 "ES_CHILD = LOAD '"+resource("pig-test-child", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage() as (child_name: chararray, parent_name: chararray, child_value: long);" +
                 "CO_GROUP = COGROUP ES_PARENT by parent_name, ES_CHILD by parent_name;" +
@@ -111,29 +109,12 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     @Test
     public void testTemporarySchema() throws Exception {
         RestUtils.touch("pig-test-temp_schema");
-        //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
 
         String script =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "data = LOAD '" + resourceFile("/group-sample.txt") + "' using PigStorage(',') as (no:long,name:chararray,age:long);" +
                 "data_limit = LIMIT data 1;" +
                 "data_final = FOREACH data_limit GENERATE TRIM(name) as details, no as number;" +
                 "STORE data_final into '"+resource("pig-test-temp_schema", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage('es.mapping.id=details');";
-        pig.executeScript(script);
-    }
-
-    //@Test
-    public void testGroup() throws Exception {
-        RestUtils.touch("pig-test-group-data-2");
-        //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
-
-        String script =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                "data = LOAD '" + resourceFile("/group-sample.txt") + "' using PigStorage(',') as (no:long,name:chararray,age:long);" +
-                "data = GROUP data by $0;" +
-                "data = FOREACH data GENERATE $1 as details;" +
-                "DUMP data;" +
-                "STORE data into '"+resource("pig-test-group-data-2", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
     }
 
@@ -145,7 +126,6 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         RestUtils.refresh("pig-test-iterate");
 
         String script =
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "data = LOAD '"+resource("pig-test-iterate", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage() as (message:chararray,message_date:chararray);" +
                 "data = FOREACH data GENERATE message_date as date, message as message;" +
                 "STORE data INTO '" + tmpPig() + "/pig-iterate';";
@@ -160,10 +140,6 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     public void testTupleSaving() throws Exception {
 
         String script =
-                // (4,{(4,7,287),(4,7263,48)})
-                // 'es.mapping.pig.tuple.use.field.names = true' -> {"group":4,"answers":[[{"id":4,"parentId":7,"score":287}],[{"id":4,"parentId":7263,"score":48}]]}
-                // 'es.mapping.pig.tuple.use.field.names = false' -> {"group":4,"data":[[4,7,287],[4,7263,48]]}
-//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "answers = LOAD '" + resourceFile("/tuple.txt") + "' using PigStorage(',') as (id:int, parentId:int, score:int);" +
                 "grouped = GROUP answers by id;" +
                 "ILLUSTRATE grouped;" +

@@ -77,7 +77,6 @@ dependencies {
     } else {
         compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
-    compile group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: '6.1.0'
 }
 
 // write the updated properties to a temp property file

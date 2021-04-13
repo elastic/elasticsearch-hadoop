@@ -36,26 +36,32 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 public class HiveValueReader extends WritableValueReader {
 
     private static Log LOG = LogFactory.getLog(HiveValueReader.class);
-    private static boolean TIMESTAMP_V2 = ObjectUtils.isClassPresent(HiveConstants.TIMESTAMP_WRITABLE_V2, HiveValueReader.class.getClassLoader());
-    private static Class<? extends Writable> TIMESTAMP_CLASS;
-    static {
-        if (TIMESTAMP_V2) {
+
+    private final boolean timestampV2Present;
+    private final Class<? extends Writable> timestampClass;
+
+    public HiveValueReader() {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        this.timestampV2Present = ObjectUtils.isClassPresent(HiveConstants.TIMESTAMP_WRITABLE_V2, contextClassLoader);
+        if (timestampV2Present) {
+            Class<? extends Writable> clazz;
             try {
                 @SuppressWarnings("unchecked")
-                Class<? extends Writable> clazz = (Class<? extends Writable>) Class.forName(HiveConstants.TIMESTAMP_WRITABLE_V2);
-                TIMESTAMP_CLASS = clazz;
+                Class<? extends Writable> c = (Class<? extends Writable>) Class.forName(HiveConstants.TIMESTAMP_WRITABLE_V2);
+                clazz = c; // Get around the warning
             } catch (ClassNotFoundException e) {
                 LOG.warn("Could not load " + HiveConstants.TIMESTAMP_WRITABLE_V2 + ". Continuing with legacy Timestamp class.");
-                TIMESTAMP_CLASS = TimestampWritable.class;
+                clazz = TimestampWritable.class;
             }
+            this.timestampClass = clazz;
         } else {
-            TIMESTAMP_CLASS = TimestampWritable.class;
+            this.timestampClass = TimestampWritable.class;
         }
     }
 
     @Override
     protected Class<? extends Writable> dateType() {
-        return TIMESTAMP_CLASS;
+        return timestampClass;
     }
 
     @Override
@@ -76,7 +82,7 @@ public class HiveValueReader extends WritableValueReader {
     @Override
     protected Object parseDate(Long value, boolean richDate) {
         if (richDate) {
-            return TIMESTAMP_V2 ? TimestampWritableV2Reader.readTimestampV2(value) : TimestampWritableReader.readTimestamp(value);
+            return timestampV2Present ? TimestampWritableV2Reader.readTimestampV2(value) : TimestampWritableReader.readTimestamp(value);
         } else {
             return processLong(value);
         }
@@ -86,7 +92,7 @@ public class HiveValueReader extends WritableValueReader {
     protected Object parseDate(String value, boolean richDate) {
         if (richDate) {
             long millis = DatatypeConverter.parseDateTime(value).getTimeInMillis();
-            return TIMESTAMP_V2 ? TimestampWritableV2Reader.readTimestampV2(millis) : TimestampWritableReader.readTimestamp(millis);
+            return timestampV2Present ? TimestampWritableV2Reader.readTimestampV2(millis) : TimestampWritableReader.readTimestamp(millis);
         } else {
             return parseString(value);
         }
