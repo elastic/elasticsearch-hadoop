@@ -8,6 +8,9 @@ defaultTasks 'build'
 
 allprojects {
     group = "org.elasticsearch"
+    tasks.withType(AbstractCopyTask) {
+      duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 }
 
 // Simple utility task to help with downloading artifacts and jars
