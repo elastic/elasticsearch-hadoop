@@ -72,8 +72,12 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             integTestCluster.setting("node.ingest", "true")
             integTestCluster.setting("http.host", "localhost")
             integTestCluster.systemProperty('es.http.cname_in_publish_address', 'true')
-        } else if (majorVersion >= 7) {
+        } else if (majorVersion == 7) {
             integTestCluster.setting("node.ingest", "true")
+            integTestCluster.setting("http.host", "localhost")
+            integTestCluster.systemProperty('es.http.cname_in_publish_address', 'true')
+        } else if (majorVersion >= 8) {
+            integTestCluster.setting("node.roles", "[\"master\", \"data\", \"ingest\"]")
             integTestCluster.setting("http.host", "localhost")
             // TODO: Remove this when this is the default in 7
             integTestCluster.systemProperty('es.http.cname_in_publish_address', 'true')
