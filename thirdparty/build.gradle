@@ -1,7 +1,7 @@
 import org.elasticsearch.hadoop.gradle.BuildPlugin
 
 plugins {
-    id 'com.github.johnrengelman.shadow'
+    id 'com.github.johnrengelman.shadow' version "6.1.0"
     id 'es.hadoop.build'
 }
 
