@@ -28,10 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.google.common.base.Charsets;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.bulk.BulkOutputGenerator;
@@ -39,6 +35,10 @@ import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 

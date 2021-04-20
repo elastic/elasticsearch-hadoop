@@ -18,8 +18,8 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.Protocol;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 /**
  * Class used to make sure wrapped protocol object is behaving like the original one.

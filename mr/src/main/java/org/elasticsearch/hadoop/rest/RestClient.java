@@ -18,10 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
@@ -40,6 +36,10 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;

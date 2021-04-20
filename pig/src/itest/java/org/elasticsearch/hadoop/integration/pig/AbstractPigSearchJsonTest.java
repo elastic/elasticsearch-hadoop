@@ -18,16 +18,22 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.nio.file.Paths;
 import java.util.Collection;
 
-import org.elasticsearch.hadoop.Provisioner;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.EsAssume;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.LazyTempFolder;
@@ -47,6 +53,8 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     private static String previousQuery;
     private boolean readMetadata;
     private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
+    private static Configuration testConfiguration = HdpBootstrap.hadoopConfig();
+    private static String workingDir = HadoopCfgUtils.isLocal(testConfiguration) ? Paths.get("").toAbsolutePath().toString() : "/";
 
     @ClassRule
     public static LazyTempFolder tempFolder = new LazyTempFolder();
@@ -68,6 +76,12 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         }
     }
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        // we do this just here since the configuration doesn't get used in Pig scripts.
+        new QueryTestParams(tempFolder).provisionQueries(AbstractPigTests.testConfiguration);
+    }
+
     @Before
     public void before() throws Exception {
         RestUtils.refresh("json-pig*");
@@ -76,7 +90,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testTuple() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
                 "A = LOAD '"+resource("json-pig-tupleartists", "data", VERSION)+"' USING EsStorage();" +
                 "X = LIMIT A 3;" +
@@ -95,7 +108,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testTupleWithSchema() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
                 "A = LOAD '"+resource("json-pig-tupleartists", "data", VERSION)+"' USING EsStorage() AS (name:chararray);" +
                 "B = ORDER A BY name DESC;" +
@@ -112,7 +124,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testFieldAlias() throws Exception {
         String script =
-                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                        "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query="+ query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD '"+resource("json-pig-fieldalias", "data", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
@@ -129,7 +140,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testMissingIndex() throws Exception {
         String script =
-                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD '"+resource("foo", "bar", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
@@ -144,7 +154,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testParentChild() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         String script =
-                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD 'json-pig-pc/child' USING EsStorage();"
                       + "X = LIMIT A 3;"
@@ -173,6 +182,9 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     }
 
     private static String tmpPig() {
-        return "tmp-pig/json-search-" + testInstance;
+        return new Path("tmp-pig/search-json-" + testInstance)
+                .makeQualified(FileSystem.getDefaultUri(AbstractPigTests.testConfiguration), new Path(workingDir))
+                .toUri()
+                .toString();
     }
 }

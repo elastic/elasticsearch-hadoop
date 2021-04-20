@@ -19,13 +19,12 @@
 
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import java.util.ArrayList;

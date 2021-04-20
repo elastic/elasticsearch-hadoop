@@ -19,6 +19,27 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.security.UgiUtil;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethodBase;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthChallengeParser;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthChallengeProcessor;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthPolicy;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScheme;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthState;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpClientParams;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpParams;
+import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.File;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -30,32 +51,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.auth.AuthChallengeParser;
-import org.apache.commons.httpclient.auth.AuthChallengeProcessor;
-import org.apache.commons.httpclient.auth.AuthPolicy;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.AuthState;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpParams;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.SecurityUtil;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
-import org.elasticsearch.hadoop.security.UgiUtil;
-import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 public class AbstractSpnegoAuthSchemeTest {
 
@@ -159,7 +157,7 @@ public class AbstractSpnegoAuthSchemeTest {
 
                 TestMethod method = new TestMethod();
                 method.setHeaders(new Header[]{new Header("WWW-Authenticate", "Negotiate")});
-                method.setURI(new org.apache.commons.httpclient.URI("http", null, "es.build.elastic.co", 9200));
+                method.setURI(new org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URI("http", null, "es.build.elastic.co", 9200));
 
                 Credentials credentials = new SpnegoCredentials(HadoopUserProvider.create(new TestSettings()), "HTTP/_HOST@BUILD.ELASTIC.CO");
 
@@ -228,7 +226,7 @@ public class AbstractSpnegoAuthSchemeTest {
 
                 TestMethod method = new TestMethod();
                 method.setHeaders(new Header[]{new Header("WWW-Authenticate", "Negotiate")});
-                method.setURI(new org.apache.commons.httpclient.URI("http", null, "127.0.0.1", 9200));
+                method.setURI(new org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URI("http", null, "127.0.0.1", 9200));
 
                 Credentials credentials = new SpnegoCredentials(HadoopUserProvider.create(new TestSettings()), "HTTP/_HOST@BUILD.ELASTIC.CO");
 

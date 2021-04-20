@@ -18,12 +18,12 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.rest.PartitionDefinition.PartitionDefinitionBuilder;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;

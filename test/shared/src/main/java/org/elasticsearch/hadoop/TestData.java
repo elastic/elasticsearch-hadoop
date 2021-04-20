@@ -112,6 +112,14 @@ public class TestData extends LazyTempFolder {
         return unpackResource(DATA_JOIN_DATA_ALL_DAT, getDataRoot());
     }
 
+    public String sampleJoinDat(Configuration cfg) throws IOException {
+        return (HadoopCfgUtils.isLocal(cfg) ? sampleJoinDatURI().toString() : DATA_JOIN_DATA_ALL_DAT);
+    }
+
+    public File unpackResource(String resource) throws IOException {
+        return unpackResource(resource, getDataRoot());
+    }
+
     public static synchronized File unpackResource(String resource, File stagingLocation) {
         if (stagingLocation.exists() == false) {
             throw new IllegalArgumentException("staging location must exist for resource to be unpacked");

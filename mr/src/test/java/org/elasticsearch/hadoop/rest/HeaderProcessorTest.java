@@ -19,15 +19,13 @@
 
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.PostMethod;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
-
-import java.util.Properties;
 
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
