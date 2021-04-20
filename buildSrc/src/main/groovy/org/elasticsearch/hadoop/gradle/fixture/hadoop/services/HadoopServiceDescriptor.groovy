@@ -24,6 +24,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.SetupTaskFactory
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
@@ -61,7 +62,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 7, 7)
+        return new Version(3, 3, 0)
     }
 
     @Override
@@ -78,6 +79,15 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     String artifactName(ServiceConfiguration configuration) {
         Version version = configuration.getVersion()
         return "hadoop-${version}"
+    }
+
+    @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // The share/doc directory has like 20k files in it that just do not have any business being extracted.
+        // Switching back to the IDE after a test causes it to choke from the crazy number of FS updates because of
+        // this dir.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/share/doc/"]
     }
 
     @Override
@@ -147,6 +157,14 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         // history server addresses
         mapredSite.putIfAbsent('mapreduce.jobhistory.address', 'localhost:10020')
         mapredSite.putIfAbsent('mapreduce.jobhistory.webapp.address', 'localhost:19888')
+
+        // mapreduce env settings
+        File hadoopBaseDir = configuration.getBaseDir()
+        String homeDirName = homeDirName(configuration)
+        File mapredHome = new File(hadoopBaseDir, homeDirName)
+        mapredSite.putIfAbsent('yarn.app.mapreduce.am.env', "HADOOP_MAPRED_HOME=${mapredHome}")
+        mapredSite.putIfAbsent('mapreduce.map.env', "HADOOP_MAPRED_HOME=${mapredHome}")
+        mapredSite.putIfAbsent('mapreduce.reduce.env', "HADOOP_MAPRED_HOME=${mapredHome}")
 
         files.put('mapred-site.xml', mapredSite)
 
@@ -261,6 +279,11 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
+
+    }
+
+    @Override
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
 
     }
 

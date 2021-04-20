@@ -20,11 +20,11 @@ package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.NoOpLog;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.Test;
 import org.mockito.Mockito;

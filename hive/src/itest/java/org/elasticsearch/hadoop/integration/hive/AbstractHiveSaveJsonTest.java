@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -165,7 +166,7 @@ public class AbstractHiveSaveJsonTest {
         System.out.println(server.execute(insert));
     }
 
-    @Test(expected = HiveSQLException.class)
+    @Test(expected = SQLException.class)
     public void testCreateWithDuplicates() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -228,7 +229,7 @@ public class AbstractHiveSaveJsonTest {
     }
 
 
-    @Test(expected = HiveSQLException.class)
+    @Test(expected = SQLException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one

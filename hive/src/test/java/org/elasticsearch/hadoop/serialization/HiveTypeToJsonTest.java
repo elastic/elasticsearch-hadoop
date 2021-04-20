@@ -31,7 +31,7 @@ import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
-import org.apache.hadoop.hive.serde2.io.TimestampWritable;
+import org.apache.hadoop.hive.serde2.io.TimestampWritableV2;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
@@ -148,7 +148,7 @@ public class HiveTypeToJsonTest {
     @Test
     public void testTimestamp() {
         assertTrue(hiveTypeToJson(
-                new MyHiveType(new TimestampWritable(new Timestamp(1407239910771l)), timestampTypeInfo)).startsWith(
+                new MyHiveType(new TimestampWritableV2(org.apache.hadoop.hive.common.type.Timestamp.ofEpochMilli(1407239910771L)), timestampTypeInfo)).startsWith(
                         "\"2014-08-0"));
     }
 

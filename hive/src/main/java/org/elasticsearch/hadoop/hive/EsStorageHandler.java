@@ -28,7 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
-import org.apache.hadoop.hive.serde2.SerDe;
+import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
@@ -75,7 +75,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
     }
 
     @Override
-    public Class<? extends SerDe> getSerDeClass() {
+    public Class<? extends AbstractSerDe> getSerDeClass() {
         return EsSerDe.class;
     }
 

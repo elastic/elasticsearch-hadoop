@@ -283,13 +283,6 @@ class BuildPlugin implements Plugin<Project> {
                 // Locking on to joda 2.8
                 resolve.force('joda-time:joda-time:2.8')
 
-                // Ensure our jackson version is respected in the transient deps
-                resolve.force("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-                resolve.force("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-
-                // force the use of commons-http from Hadoop
-                resolve.force('commons-httpclient:commons-httpclient:3.0.1')
-
                 // used when using Elastic non-shaded version
                 resolve.force("commons-cli:commons-cli:1.2")
 

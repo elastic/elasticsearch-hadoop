@@ -114,9 +114,13 @@ class BaseBuildPlugin implements Plugin<Project> {
             println "Using Gradle [${project.gradle.gradleVersion}]"
 
             // Hadoop versions
-            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopYarn"
+            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoop3"
             switch (project.rootProject.ext.hadoopDistro) {
             // Hadoop YARN/2.0.x
+                case "hadoop3":
+                    project.rootProject.ext.hadoopVersion = project.hadoop3Version
+                    println "Using Apache Hadoop on YARN [$project.hadoop3Version]"
+                    break
                 case "hadoopYarn":
                     project.rootProject.ext.hadoopVersion = project.hadoop2Version
                     println "Using Apache Hadoop on YARN [$project.hadoop2Version]"

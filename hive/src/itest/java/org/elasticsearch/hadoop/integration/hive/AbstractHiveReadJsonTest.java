@@ -19,7 +19,7 @@
 
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.apache.hive.service.cli.HiveSQLException;
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.EsAssume;
@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,6 +75,7 @@ public class AbstractHiveReadJsonTest {
         provisionEsLib();
         RestUtils.refresh("json-hive*");
         targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
+        new QueryTestParams(tempFolder).provisionQueries(HdpBootstrap.hadoopConfig());
     }
 
     @After
@@ -114,7 +116,7 @@ public class AbstractHiveReadJsonTest {
         assertContains(result, "last.fm/serve/252/5872875.jpg");
     }
 
-    @Test(expected = HiveSQLException.class)
+    @Test(expected = SQLException.class)
     public void basicLoadWithNoGoodCandidateField() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE jsonartistsread" + testInstance + " (refuse INT, garbage INT) "

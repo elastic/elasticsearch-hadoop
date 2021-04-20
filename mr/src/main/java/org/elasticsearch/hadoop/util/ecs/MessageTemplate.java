@@ -22,7 +22,6 @@ package org.elasticsearch.hadoop.util.ecs;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jackson.map.annotate.JacksonStdImpl;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;

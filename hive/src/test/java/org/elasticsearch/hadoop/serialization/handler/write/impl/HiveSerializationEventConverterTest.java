@@ -35,6 +35,7 @@ import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -85,7 +86,11 @@ public class HiveSerializationEventConverterTest {
         SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), tuple, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, startsWith("HiveType{object=org.apache.hadoop.io.MapWritable@"));
+        assertThat(rawEvent, startsWith("HiveType{object={"));
+        assertThat(rawEvent, containsString("one=1"));
+        assertThat(rawEvent, containsString("two=2"));
+        assertThat(rawEvent, containsString("three=3"));
+        assertThat(rawEvent, containsString("inspector=org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector@"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);

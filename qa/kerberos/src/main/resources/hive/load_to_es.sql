@@ -12,7 +12,7 @@ FIELDS TERMINATED BY '\t'
 STORED AS TEXTFILE
 LOCATION '/data/artists';
 
-SELECT * FROM artist_data LIMIT 10;
+SELECT ad.num, ad.name, ad.url, ad.picture, from_unixtime(unix_timestamp()), ad.tag FROM artist_data ad LIMIT 10;
 
 DROP TABLE IF EXISTS es_artist_data;
 
@@ -21,7 +21,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS es_artist_data (
   name STRING,
   url STRING,
   picture STRING,
-  ts STRING,
+  ts TIMESTAMP,
   tag STRING)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES(
@@ -30,5 +30,6 @@ TBLPROPERTIES(
   'es.net.spnego.auth.elasticsearch.principal' = 'HTTP/build.elastic.co@BUILD.ELASTIC.CO'
 );
 
+-- Create random timestamps up front since Hive's timestamp format differs from ISO8601
 INSERT OVERWRITE TABLE es_artist_data
-SELECT * FROM artist_data;
+SELECT ad.num, ad.name, ad.url, ad.picture, from_unixtime(unix_timestamp()), ad.tag FROM artist_data ad;

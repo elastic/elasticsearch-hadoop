@@ -21,8 +21,8 @@ package org.elasticsearch.hadoop.serialization.json;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 
 public abstract class JsonFactory {
@@ -37,7 +37,7 @@ public abstract class JsonFactory {
     private static class JacksonObjectReader {
         public static <E> ObjectReader reader(final ObjectMapper mapper, final Class<E> clazz) {
             return new ObjectReader() {
-                private final org.codehaus.jackson.map.ObjectReader or = mapper.reader(clazz);
+                private final org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectReader or = mapper.reader(clazz);
 
                 @Override
                 public <T> Iterator<T> readValues(JsonParser parser) throws IOException {

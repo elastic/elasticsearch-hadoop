@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.EsAssume;
@@ -77,6 +78,7 @@ public class AbstractHiveSearchTest {
         provisionEsLib();
         RestUtils.refresh("hive*");
         targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
+        new QueryTestParams(tempFolder).provisionQueries(HdpBootstrap.hadoopConfig());
     }
 
     @After
