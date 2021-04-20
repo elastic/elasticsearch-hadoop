@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.integration.hive;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
@@ -41,7 +43,10 @@ import org.junit.runners.Suite;
 //@Suite.SuiteClasses({ AbstractHiveSaveJsonTest.class, AbstractHiveSearchJsonTest.class })
 //@Suite.SuiteClasses({ AbstractHiveSaveJsonTest.class, AbstractHiveReadJsonTest.class })
 //@Suite.SuiteClasses({ AbstractHiveSaveTest.class })
+//@Suite.SuiteClasses({ AbstractHiveExtraTests.class })
 public class HiveSuite {
+
+    static Log LOG = LogFactory.getLog(HiveSuite.class);
 
     static HiveInstance server;
     static boolean isLocal = true;
@@ -79,9 +84,15 @@ public class HiveSuite {
             String hive = props.getProperty("hive", "local");
 
             isLocal = "local".equals(hive);
+            LOG.info("Executing hive tests against " + (isLocal ? "embedded hiveserver" : "jdbc connection"));
             server = (isLocal ? new HiveEmbeddedServer2(props) : new HiveJdbc(hive));
             server.start();
 
+            if (isLocal) {
+                HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+                String jar = "ADD JAR " + HdfsUtils.qualify(Provisioner.HDFS_ES_HDP_LIB, HdpBootstrap.hadoopConfig());
+                server.execute(jar);
+            }
             server.execute(cleanDdl);
             server.execute(createDB);
             server.execute(useDB);
@@ -172,7 +183,7 @@ public class HiveSuite {
             HdfsUtils.copyFromLocal(originalResource, hdfsResource);
 
             hdfsJsonResource = "/eshdp/hive/hive-compund.json";
-            HdfsUtils.copyFromLocal(originalResource, hdfsJsonResource);
+            HdfsUtils.copyFromLocal(originalJsonResource, hdfsJsonResource);
         }
 
         String jar = "ADD JAR " + HiveSuite.hdfsEsLib;

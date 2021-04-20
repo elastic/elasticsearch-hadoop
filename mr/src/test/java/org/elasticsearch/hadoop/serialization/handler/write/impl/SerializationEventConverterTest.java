@@ -28,11 +28,9 @@ import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class SerializationEventConverterTest {
@@ -69,7 +67,7 @@ public class SerializationEventConverterTest {
         SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, Matchers.startsWith("org.apache.hadoop.io.MapWritable@"));
+        assertEquals("{field=value}", rawEvent);
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);

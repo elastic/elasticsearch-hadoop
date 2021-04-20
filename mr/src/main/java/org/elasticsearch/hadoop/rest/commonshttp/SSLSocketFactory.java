@@ -39,9 +39,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -49,6 +46,9 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.security.SecureSettings;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.ConnectTimeoutException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpConnectionParams;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 

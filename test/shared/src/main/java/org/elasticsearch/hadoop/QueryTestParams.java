@@ -20,12 +20,16 @@ package org.elasticsearch.hadoop;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.elasticsearch.hadoop.fs.HdfsUtils;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.junit.rules.LazyTempFolder;
 
@@ -35,13 +39,16 @@ public class QueryTestParams {
     private static final String QUERY_URI = "/org/elasticsearch/hadoop/integration/query.uri";
 
     private final File stagingLocation;
+    private final boolean isLocal;
 
     public QueryTestParams(LazyTempFolder temporaryFolder) {
-        this.stagingLocation = temporaryFolder.getOrCreateFolder("queries");
+        this(temporaryFolder.getOrCreateFolder("queries"));
     }
 
     public QueryTestParams(File stagingDir) {
         this.stagingLocation = stagingDir;
+        JobConf testConfiguration = HdpBootstrap.hadoopConfig();
+        this.isLocal = HadoopCfgUtils.isLocal(testConfiguration);
     }
 
     public Collection<Object[]> jsonParams() {
@@ -166,7 +173,17 @@ public class QueryTestParams {
     }
 
     private String resource(String resource) {
-        return TestData.unpackResource(resource, stagingLocation).toURI().toString();
+        if (isLocal) {
+            return TestData.unpackResource(resource, stagingLocation).toURI().toString();
+        } else {
+            // The path that exists on HDFS. Must call provisionQueries at job setup.
+            Configuration conf = HdpBootstrap.hadoopConfig();
+            URI fsURI = FileSystem.getDefaultUri(conf);
+            Path fsRootDir = new Path("/");
+            // 3-way URL merge: takes fs address component if missing, and treats root
+            // dir as working dir for relative paths.
+            return new Path(resource).makeQualified(fsURI, fsRootDir).toUri().toString();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -174,11 +191,16 @@ public class QueryTestParams {
         if (HadoopCfgUtils.isLocal(cfg)) {
             return cfg;
         }
-
         try {
-            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(QUERY_DSL, stagingLocation).getAbsolutePath()), cfg);
-            DistributedCache.addFileToClassPath(new Path(TestData.unpackResource(QUERY_URI, stagingLocation).getAbsolutePath()), cfg);
+            String localQueryDSLFile = TestData.unpackResource(QUERY_DSL, stagingLocation).getAbsolutePath();
+            HdfsUtils.copyFromLocal(localQueryDSLFile, QUERY_DSL);
+            DistributedCache.addFileToClassPath(new Path(QUERY_DSL), cfg);
+
+            String localQueryURIFile = TestData.unpackResource(QUERY_URI, stagingLocation).getAbsolutePath();
+            HdfsUtils.copyFromLocal(localQueryURIFile, QUERY_URI);
+            DistributedCache.addFileToClassPath(new Path(QUERY_URI), cfg);
         } catch (IOException ex) {
+            throw new RuntimeException("Could not load query files to distributed cache", ex);
         }
         return cfg;
     }

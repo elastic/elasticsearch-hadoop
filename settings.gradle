@@ -1,4 +1,12 @@
+pluginManagement {
+  plugins {
+    id 'com.github.johnrengelman.shadow' version "6.1.0"
+  }
+}
+
 rootProject.name = "elasticsearch-hadoop"
+
+include 'thirdparty'
 
 include 'mr'
 project(":mr").name = "elasticsearch-hadoop-mr"

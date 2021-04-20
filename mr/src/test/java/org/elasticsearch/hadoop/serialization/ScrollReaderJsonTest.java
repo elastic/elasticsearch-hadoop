@@ -25,11 +25,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;

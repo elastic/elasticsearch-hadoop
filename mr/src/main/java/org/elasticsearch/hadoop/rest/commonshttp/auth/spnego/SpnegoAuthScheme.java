@@ -19,25 +19,24 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URIException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScheme;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthenticationException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.MalformedChallengeException;
+import org.elasticsearch.hadoop.util.StringUtils;
+import org.ietf.jgss.GSSException;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.AuthenticationException;
-import org.apache.commons.httpclient.auth.MalformedChallengeException;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
-import org.elasticsearch.hadoop.security.User;
-import org.elasticsearch.hadoop.util.StringUtils;
-import org.ietf.jgss.GSSException;
 
 public class SpnegoAuthScheme implements AuthScheme, Closeable {
 

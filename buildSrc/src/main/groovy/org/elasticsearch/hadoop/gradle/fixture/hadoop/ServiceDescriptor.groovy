@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.gradle.api.Task
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
@@ -73,6 +74,12 @@ interface ServiceDescriptor {
      * The name of the artifact that will be downloaded.
      */
     String artifactName(ServiceConfiguration configuration)
+
+    /**
+     * Returns a collection of directories/files that can be excluded when extracting an archive. Some distributions
+     * include entire directories full of things we do not need in the fixture like documentation and example code.
+     */
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration)
 
     /**
      * The name of the directory under the base dir that contains the package contents.
@@ -130,8 +137,16 @@ interface ServiceDescriptor {
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration)
 
     /**
-     * A map of default setup commands to run for an instance. The name of the command
-     * is mapped to the command line contents.
+     * Configure a list of Gradle tasks that are specific to setting up this service. If a setup step needs
+     * to run scripts that are provided by the service installation's bin directory, use defaultSetupCommands
+     * instead.
+     */
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory)
+
+    /**
+     * A map of default setup commands to run for an instance. Each entry's key is the taskName to use for the
+     * exec command, and value is the command line to execute. Every command is resolved against the instance's
+     * home directory. If you need to perform set up operations with Gradle tasks, use configureSetupTasks.
      */
     Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration)
 }

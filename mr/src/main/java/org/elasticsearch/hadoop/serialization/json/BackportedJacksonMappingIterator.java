@@ -39,18 +39,19 @@ package org.elasticsearch.hadoop.serialization.json;
  * limitations under the License.
  */
 
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonStreamContext;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonToken;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationContext;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.JsonDeserializer;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.JsonMappingException;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.RuntimeJsonMappingException;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.type.JavaType;
+
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonStreamContext;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.DeserializationContext;
-import org.codehaus.jackson.map.JsonDeserializer;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.RuntimeJsonMappingException;
-import org.codehaus.jackson.type.JavaType;
 
 /**
  * Backported class from Jackson 1.8.8 for Jackson 1.5.2

@@ -91,6 +91,7 @@ sparkVariants {
                 add(variant.configuration('compileOnly'), "org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
                 add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
                 add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+                add(variant.configuration('compileOnly'), "org.codehaus.woodstox:stax2-api:3.1.4")
             }
 
             add(variant.configuration('test', 'implementation'), project(":test:shared"))

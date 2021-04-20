@@ -39,10 +39,10 @@ package org.elasticsearch.hadoop.serialization.json;
  * limitations under the License.
  */
 
-import java.lang.ref.SoftReference;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.util.BufferRecycler;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.util.TextBuffer;
 
-import org.codehaus.jackson.util.BufferRecycler;
-import org.codehaus.jackson.util.TextBuffer;
+import java.lang.ref.SoftReference;
 
 /**
  * Backported class from Jackson 1.8.8 for Jackson 1.5.2
@@ -88,7 +88,7 @@ public class BackportedJsonStringEncoder {
     }
 
     /**
-     * This <code>ThreadLocal</code> contains a {@link java.lang.ref.SoftRerefence}
+     * This <code>ThreadLocal</code> contains a {@link SoftReference}
      * to a {@link BufferRecycler} used to provide a low-cost
      * buffer recycling between reader and writer instances.
      */
