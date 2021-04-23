@@ -19,9 +19,9 @@
 
 package org.elasticsearch.hadoop.gradle
 
-import org.elasticsearch.gradle.info.BuildParams
-import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
-import org.elasticsearch.gradle.info.JavaHome
+import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
+import org.elasticsearch.hadoop.gradle.buildtools.info.GlobalBuildInfoPlugin
+import org.elasticsearch.hadoop.gradle.buildtools.info.JavaHome
 import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion

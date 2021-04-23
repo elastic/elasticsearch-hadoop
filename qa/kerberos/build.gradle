@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import org.elasticsearch.gradle.test.AntFixture
+import org.elasticsearch.hadoop.gradle.buildtools.AntFixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopFixturePlugin
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
