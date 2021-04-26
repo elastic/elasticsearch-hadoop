@@ -1,6 +1,6 @@
-import org.elasticsearch.gradle.ConcatFilesTask
-import org.elasticsearch.gradle.DependenciesInfoTask
-import org.elasticsearch.gradle.internal.precommit.DependencyLicensesTask
+import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
+import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoTask
+import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
 import org.elasticsearch.hadoop.gradle.BuildPlugin
 
 apply plugin: 'es.hadoop.build'

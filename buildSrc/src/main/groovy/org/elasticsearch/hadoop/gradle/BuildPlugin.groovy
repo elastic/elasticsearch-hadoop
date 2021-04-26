@@ -1,11 +1,30 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.elasticsearch.hadoop.gradle
 
-import org.elasticsearch.gradle.DependenciesInfoPlugin
-import org.elasticsearch.gradle.info.BuildParams
-import org.elasticsearch.gradle.internal.precommit.DependencyLicensesTask
-import org.elasticsearch.gradle.internal.precommit.LicenseHeadersTask
-import org.elasticsearch.gradle.internal.precommit.UpdateShasTask
-import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
+import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoPlugin
+import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
+import org.elasticsearch.hadoop.gradle.buildtools.LicenseHeadersTask
+import org.elasticsearch.hadoop.gradle.buildtools.StandaloneRestIntegTestTask
+import org.elasticsearch.hadoop.gradle.buildtools.UpdateShasTask
+import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
