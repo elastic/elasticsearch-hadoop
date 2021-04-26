@@ -20,10 +20,10 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.apache.tools.ant.DefaultLogger
-import org.elasticsearch.gradle.LoggedExec
 import org.elasticsearch.gradle.Version
-import org.elasticsearch.gradle.test.Fixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
+import org.elasticsearch.hadoop.gradle.buildtools.Fixture
+import org.elasticsearch.hadoop.gradle.buildtools.LoggedExec
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration

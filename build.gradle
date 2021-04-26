@@ -1,4 +1,4 @@
-import org.elasticsearch.gradle.ConcatFilesTask
+import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
 
 description = 'Elasticsearch for Apache Hadoop'
 
