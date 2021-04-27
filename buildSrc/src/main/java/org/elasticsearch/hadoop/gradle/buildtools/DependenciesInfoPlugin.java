@@ -20,7 +20,6 @@
 package org.elasticsearch.hadoop.gradle.buildtools;
 
 import org.elasticsearch.gradle.dependencies.CompileOnlyResolvePlugin;
-import org.elasticsearch.gradle.internal.precommit.DependencyLicensesTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaPlugin;
