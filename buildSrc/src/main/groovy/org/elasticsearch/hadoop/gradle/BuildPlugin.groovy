@@ -22,7 +22,7 @@ package org.elasticsearch.hadoop.gradle
 import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoPlugin
 import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
 import org.elasticsearch.hadoop.gradle.buildtools.LicenseHeadersTask
-import org.elasticsearch.hadoop.gradle.buildtools.StandaloneRestIntegTestTask
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.hadoop.gradle.buildtools.UpdateShasTask
 import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
