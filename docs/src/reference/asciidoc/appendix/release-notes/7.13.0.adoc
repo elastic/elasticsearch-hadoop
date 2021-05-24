@@ -1,0 +1,11 @@
+[[eshadoop-7.13.0]]
+== Elasticsearch for Apache Hadoop version 7.13.0
+
+coming::[7.13.0]
+
+[[new-7.13.0]]
+=== Enhancements
+
+Build::
+- Upgrade Hadoop and Hive to version 3
+https://github.com/elastic/elasticsearch-hadoop/pull/1636[#1636]
