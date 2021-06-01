@@ -175,7 +175,7 @@ class BaseBuildPlugin implements Plugin<Project> {
         project.repositories.mavenCentral()
         project.repositories.maven { url "https://conjars.org/repo" }
         project.repositories.maven { url "https://clojars.org/repo" }
-        project.repositories.maven { url 'https://repo.spring.io/plugins-release' }
+        project.repositories.maven { url 'https://repo.spring.io/plugins-release-local' }
 
         // For Elasticsearch snapshots.
         project.repositories.maven { url "https://snapshots.elastic.co/maven/" } // default
