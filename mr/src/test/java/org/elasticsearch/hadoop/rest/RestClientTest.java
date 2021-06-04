@@ -473,7 +473,7 @@ public class RestClientTest {
             client.mainInfo();
             fail("Shouldn't operate on main version that is too old.");
         } catch (EsHadoopIllegalStateException e) {
-            assertEquals("Invalid major version [2.0.0]. Version is lower than minimum required version [5.x].", e.getMessage());
+            assertEquals("Invalid major version [2.0.0]. Version is lower than minimum required version [6.x].", e.getMessage());
         }
     }
 
@@ -499,7 +499,7 @@ public class RestClientTest {
             client.mainInfo();
             fail("Shouldn't operate on request that does not contain the required headers.");
         } catch (EsHadoopTransportException e) {
-            assertEquals("Connected, but could not verify server is Elasticsearch. Response missing [X-Elastic-Product] header. " +
+            assertEquals("Connected, but could not verify server is Elasticsearch. Response missing [X-elastic-product] header. " +
                     "Please check that you are connecting to an Elasticsearch instance, and that any networking filters are " +
                     "preserving that header.", e.getMessage());
         }
@@ -511,7 +511,7 @@ public class RestClientTest {
                 "\"name\": \"node\",\n" +
                 "\"cluster_name\": \"cluster\",\n" +
                 "\"version\": {\n" +
-                "  \"number\": \"5.0.1\"\n" +
+                "  \"number\": \"6.0.1\"\n" +
                 "},\n" +
                 "\"tagline\": \"You Know, for Search\"\n" +
                 "}";
