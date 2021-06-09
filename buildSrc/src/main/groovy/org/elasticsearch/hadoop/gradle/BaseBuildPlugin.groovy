@@ -163,7 +163,6 @@ class BaseBuildPlugin implements Plugin<Project> {
      */
     private static void configureRepositories(Project project) {
         project.repositories.mavenCentral()
-        project.repositories.maven { url "https://conjars.org/repo" }
         project.repositories.maven { url "https://clojars.org/repo" }
         project.repositories.maven { url 'https://repo.spring.io/plugins-release-local' }
 
