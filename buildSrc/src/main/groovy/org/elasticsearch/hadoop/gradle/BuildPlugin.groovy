@@ -172,7 +172,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.repositories.mavenCentral()
         project.repositories.maven { url "https://conjars.org/repo" }
         project.repositories.maven { url "https://clojars.org/repo" }
-        project.repositories.maven { url 'https://repo.spring.io/plugins-release' }
+        project.repositories.maven { url 'https://repo.spring.io/plugins-release-local' }
 
         // Elastic artifacts
         project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
