@@ -1055,15 +1055,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_starts_with")
     var filter = df.filter(df("airport").startsWith("O"))
 
-    if (!keepHandledFilters) {
+    if (!keepHandledFilters && !strictPushDown) {
       // term query pick field with multi values
       assertEquals(2, filter.count())
       return
     }
 
     filter.show
-    assertEquals(1, filter.count())
-    assertEquals("feb", filter.select("tag").take(1)(0)(0))
+    if (strictPushDown) {
+      assertEquals(0, filter.count()) // Strict means specific terms matching, and the terms are lowercased
+    } else {
+      assertEquals(1, filter.count())
+      assertEquals("feb", filter.select("tag").take(1)(0)(0))
+    }
   }
 
   @Test
@@ -1071,15 +1075,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_ends_with")
     var filter = df.filter(df("airport").endsWith("O"))
 
-    if (!keepHandledFilters) {
+    if (!keepHandledFilters && !strictPushDown) {
       // term query pick field with multi values
       assertEquals(2, filter.count())
       return
     }
 
     filter.show
-    assertEquals(1, filter.count())
-    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+    if (strictPushDown) {
+      assertEquals(0, filter.count()) // Strict means specific terms matching, and the terms are lowercased
+    } else {
+      assertEquals(1, filter.count())
+      assertEquals("jan", filter.select("tag").take(1)(0)(0))
+    }
   }
 
   @Test
@@ -1093,7 +1101,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testDataSourcePushDown12And() {
     val df = esDataSource("pd_and")
-    var filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
+    var filter = df.filter(df("reason").isNotNull.and(df("tag").equalTo("jan")))
 
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
