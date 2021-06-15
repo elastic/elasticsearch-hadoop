@@ -22,10 +22,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class EsMajorVersionTest {
     private static final List<String> TEST_VERSIONS;
@@ -95,6 +100,36 @@ public class EsMajorVersionTest {
                 assertTrue(cmp_version.onOrBefore(version));
                 assertFalse(cmp_version.equals(version));
             }
+        }
+    }
+
+    @Test
+    public void testMinorVersionParsing() {
+        for (String testVersion : TEST_VERSIONS) {
+            EsMajorVersion version = EsMajorVersion.parse(testVersion);
+            int minorVersion = version.parseMinorVersion(testVersion);
+            assertThat(minorVersion, greaterThanOrEqualTo(0));
+        }
+        try {
+            EsMajorVersion.V_7_X.parseMinorVersion("6.0.0");
+            fail("Invalid major version");
+        } catch (EsHadoopIllegalArgumentException e) {
+            assertEquals("Invalid version string for major version; Received [6.0.0] for major version [7.x]",
+                    e.getMessage());
+        }
+        try {
+            EsMajorVersion.V_7_X.parseMinorVersion("7.");
+            fail("Invalid major version");
+        } catch (EsHadoopIllegalArgumentException e) {
+            assertEquals("Could not parse Elasticsearch minor version [7.]. Invalid version format.",
+                    e.getMessage());
+        }
+        try {
+            EsMajorVersion.V_7_X.parseMinorVersion("7.4-abcd.4");
+            fail("Invalid major version");
+        } catch (EsHadoopIllegalArgumentException e) {
+            assertEquals("Could not parse Elasticsearch minor version [7.4-abcd.4]. Non-numeric minor version [4-abcd].",
+                    e.getMessage());
         }
     }
 }

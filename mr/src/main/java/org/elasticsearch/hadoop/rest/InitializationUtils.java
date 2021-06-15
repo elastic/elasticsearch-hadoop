@@ -313,6 +313,61 @@ public abstract class InitializationUtils {
     }
 
     /**
+     * Creates a bootstrap client to discover and validate cluster information.
+     *
+     * Unlike {@link InitializationUtils#discoverClusterInfo(Settings, Log)}, this method always calls the cluster in order to validate
+     * headers. If cluster name, uuid, and version are present in the settings, this will validate them against the cluster, warning
+     * and overriding if they are different.
+     */
+    public static ClusterInfo discoverAndValidateClusterInfo(Settings settings, Log log) {
+        ClusterInfo mainInfo;
+        RestClient bootstrap = new RestClient(settings);
+        // first get ES main action info
+        try {
+            mainInfo = bootstrap.mainInfo();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Discovered Elasticsearch cluster [%s/%s], version [%s]",
+                        mainInfo.getClusterName().getName(),
+                        mainInfo.getClusterName().getUUID(),
+                        mainInfo.getMajorVersion()));
+            }
+        } catch (EsHadoopException ex) {
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot detect ES version - "
+                    + "typically this happens if the network/Elasticsearch cluster is not accessible or when targeting "
+                    + "a WAN/Cloud instance without the proper setting '%s'", ConfigurationOptions.ES_NODES_WAN_ONLY), ex);
+        } finally {
+            bootstrap.close();
+        }
+
+        // Check if the info is set in the settings and validate that it is correct
+        String clusterName = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        String clusterUUID = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
+        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
+        if (StringUtils.hasText(clusterName) && StringUtils.hasText(version)) { // UUID is optional for now
+            if (mainInfo.getClusterName().getName().equals(clusterName) == false) {
+                log.warn(String.format("Discovered incorrect cluster name in settings. Expected [%s] but received [%s]; replacing...",
+                        mainInfo.getClusterName().getName(),
+                        clusterName));
+            }
+            if (mainInfo.getClusterName().getUUID().equals(clusterUUID) == false) {
+                log.warn(String.format("Discovered incorrect cluster UUID in settings. Expected [%s] but received [%s]; replacing...",
+                        mainInfo.getClusterName().getUUID(),
+                        clusterUUID));
+            }
+            EsMajorVersion existingVersion = EsMajorVersion.parse(version);
+            if (mainInfo.getMajorVersion().equals(existingVersion) == false) {
+                log.warn(String.format("Discovered incorrect cluster version in settings. Expected [%s] but received [%s]; replacing...",
+                        mainInfo.getMajorVersion(),
+                        existingVersion));
+            }
+        }
+
+        // Update connection settings to ensure that they match those given by the server connection.
+        settings.setInternalClusterInfo(mainInfo);
+        return mainInfo;
+    }
+
+    /**
      * Retrieves the Elasticsearch cluster name and version from the settings, or, if they should be missing,
      * creates a bootstrap client and obtains their values.
      */

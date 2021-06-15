@@ -45,6 +45,7 @@ import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HostConfiguration;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpClient;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpConnection;
@@ -86,6 +87,7 @@ import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -693,8 +695,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
         }
 
+        // Parse headers
+        Map<String, List<String>> headers = new HashMap<>();
+        for (Header responseHeader : http.getResponseHeaders()) {
+            List<String> headerValues = headers.computeIfAbsent(responseHeader.getName(), k -> new ArrayList<>());
+            headerValues.add(responseHeader.getValue());
+        }
+
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
-        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
+        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo, headers);
     }
 
     /**

@@ -152,7 +152,7 @@ public class ElasticsearchHandler<I extends Exceptional, O, C extends ErrorColle
         }
 
         // Ensure no pattern in Index format, and extract the index to send errors to
-        InitializationUtils.discoverClusterInfo(clientSettings, LOG);
+        InitializationUtils.discoverAndValidateClusterInfo(clientSettings, LOG);
         Resource resource = new Resource(clientSettings, false);
         IndexExtractor iformat = ObjectUtils.instantiate(clientSettings.getMappingIndexExtractorClassName(), handlerSettings);
         iformat.compile(resource.toString());
