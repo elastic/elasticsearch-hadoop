@@ -33,6 +33,7 @@ sourcesJar {
 dependencies {
     provided("org.apache.hive:hive-service:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
+        exclude module: "pentaho-aggdesigner-algorithm"
     }
 
     itestRuntime("org.apache.hive:hive-jdbc:$hiveVersion") {
