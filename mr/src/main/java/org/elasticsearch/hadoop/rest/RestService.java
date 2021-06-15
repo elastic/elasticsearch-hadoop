@@ -217,7 +217,7 @@ public abstract class RestService implements Serializable {
 
         InitializationUtils.validateSettings(settings);
 
-        ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
+        ClusterInfo clusterInfo = InitializationUtils.discoverAndValidateClusterInfo(settings, log);
         InitializationUtils.validateSettingsForReading(settings);
         List<NodeInfo> nodes = InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
@@ -578,7 +578,7 @@ public abstract class RestService implements Serializable {
         Version.logVersion();
 
         InitializationUtils.validateSettings(settings);
-        InitializationUtils.discoverClusterInfo(settings, log);
+        InitializationUtils.discoverAndValidateClusterInfo(settings, log);
 
         InitializationUtils.validateSettingsForWriting(settings);
 
