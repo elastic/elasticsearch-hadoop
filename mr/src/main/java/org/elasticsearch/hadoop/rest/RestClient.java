@@ -75,7 +75,6 @@ import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_6_X;
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_7_X;
-import static org.elasticsearch.hadoop.util.EsMajorVersion.V_8_X;
 
 public class RestClient implements Closeable, StatsAware {
 
@@ -782,7 +781,7 @@ public class RestClient implements Closeable, StatsAware {
 
                 List<String> productHeader = response.headers().get(ELASTIC_PRODUCT_HEADER);
                 boolean validElasticsearchHeader = productHeader != null && productHeader.size() == 1 && productHeader.get(0).equals(ELASTIC_PRODUCT_HEADER_VALUE);
-                boolean verifyServer = (major.on(V_7_X) && major.parseMinorVersion(versionNumber) >= 14) || major.onOrAfter(V_8_X);
+                boolean verifyServer = (major.on(V_7_X) && major.parseMinorVersion(versionNumber) >= 14) || major.after(V_7_X);
                 if (validElasticsearchHeader == false) {
                     if (verifyServer) {
                         throw new EsHadoopTransportException("Connected, but could not verify server is Elasticsearch. Response missing [" +
