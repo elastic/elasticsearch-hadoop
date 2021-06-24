@@ -9,7 +9,7 @@ At the core, {eh} integrates two _distributed_ systems: *Hadoop*, a distributed 
 [float]
 === {mr} and Shards
 
-A critical component for scalability is parallelism or splitting a task into multiple, smaller ones that execute at the same time, on different nodes in the cluster. The concept is present in both Hadoop through its `splits` (the number of parts in which a source or input can be divided) and {es} through {ref}/glossary.html#glossary-shard[`shards`] (the number of parts in which a index is divided into).
+A critical component for scalability is parallelism or splitting a task into multiple, smaller ones that execute at the same time, on different nodes in the cluster. The concept is present in both Hadoop through its `splits` (the number of parts in which a source or input can be divided) and {es} through {glossary}/terms.html#glossary-shard[`shards`] (the number of parts in which a index is divided into).
 
 In short, roughly speaking more input splits means more tasks that can read at the same time, different parts of the source. More shards means more 'buckets' from which to read an index content (at the same time).
 
