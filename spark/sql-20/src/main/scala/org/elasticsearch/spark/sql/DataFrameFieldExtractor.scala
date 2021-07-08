@@ -23,6 +23,7 @@ import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 
+
 class DataFrameFieldExtractor extends ScalaMapFieldExtractor {
 
   override protected def extractField(target: AnyRef): AnyRef = {
@@ -47,7 +48,7 @@ class DataFrameFieldExtractor extends ScalaMapFieldExtractor {
 
     // Return the value or unpack the value if it's a row-schema tuple
     obj match {
-      case (row: Row, _: StructType) => row
+      case (row: Row, structType: StructType) => (row, structType)
       case any => any
     }
   }

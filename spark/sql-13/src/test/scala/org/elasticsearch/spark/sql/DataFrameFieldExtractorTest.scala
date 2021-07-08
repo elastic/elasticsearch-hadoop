@@ -59,7 +59,9 @@ class DataFrameFieldExtractorTest {
           StructField("test", StringType)
         )))
       )))
-    val expected = Row("target")
+    val expected = (Row("target"), StructType(Seq(
+      StructField("test", StringType)
+    )))
     val actual = extractor.field(data)
 
     assertEquals(expected, actual)
