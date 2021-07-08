@@ -46,6 +46,11 @@ class JsonScriptTemplateBulk extends JsonTemplatedBulk {
         BytesArray ba = null;
         if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(settings.getOperation())) {
             ba = storage;
+            if (settings.hasScriptUpsert()) {
+                jsonWriter.convert("{}", ba);
+                scratchPad.reset();
+                ba = scratchPad;
+            }
         }
         else {
             scratchPad.reset();

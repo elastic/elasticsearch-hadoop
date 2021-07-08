@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -38,7 +39,9 @@ class ScriptTemplateBulk extends TemplatedBulk {
     @Override
     protected void doWriteObject(Object object, BytesArray storage, ValueWriter<?> writer) {
         if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(settings.getOperation())) {
-            super.doWriteObject(object, storage, writer);
+            if (settings.hasScriptUpsert()) {
+                super.doWriteObject(Collections.emptyMap(), storage, writer);
+            } else super.doWriteObject(object, storage, writer);
         }
     }
 }
