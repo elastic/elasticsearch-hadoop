@@ -68,11 +68,12 @@ dependencies {
     compileOnly gradleApi()
     compileOnly localGroovy()
 
+    // Required for dependency licenses task
+    implementation 'org.apache.rat:apache-rat:0.11'
+    implementation 'commons-codec:commons-codec:1.12'
+
     if (localRepo) {
         implementation name: "build-tools-${buildToolsVersion}"
-        // Required for dependency licenses task (explicitly added in case of localRepo missing transitive dependencies)
-        implementation group: 'commons-codec', name: 'commons-codec', version: '1.12'
-        implementation group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
     } else {
         implementation group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
