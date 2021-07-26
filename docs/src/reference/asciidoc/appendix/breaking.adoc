@@ -16,6 +16,20 @@ For clarity, we always list any breaking changes at the top of the
 
 // end::notable-v8-breaking-changes[]
 
+[[breaking-changes-8.0]]
+=== Breaking Changes in 8.0
+
+==== `es.scroll.size` now defaults to `1000`
+
+In 8.0, we increased the default `es.scroll.size` to `1000` from `50`. If you
+deploy ES-hadoop in a low memory environment, consider lowering `es.scroll.size`
+to avoid issues.
+
+==== Support for Scala 2.10 has been removed
+
+In 8.0, our compatibility artifacts no longer support Scala 2.10. Spark deprecated
+support for Scala 2.10 in the Spark 2.0.0 release.
+
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
 
