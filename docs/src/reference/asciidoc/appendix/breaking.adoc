@@ -12,13 +12,11 @@ For clarity, we always list any breaking changes at the top of the
 
 //NOTE: The notable-breaking-changes tagged regions are re-used in the
 //Installation and Upgrade Guide
-// tag::notable-v8-breaking-changes[]
-
-// end::notable-v8-breaking-changes[]
 
 [[breaking-changes-8.0]]
 === Breaking Changes in 8.0
 
+// tag::notable-v8-breaking-changes[]
 ==== The default scroll size is now `1000`
 
 We've increased the `es.scroll.size` default from `50` to `1000`. If you deploy
@@ -29,6 +27,7 @@ avoid issues.
 
 Our compatibility artifacts no longer support Scala 2.10. Spark deprecated
 support for Scala 2.10 in the Spark 2.0.0 release.
+// end::notable-v8-breaking-changes[]
 
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
