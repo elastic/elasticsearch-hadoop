@@ -1,5 +1,0 @@
-[[eshadoop-7.9.3]]
-== Elasticsearch for Apache Hadoop version 7.9.3
-
-ES-Hadoop 7.9.3 is a version compatibility release, tested specifically against 
-Elasticsearch 7.9.3.
