@@ -19,9 +19,9 @@ For clarity, we always list any breaking changes at the top of the
 [[breaking-changes-8.0]]
 === Breaking Changes in 8.0
 
-==== `es.scroll.size` now defaults to `1000`
+==== The default scroll size is now `1000`
 
-We've increased the default `es.scroll.size` from `50` to `1000`. If you deploy
+We've increased the `es.scroll.size` default from `50` to `1000`. If you deploy
 ES-hadoop in a low memory environment, consider lowering `es.scroll.size` to
 avoid issues.
 
