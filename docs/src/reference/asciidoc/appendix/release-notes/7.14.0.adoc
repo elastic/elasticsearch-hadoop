@@ -1,0 +1,15 @@
+[[eshadoop-7.14.0]]
+== Elasticsearch for Apache Hadoop version 7.14.0
+
+coming::[7.14.0]
+
+[[new-7.14.0]]
+=== Enhancements
+
+Build::
+- Remove the conjars repository from the build
+https://github.com/elastic/elasticsearch-hadoop/pull/1684[#1684]
+
+Core::
+- Verify cluster main info response returns correct product headers
+https://github.com/elastic/elasticsearch-hadoop/pull/1679[#1679]
