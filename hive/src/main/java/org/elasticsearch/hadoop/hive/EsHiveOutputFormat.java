@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
+import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
@@ -47,8 +48,8 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
         private final Progressable progress;
 
-        public EsHiveRecordWriter(Configuration cfg, Progressable progress) {
-            super(cfg, progress);
+        public EsHiveRecordWriter(Configuration cfg, Progressable progress, String opaqueId) {
+            super(cfg, progress, opaqueId);
             this.progress = progress;
         }
 
@@ -94,7 +95,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
         settings.setResourceWrite(settings.getResourceWrite());
 
         HiveUtils.init(settings, log);
-
-        return new EsHiveRecordWriter(jc, progress);
+        String opaqueId = ShimLoader.getHadoopShims().newTaskAttemptContext(jc, progress).getTaskAttemptID().toString();
+        return new EsHiveRecordWriter(jc, progress, opaqueId);
     }
 }

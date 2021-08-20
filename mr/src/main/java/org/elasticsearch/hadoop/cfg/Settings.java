@@ -765,5 +765,10 @@ public abstract class Settings {
     }
 
     public abstract Properties asProperties();
+
+    public Settings setOpaqueId(String opaqueId) {
+        setProperty(OPAQUE_ID, opaqueId);
+        return this;
+    }
 }
 
