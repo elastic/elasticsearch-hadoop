@@ -23,24 +23,14 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.ClusterInfo;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
-import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.*;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class RestClientTest {
 
@@ -440,7 +430,7 @@ public class RestClientTest {
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
         Map<String, List<String>> headers = new HashMap<>();
-        headers.computeIfAbsent(RestClient.ELASTIC_PRODUCT_HEADER, k -> new ArrayList<>()).add(RestClient.ELASTIC_PRODUCT_HEADER_VALUE);
+        headers.computeIfAbsent(RestClient.ELASTIC_PRODUCT_HEADER.toLowerCase(Locale.ROOT), k -> new ArrayList<>()).add(RestClient.ELASTIC_PRODUCT_HEADER_VALUE);
         Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
                 .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200", headers));
 
