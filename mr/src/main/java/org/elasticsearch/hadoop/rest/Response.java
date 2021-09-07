@@ -46,5 +46,10 @@ public interface Response {
 
     boolean hasFailed();
 
-    Map<String, List<String>> headers();
+    /**
+     * Returns the headers with the given name
+     * @param headerName, case-insensitive
+     * @return The list of matching headers
+     */
+    List<String> getHeaders(String headerName);
 }
