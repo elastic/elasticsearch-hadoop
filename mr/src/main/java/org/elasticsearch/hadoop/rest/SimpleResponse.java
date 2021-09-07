@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SimpleResponse implements Response {
 
@@ -102,7 +103,8 @@ public class SimpleResponse implements Response {
     }
 
     @Override
-    public Map<String, List<String>> headers() {
-        return headers;
+    public List<String> getHeaders(String headerName) {
+        return headers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(headerName)).map(Map.Entry::getValue)
+                .flatMap(List::stream).collect(Collectors.toList());
     }
 }
