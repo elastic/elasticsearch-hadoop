@@ -780,7 +780,7 @@ public class RestClient implements Closeable, StatsAware {
                     LOG.warn("Could not verify server is Elasticsearch! Invalid main action response body format [build_flavor].");
                 }
 
-                List<String> productHeader = response.headers().get(ELASTIC_PRODUCT_HEADER);
+                List<String> productHeader = response.getHeaders(ELASTIC_PRODUCT_HEADER);
                 boolean validElasticsearchHeader = productHeader != null && productHeader.size() == 1 && productHeader.get(0).equals(ELASTIC_PRODUCT_HEADER_VALUE);
                 boolean verifyServer = (major.on(V_7_X) && major.parseMinorVersion(versionNumber) >= 14) || major.onOrAfter(V_8_X);
                 if (validElasticsearchHeader == false) {

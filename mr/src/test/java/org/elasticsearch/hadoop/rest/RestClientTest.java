@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -440,7 +441,7 @@ public class RestClientTest {
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
         Map<String, List<String>> headers = new HashMap<>();
-        headers.computeIfAbsent(RestClient.ELASTIC_PRODUCT_HEADER, k -> new ArrayList<>()).add(RestClient.ELASTIC_PRODUCT_HEADER_VALUE);
+        headers.computeIfAbsent(RestClient.ELASTIC_PRODUCT_HEADER.toLowerCase(Locale.ROOT), k -> new ArrayList<>()).add(RestClient.ELASTIC_PRODUCT_HEADER_VALUE);
         Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
                 .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200", headers));
 
