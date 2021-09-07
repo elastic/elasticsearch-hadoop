@@ -104,7 +104,7 @@ public class SimpleResponse implements Response {
 
     @Override
     public List<String> getHeaders(String headerName) {
-        return headers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(headerName)).map(entry -> entry.getValue())
+        return headers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(headerName)).map(Map.Entry::getValue)
                 .flatMap(List::stream).collect(Collectors.toList());
     }
 }
