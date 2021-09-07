@@ -23,14 +23,25 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
-import org.elasticsearch.hadoop.util.*;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ClusterInfo;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 public class RestClientTest {
 
