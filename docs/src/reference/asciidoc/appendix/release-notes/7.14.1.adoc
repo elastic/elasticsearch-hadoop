@@ -1,0 +1,9 @@
+[[eshadoop-7.14.1]]
+== Elasticsearch for Apache Hadoop version 7.14.1
+
+[[new-7.14.1]]
+=== Enhancements
+
+Build::
+- Fix buildSrc classpath after build-tools refactoring
+https://github.com/elastic/elasticsearch-hadoop/pull/1705[#1705]
