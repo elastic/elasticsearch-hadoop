@@ -104,7 +104,7 @@ object EsSpark {
     InitializationUtils.discoverClusterInfo(config, LOG)
     InitializationUtils.checkIdForOperation(config)
     InitializationUtils.checkIndexExistence(config)
-
+    config.setOpaqueId("spark application " + rdd.sparkContext.applicationId)
     rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), hasMeta).write _)
   }
 

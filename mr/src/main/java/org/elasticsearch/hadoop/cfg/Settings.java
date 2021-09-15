@@ -767,8 +767,12 @@ public abstract class Settings {
     public abstract Properties asProperties();
 
     public Settings setOpaqueId(String opaqueId) {
-        setProperty(OPAQUE_ID, opaqueId);
+        setProperty(ES_NET_HTTP_HEADER_OPAQUE_ID, opaqueId);
         return this;
+    }
+
+    public String getOpaqueId() {
+        return getProperty(ES_NET_HTTP_HEADER_OPAQUE_ID);
     }
 }
 

@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop.mr;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -27,7 +25,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskID;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.OutputFormat;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -40,6 +42,8 @@ import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+
+import java.io.IOException;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
 
@@ -138,10 +142,10 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         private HeartBeat beat;
         private final Progressable progressable;
 
-        public EsRecordWriter(Configuration cfg, Progressable progressable, String opaqueId) {
+        public EsRecordWriter(Configuration cfg, Progressable progressable, String taskAttemptId) {
             this.cfg = cfg;
             this.progressable = progressable;
-            this.opaqueId = opaqueId;
+            this.opaqueId = "mapreduce task attempt " + taskAttemptId;
         }
 
         @Override
@@ -229,10 +233,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
-//        xxx
-        String opaqueId = context.getTaskAttemptID().getTaskID().toString(); //??
+        String taskAttemptId = context.getTaskAttemptID().getTaskID().toString();
         return new EsRecordWriter(HadoopCfgUtils.asJobConf(CompatHandler.taskAttemptContext(context).getConfiguration()), context,
-                opaqueId);
+                taskAttemptId);
     }
 
     @Override
@@ -252,13 +255,13 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     @Override
     public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) {
         TaskAttemptID taskAttemptId = TaskAttemptID.forName(job.get("mapreduce.task.attempt.id"));
-        String opaqueId;
+        String taskAttemptIdString;
         if (taskAttemptId == null) {
-            opaqueId = null;
+            taskAttemptIdString = null;
         } else {
-            opaqueId = taskAttemptId.toString();
+            taskAttemptIdString = taskAttemptId.toString();
         }
-        return new EsRecordWriter(job, progress, null);
+        return new EsRecordWriter(job, progress, taskAttemptIdString);
     }
 
     @Override

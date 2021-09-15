@@ -41,5 +41,4 @@ public interface InternalConfigurationOptions extends ConfigurationOptions {
     String INTERNAL_ES_EXCLUDE_SOURCE = "es.internal.exclude.source";
     String INTERNAL_ES_EXCLUDE_SOURCE_DEFAULT = "false";
 
-    String OPAQUE_ID = ES_NET_HTTP_HEADER_PREFIX + "X-Opaque-ID";
 }

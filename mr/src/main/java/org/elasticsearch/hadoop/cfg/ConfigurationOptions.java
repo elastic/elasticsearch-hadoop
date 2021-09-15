@@ -322,4 +322,6 @@ public interface ConfigurationOptions {
     /** Security options **/
     String ES_SECURITY_AUTHENTICATION = "es.security.authentication";
     String ES_SECURITY_USER_PROVIDER_CLASS = "es.security.user.provider.class";
+
+    String ES_NET_HTTP_HEADER_OPAQUE_ID = ES_NET_HTTP_HEADER_PREFIX + "X-Opaque-ID";
 }
