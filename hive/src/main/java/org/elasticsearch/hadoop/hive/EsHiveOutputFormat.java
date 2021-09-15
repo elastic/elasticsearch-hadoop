@@ -48,8 +48,8 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
         private final Progressable progress;
 
-        public EsHiveRecordWriter(Configuration cfg, Progressable progress, String opaqueId) {
-            super(cfg, progress, opaqueId);
+        public EsHiveRecordWriter(Configuration cfg, Progressable progress, String taskAttemptId) {
+            super(cfg, progress, taskAttemptId);
             this.progress = progress;
         }
 
@@ -95,7 +95,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
         settings.setResourceWrite(settings.getResourceWrite());
 
         HiveUtils.init(settings, log);
-        String opaqueId = ShimLoader.getHadoopShims().newTaskAttemptContext(jc, progress).getTaskAttemptID().toString();
-        return new EsHiveRecordWriter(jc, progress, opaqueId);
+        String taskAttemptId = ShimLoader.getHadoopShims().newTaskAttemptContext(jc, progress).getTaskAttemptID().toString();
+        return new EsHiveRecordWriter(jc, progress, taskAttemptId);
     }
 }

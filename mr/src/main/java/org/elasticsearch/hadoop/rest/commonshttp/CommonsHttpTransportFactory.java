@@ -37,7 +37,6 @@ public class CommonsHttpTransportFactory implements TransportFactory {
         if (log.isDebugEnabled()) {
             log.debug("Creating new CommonsHttpTransport");
         }
-        // here
         return new CommonsHttpTransport(settings, secureSettings, hostInfo);
     }
 }

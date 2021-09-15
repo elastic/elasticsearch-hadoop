@@ -107,7 +107,6 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public RestClient(Settings settings) {
-        // here
         this(settings, new NetworkClient(settings));
     }
 
