@@ -8,8 +8,9 @@
 * In 7.14.0, {esh} began preventing access to {es} clusters that did not include an `X-elastic-product` header in responses in order to
 ensure that {esh} was working with an {es} cluster that it was compatible with. See
 https://github.com/elastic/elasticsearch-hadoop/issues/1672[#1672] for more information about this. However if the case of the
-`X-elastic-product` header name sent from {es} is changed (for example if it is lower-cased) by an intermediary between {es} and {esh} (for example, the http proxy for cloud.elastic.co), then
-{esh} ignores the header and will reject the response as not being from a valid {es} cluster.
+`X-elastic-product` header name sent from {es} is changed (for example if it is lower-cased) by an intermediary between {es} and {esh} (for
+example, the http proxy for cloud.elastic.co), then {esh} ignores the header and will reject the response as not being from a valid {es}
+cluster.
 +
 We have fixed this issue in {esh} 7.14.2 and later versions. For more details,see
 https://github.com/elastic/elasticsearch-hadoop/issues/1745[#1745].
