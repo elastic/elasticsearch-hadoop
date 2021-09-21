@@ -44,6 +44,7 @@ import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
 
@@ -56,6 +57,23 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     private static Log log = LogFactory.getLog(EsOutputFormat.class);
     private static final int NO_TASK_ID = -1;
+
+    public EsOutputFormat()  {
+        this(RestService::createWriter);
+    }
+
+    EsOutputFormat(PartitionWriterProvider partitionWriterProvider)  {
+        super();
+        this.partitionWriterProvider = partitionWriterProvider;
+    }
+
+    @FunctionalInterface
+    interface PartitionWriterProvider {
+        PartitionWriter createWriter(Settings settings, long currentSplit, int totalSplits, Log log);
+    }
+
+    // This can be swapped out for unit testing so that we don't have to have an ES instance:
+    private final PartitionWriterProvider partitionWriterProvider;
 
     // don't use mapred.OutputCommitter as it performs mandatory casts to old API resulting in CCE
     public static class EsOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {
@@ -138,14 +156,18 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         protected RestRepository repository;
         private String uri;
         private Resource resource;
+        PartitionWriterProvider partitionWriterProvider;
 
         private HeartBeat beat;
         private final Progressable progressable;
 
-        public EsRecordWriter(Configuration cfg, Progressable progressable, String taskAttemptId) {
+        public EsRecordWriter(Configuration cfg, Progressable progressable, PartitionWriterProvider partitionWriterProvider,
+                              String taskAttemptId) {
             this.cfg = cfg;
             this.progressable = progressable;
-            this.opaqueId = "mapreduce task attempt " + taskAttemptId;
+            String jobName = cfg.get(JobContext.JOB_NAME, "job");
+            this.partitionWriterProvider = partitionWriterProvider;
+            this.opaqueId = String.format(Locale.ROOT, "mapreduce %s %s", jobName, taskAttemptId);
         }
 
         @Override
@@ -179,9 +201,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
             InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
-            PartitionWriter pw = RestService.createWriter(settings, currentInstance, -1, log);
+            PartitionWriter pw = partitionWriterProvider.createWriter(settings, currentInstance, -1, log);
 
-            this.repository = pw.repository;
+            this.repository = pw.getRepository();
 
             if (progressable != null) {
                 this.beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
@@ -233,9 +255,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
-        String taskAttemptId = context.getTaskAttemptID().getTaskID().toString();
+        String taskAttemptId = context.getTaskAttemptID().toString();
         return new EsRecordWriter(HadoopCfgUtils.asJobConf(CompatHandler.taskAttemptContext(context).getConfiguration()), context,
-                taskAttemptId);
+                partitionWriterProvider, taskAttemptId);
     }
 
     @Override
@@ -261,7 +283,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         } else {
             taskAttemptIdString = taskAttemptId.toString();
         }
-        return new EsRecordWriter(job, progress, taskAttemptIdString);
+        return new EsRecordWriter(job, progress, partitionWriterProvider, taskAttemptIdString);
     }
 
     @Override

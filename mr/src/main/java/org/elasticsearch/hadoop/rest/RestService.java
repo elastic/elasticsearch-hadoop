@@ -115,6 +115,10 @@ public abstract class RestService implements Serializable {
             this.total = splitsSize;
         }
 
+        public RestRepository getRepository() {
+            return repository;
+        }
+
         @Override
         public void close() {
             if (!closed) {
