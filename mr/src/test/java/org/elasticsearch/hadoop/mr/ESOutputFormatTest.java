@@ -11,7 +11,6 @@ import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.util.Locale;

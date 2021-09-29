@@ -43,7 +43,8 @@ import scala.reflect.ClassTag
 
 
 private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
-                                              val runtimeMetadata: Boolean = false)
+                                              val runtimeMetadata: Boolean = false,
+                                              val partitionWriterProvider: (Settings, Long, Int, Log) => RestService.PartitionWriter = RestService.createWriter(_, _, _, _))
   extends Serializable {
 
   @transient protected lazy val log: Log = LogFactory.getLog(this.getClass)
@@ -66,7 +67,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     if (settings.getOpaqueId() != null) {
       settings.setOpaqueId(settings.getOpaqueId() + ", task attempt " + taskContext.taskAttemptId())
     }
-    val writer = RestService.createWriter(settings, taskContext.partitionId.toLong, -1, log)
+    val writer = partitionWriterProvider.apply(settings, taskContext.partitionId.toLong, -1, log)
 
     val listener = new TaskCompletionListener {
       override def onTaskCompletion(context: TaskContext): Unit = writer.close()
@@ -74,11 +75,11 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     taskContext.addTaskCompletionListener(listener)
 
     if (runtimeMetadata) {
-      writer.repository.addRuntimeFieldExtractor(metaExtractor)
+      writer.getRepository().addRuntimeFieldExtractor(metaExtractor)
     }
 
     while (data.hasNext) {
-      writer.repository.writeToIndex(processData(data))
+      writer.getRepository().writeToIndex(processData(data))
     }
   }
 

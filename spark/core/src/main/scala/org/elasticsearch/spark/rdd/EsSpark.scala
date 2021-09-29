@@ -20,7 +20,7 @@ package org.elasticsearch.spark.rdd
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
-import org.apache.commons.logging.LogFactory
+import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
@@ -28,14 +28,17 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
-import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.cfg.{PropertiesSettings, Settings}
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.InitializationUtils
 
+import scala.reflect.ClassTag
+
 object EsSpark {
 
   @transient private[this] val LOG = LogFactory.getLog(EsSpark.getClass)
+  @transient var clusterDiscoverer: (Settings, Log) => Unit = InitializationUtils.discoverClusterInfo(_, _)
 
   //
   // Load methods
@@ -71,12 +74,17 @@ object EsSpark {
   //
   // Save methods
   //
+  def saveToEs[T](rdd: RDD[T], resource: String, esRDDWriterProvider: (String, Boolean) => EsRDDWriter[T]): Unit = { saveToEs(rdd, Map
+  (ES_RESOURCE_WRITE -> resource), esRDDWriterProvider) }
   def saveToEs(rdd: RDD[_], resource: String): Unit = { saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
   def saveToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(rdd: RDD[_], cfg: Map[String, String]): Unit =  {
-    doSaveToEs(rdd, cfg, false)
+  def saveToEs[T](rdd: RDD[T], cfg: Map[String, String], esRDDWriterProvider: (String, Boolean) => EsRDDWriter[T]): Unit =  {
+    doSaveToEs(rdd, cfg, false, esRDDWriterProvider)
+  }
+  def saveToEs[T:ClassTag](rdd: RDD[T], cfg: Map[String, String]): Unit =  {
+    saveToEs(rdd, cfg, new EsRDDWriter[T](_, _))
   }
 
   // Save with metadata
@@ -85,10 +93,11 @@ object EsSpark {
     saveToEsWithMeta(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]): Unit = {
-    doSaveToEs(rdd, cfg, true)
+    doSaveToEs(rdd, cfg, true, new EsRDDWriter[(K,V)](_, _))
   }
 
-  private[spark] def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean): Unit = {
+  private[spark] def doSaveToEs[T](rdd: RDD[T], cfg: Map[String, String], hasMeta: Boolean, esRDDWriterProvider: (String, Boolean) =>
+    EsRDDWriter[T]): Unit = {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
     if (rdd == null || rdd.partitions.length == 0) {
@@ -101,12 +110,12 @@ object EsSpark {
 
     // Need to discover the EsVersion here before checking if the index exists
     InitializationUtils.setUserProviderIfNotSet(config, classOf[HadoopUserProvider], LOG)
-    InitializationUtils.discoverClusterInfo(config, LOG)
+    clusterDiscoverer.apply(config, LOG)
     InitializationUtils.checkIdForOperation(config)
     InitializationUtils.checkIndexExistence(config)
 
     config.setOpaqueId("spark application " + rdd.sparkContext.applicationId)
-    rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), hasMeta).write _)
+    rdd.sparkContext.runJob(rdd, esRDDWriterProvider.apply(config.save(), hasMeta).write _)
   }
 
   // JSON variant
