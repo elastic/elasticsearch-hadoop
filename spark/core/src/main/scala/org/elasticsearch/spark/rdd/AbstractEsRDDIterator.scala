@@ -25,6 +25,8 @@ import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 
+import java.util.Locale
+
 private[spark] abstract class AbstractEsRDDIterator[T](
     val context: TaskContext,
     partition: PartitionDefinition)
@@ -45,7 +47,10 @@ private[spark] abstract class AbstractEsRDDIterator[T](
 
      // initialize mapping/ scroll reader
      initReader(settings, log)
-
+     if (settings.getOpaqueId() != null && settings.getOpaqueId().contains("task attempt") == false) {
+       settings.setOpaqueId(String.format(Locale.ROOT, "%s, stage %s, task attempt %s", settings.getOpaqueId(),
+         context.stageId().toString, context.taskAttemptId.toString))
+     }
      val readr = RestService.createReader(settings, partition, log)
      readr.scrollQuery()
   }

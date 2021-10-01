@@ -18,12 +18,15 @@
  */
 package org.elasticsearch.spark.cfg
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.elasticsearch.spark.serialization.ReflectionUtils._
 import org.junit.Test
 import org.junit.Assert._
 import org.hamcrest.Matchers._
 import org.apache.spark.SparkConf
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
+
+import java.util.Locale
 
 class SparkConfigTest {
 
@@ -49,5 +52,17 @@ class SparkConfigTest {
     val settings = new SparkSettingsManager().load(cfg)
     val props = new PropertiesSettings().load(settings.save())
     assertEquals("win", props.getProperty("type"))
+  }
+
+  @Test
+  def testOpaqueId(): Unit = {
+    var cfg = new SparkConf()
+    assertEquals(String.format(Locale.ROOT, "[spark] [%s] [] []", UserGroupInformation.getCurrentUser.getShortUserName),
+        new SparkSettingsManager().load(cfg).getOpaqueId)
+    val appName = "some app"
+    val appdId = "some app id"
+    cfg = new SparkConf().set("spark.app.name", appName).set("spark.app.id", appdId)
+    assertEquals(String.format(Locale.ROOT, "[spark] [%s] [%s] [%s]", UserGroupInformation.getCurrentUser.getShortUserName, appName,
+      appdId), new SparkSettingsManager().load(cfg).getOpaqueId)
   }
 }
