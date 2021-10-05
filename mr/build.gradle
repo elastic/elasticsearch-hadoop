@@ -129,6 +129,10 @@ itestJar {
     }
 }
 
+tasks.named("test").configure {
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+}
+
 eclipse.classpath.file {
     whenMerged { cp ->
         // export all jars (to be used upstream by dependent projects)  <-- for some reason Gradle removes all jars
