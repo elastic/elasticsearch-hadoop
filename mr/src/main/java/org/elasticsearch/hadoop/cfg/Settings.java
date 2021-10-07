@@ -38,6 +38,7 @@ import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_NET_HTTP_HEADER_OPAQUE_ID;
 import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
 
 /**
@@ -765,5 +766,14 @@ public abstract class Settings {
     }
 
     public abstract Properties asProperties();
+
+    public Settings setOpaqueId(String opaqueId) {
+        setProperty(ES_NET_HTTP_HEADER_OPAQUE_ID, opaqueId);
+        return this;
+    }
+
+    public String getOpaqueId() {
+        return getProperty(ES_NET_HTTP_HEADER_OPAQUE_ID);
+    }
 }
 

@@ -39,6 +39,7 @@ import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 
+import java.util.Locale
 import scala.reflect.ClassTag
 
 
@@ -63,6 +64,10 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
   lazy val metaExtractor = ObjectUtils.instantiate[MetadataExtractor](settings.getMappingMetadataExtractorClassName, settings)
 
   def write(taskContext: TaskContext, data: Iterator[T]): Unit = {
+    if (settings.getOpaqueId() != null && settings.getOpaqueId().contains("] [task attempt ") == false) {
+      settings.setOpaqueId(String.format(Locale.ROOT, "%s [stage %s] [task attempt %s]", settings.getOpaqueId(),
+        taskContext.stageId().toString, taskContext.taskAttemptId.toString))
+    }
     val writer = RestService.createWriter(settings, taskContext.partitionId.toLong, -1, log)
 
     val listener = new TaskCompletionListener {

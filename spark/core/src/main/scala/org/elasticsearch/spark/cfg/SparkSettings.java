@@ -18,9 +18,12 @@
  */
 package org.elasticsearch.spark.cfg;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
@@ -36,6 +39,18 @@ public class SparkSettings extends Settings {
     public SparkSettings(SparkConf cfg) {
         Assert.notNull(cfg, "non-null spark configuration expected");
         this.cfg = cfg;
+        String user;
+        try {
+            user = System.getenv("SPARK_USER") == null ?
+                    UserGroupInformation.getCurrentUser().getShortUserName() :
+                    System.getenv("SPARK_USER");
+        } catch (IOException e) {
+            user = "";
+        }
+        String appName = cfg.get("app.name", cfg.get("spark.app.name", ""));
+        String appId = cfg.get("spark.app.id", "");
+        String opaqueId = String.format(Locale.ROOT, "[spark] [%s] [%s] [%s]", user, appName, appId);
+        this.setOpaqueId(opaqueId);
     }
 
     @Override
