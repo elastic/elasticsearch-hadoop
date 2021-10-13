@@ -107,6 +107,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/7.15.1.adoc[]
 include::release-notes/7.15.0.adoc[]
 include::release-notes/7.14.2.adoc[]
 include::release-notes/7.14.1.adoc[]
