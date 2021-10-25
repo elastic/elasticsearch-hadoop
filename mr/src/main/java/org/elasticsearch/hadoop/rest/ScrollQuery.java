@@ -77,6 +77,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             if (StringUtils.hasText(scrollId)) {
                 repository.getRestClient().deleteScroll(scrollId);
             }
+            repository.close();
         }
     }
 
