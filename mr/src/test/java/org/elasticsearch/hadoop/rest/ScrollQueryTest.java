@@ -51,6 +51,7 @@ public class ScrollQueryTest {
         Assert.assertEquals("value", JsonUtils.query("field").apply(scrollQuery.next()[1]));
         Assert.assertFalse(scrollQuery.hasNext());
         scrollQuery.close();
+        Mockito.verify(repository).close();
         Stats stats = scrollQuery.stats();
         Assert.assertEquals(1, stats.docsReceived);
     }
