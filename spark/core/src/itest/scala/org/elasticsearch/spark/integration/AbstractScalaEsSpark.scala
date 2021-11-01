@@ -566,7 +566,9 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       "ctx._source.counter += 1"
     }
 
-    if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+      RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "source": "$script"}}""".getBytes(StringUtils.UTF_8))
+    } else if (version.onOrAfter(EsMajorVersion.V_5_X)) {
       RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "code": "$script"}}""".getBytes(StringUtils.UTF_8))
     } else {
       RestUtils.put(s"_scripts/$lang/$scriptName", s"""{"script":"$script"}""".getBytes(StringUtils.UTF_8))
