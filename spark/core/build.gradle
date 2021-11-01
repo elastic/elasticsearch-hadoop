@@ -12,9 +12,6 @@ sparkVariants {
     setCoreDefaultVariant "spark20scala212", spark24Version, scala212Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
     addCoreFeatureVariant "spark20scala211", spark24Version, scala211Version
-    addCoreFeatureVariant "spark20scala210", spark22Version, scala210Version
-    addCoreFeatureVariant "spark13scala211", spark13Version, scala211Version
-    addCoreFeatureVariant "spark13scala210", spark13Version, scala210Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -26,7 +23,6 @@ sparkVariants {
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
-                jvmArgs = ['-XX:MaxPermSize=512m']
             }
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
@@ -145,6 +141,13 @@ configurations.matching{ it.name.contains('CompilerPlugin') == false }.all { Con
 
 tasks.named("test").configure {
     jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+}
+tasks.named("testSpark20scala211").configure {
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+}
+tasks.named("testSpark30scala212").configure {
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+    jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer 
 }
 
 // Set minimum compatibility and java home for compiler task

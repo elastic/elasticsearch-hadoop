@@ -77,7 +77,6 @@ object AbstractScalaEsSparkStructuredStreaming {
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .setMaster("local")
     .setAppName(appName)
-    .set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
     .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
 
   @transient @ClassRule val testData = new TestData()

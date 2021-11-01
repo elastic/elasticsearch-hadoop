@@ -47,6 +47,10 @@ dependencies {
     javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
+tasks.named("test").configure {
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+}
+
 jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {

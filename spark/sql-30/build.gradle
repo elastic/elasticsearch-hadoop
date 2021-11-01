@@ -30,7 +30,6 @@ sparkVariants {
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
-                jvmArgs = ['-XX:MaxPermSize=512m']
             }
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",

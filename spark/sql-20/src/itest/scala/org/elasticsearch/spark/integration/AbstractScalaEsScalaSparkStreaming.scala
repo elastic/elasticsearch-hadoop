@@ -55,7 +55,6 @@ object AbstractScalaEsScalaSparkStreaming {
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .setMaster("local")
     .setAppName("estest")
-    .set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
     .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
   @transient var sc: SparkContext = null
   @transient var ssc: StreamingContext = null
