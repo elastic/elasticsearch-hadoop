@@ -2,6 +2,7 @@
 == Elasticsearch for Apache Hadoop version 8.0.0-alpha1
 
 [[breaking-8.0.0-beta1]]
+[float]
 === Breaking Changes
 Core::
 * Boost default scroll size to 1000
@@ -12,6 +13,7 @@ Build::
 https://github.com/elastic/elasticsearch-hadoop/pull/1350[#1350]
 
 [[new-8.0.0-alpha1]]
+[float]
 === Enhancements
 Build::
 * Update Gradle wrapper to 7.0
