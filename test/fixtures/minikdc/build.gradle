@@ -40,7 +40,7 @@ targetCompatibility = '1.8'
 // gradle hides EVERYTHING so you have no clue what went wrong.
 task kdc(type: JavaExec) {
     classpath = sourceSets.main.compileClasspath + sourceSets.main.output
-    main = "org.elasticsearch.hadoop.test.fixture.minikdc.MiniKdcFixture"
+    mainClass = "org.elasticsearch.hadoop.test.fixture.minikdc.MiniKdcFixture"
     args = [ 'build/fixtures/miniKdcFixture' ]
 }
 

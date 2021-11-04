@@ -378,7 +378,7 @@ class BuildPlugin implements Plugin<Project>  {
 
         // Enable HTML test reports
         project.tasks.withType(Test) { Test testTask ->
-            testTask.getReports().getByName('html').setEnabled(true)
+            testTask.getReports().getByName('html').setRequired(true)
         }
 
         // Configure project jar task with manifest and include license and notice data.
@@ -846,7 +846,7 @@ class BuildPlugin implements Plugin<Project>  {
             maxGranularity 2
         }
 
-        integrationTest.reports.html.enabled = false
+        integrationTest.reports.html.required = false
     }
 
     private static void configurePrecommit(Project project) {
