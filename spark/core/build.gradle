@@ -26,7 +26,6 @@ sparkVariants {
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
-                jvmArgs = ['-XX:MaxPermSize=512m']
             }
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
@@ -143,8 +142,14 @@ configurations.matching{ it.name.contains('CompilerPlugin') == false }.all { Con
     conf.exclude group: "org.mortbay.jetty"
 }
 
-tasks.named("test").configure {
-    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+if (JavaVersion.current() >= JavaVersion.VERSION_17) {
+    tasks.withType(Test) { Test task ->
+        if (task.getName().startsWith("test")) 
+            task.configure {
+                jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+                jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer
+            }
+    }
 }
 
 // Set minimum compatibility and java home for compiler task
