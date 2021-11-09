@@ -21,7 +21,6 @@ package org.elasticsearch.spark.serialization
 import java.util.Collections
 import java.util.Date
 import java.util.{List => JList}
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.Seq
 import scala.collection.mutable.LinkedHashMap
@@ -32,6 +31,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BINARY
 import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
@@ -47,6 +47,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.FieldType.TEXT
 import org.elasticsearch.hadoop.serialization.FieldType.TOKEN_COUNT
+
 import org.elasticsearch.hadoop.serialization.Parser
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_BOOLEAN
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NULL
@@ -91,6 +92,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
         case BOOLEAN => booleanValue(value, parser)
         case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
         case DATE => date(value, parser)
+        case DATE_NANOS => date(value, parser)
         // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
         case GEO_POINT | GEO_SHAPE => {
           if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser)

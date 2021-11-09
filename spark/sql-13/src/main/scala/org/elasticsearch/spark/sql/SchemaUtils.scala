@@ -23,11 +23,9 @@ import java.util.{LinkedHashSet => JHashSet}
 import java.util.{List => JList}
 import java.util.{Map => JMap}
 import java.util.Properties
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -53,6 +51,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BINARY
 import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
@@ -167,6 +166,7 @@ private[sql] object SchemaUtils {
       case HALF_FLOAT => FloatType
       case SCALED_FLOAT => FloatType
       case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType
+      case DATE_NANOS => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
       case JOIN      => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)

@@ -85,6 +85,7 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
             if(binValue == null) binValue = value.getBytes();
             return binaryValue(binValue);
         case DATE:
+        case DATE_NANOS:
             return date(value, parser);
         case JOIN:
             // In the case of a join field reaching this point it is because it is the short-hand form for a parent.
