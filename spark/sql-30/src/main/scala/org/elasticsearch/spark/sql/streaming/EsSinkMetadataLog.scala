@@ -36,7 +36,9 @@ class EsSinkMetadataLog(settings: Settings, sparkSession: SparkSession, path: St
 
   override protected def defaultCompactInterval: Int = SparkSqlStreamingConfigs.getDefaultCompactInterval(settings)
 
-  override def compactLogs(logs: Seq[EsSinkStatus]): Seq[EsSinkStatus] = logs
+  def compactLogs(logs: Seq[EsSinkStatus]): Seq[EsSinkStatus] = logs
+
+  override def shouldRetain(log: EsSinkStatus, currentTime: Long): Boolean = true
 }
 
 /**
