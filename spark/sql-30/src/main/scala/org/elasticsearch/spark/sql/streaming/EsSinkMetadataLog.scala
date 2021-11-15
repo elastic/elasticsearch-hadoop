@@ -36,6 +36,11 @@ class EsSinkMetadataLog(settings: Settings, sparkSession: SparkSession, path: St
 
   override protected def defaultCompactInterval: Int = SparkSqlStreamingConfigs.getDefaultCompactInterval(settings)
 
+  /**
+   * Compatibility requirement: Spark 3.0 and below used this method instead of shouldRetain.
+   *
+   * This method was renamed in 3.1 but can still be used in 3.0 as long as it is present at runtime.
+   */
   def compactLogs(logs: Seq[EsSinkStatus]): Seq[EsSinkStatus] = logs
 
   override def shouldRetain(log: EsSinkStatus, currentTime: Long): Boolean = true
