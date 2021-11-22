@@ -30,7 +30,6 @@ sparkVariants {
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
-                jvmArgs = ['-XX:MaxPermSize=512m']
             }
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
@@ -175,6 +174,15 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
+}
+
+if (JavaVersion.current() >= JavaVersion.VERSION_16) {
+    tasks.withType(Test) { Test task ->
+        if (task.getName().startsWith("test"))
+        task.configure {
+            jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+            jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer
+        }}
 }
 
 // Embed the embedded dependencies in the final jar after all configuration is complete
