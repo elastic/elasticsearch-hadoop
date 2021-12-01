@@ -444,7 +444,7 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
     }
 
     protected Object parseDate(String value, boolean richDate) {
-        return (richDate ? DateUtils.parseDate(value) : parseString(value));
+        return (richDate ? createDate(DateUtils.parseDate(value).getTimeInMillis()) : parseString(value));
     }
 
     protected Object parseDateNanos(String value, boolean richDate) {
