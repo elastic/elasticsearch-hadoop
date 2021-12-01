@@ -18,13 +18,21 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import java.lang.reflect.Method;
-import java.util.Calendar;
-
-import javax.xml.bind.DatatypeConverter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import javax.xml.bind.DatatypeConverter;
+import java.lang.reflect.Method;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
+import java.util.Calendar;
 
 /**
  * Utility used for parsing date ISO8601.
@@ -35,6 +43,9 @@ public abstract class DateUtils {
     public static boolean printed = false;
 
     private final static boolean jodaTimeAvailable = ObjectUtils.isClassPresent("org.joda.time.format.ISODateTimeFormat", DateUtils.class.getClassLoader());
+
+    static final DateTimeFormatter DATE_OPTIONAL_TIME_OFFSET =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd['T'HH:mm:ss][.SSSSSSSSS][.SSSSSS][.SSS][XXX]");
 
     private static abstract class Jdk6 {
         // Parses ISO date through the JDK XML bind class. However the spec doesn't support all ISO8601 formats which this class tries to address
@@ -120,5 +131,31 @@ public abstract class DateUtils {
         }
 
         return (jodaTimeAvailable && JodaTime.INITIALIZED) ? JodaTime.parseDate(value) : Jdk6.parseDate(value);
+    }
+
+    public static Timestamp parseDateNanos(String value) {
+        return DATE_OPTIONAL_TIME_OFFSET.parse(value, temporal -> {
+            int year = temporal.get(ChronoField.YEAR);
+            int month = temporal.get(ChronoField.MONTH_OF_YEAR);
+            int dayOfMonth = temporal.get(ChronoField.DAY_OF_MONTH);
+            int hour = getOrDefault(temporal, ChronoField.HOUR_OF_DAY, 0);
+            int minute = getOrDefault(temporal, ChronoField.MINUTE_OF_HOUR, 0);
+            int second = getOrDefault(temporal, ChronoField.SECOND_OF_MINUTE, 0);
+            int nanoOfSecond = getOrDefault(temporal, ChronoField.NANO_OF_SECOND, 0);
+            ZoneId zone = temporal.query(TemporalQueries.zone());
+            if (zone == null) {
+                zone = ZoneId.of("UTC");
+            }
+            ZonedDateTime zonedDateTime = ZonedDateTime.of(year, month, dayOfMonth, hour, minute, second, nanoOfSecond, zone);
+            return Timestamp.from(Instant.from(zonedDateTime));
+        });
+    }
+
+    private static int getOrDefault(TemporalAccessor temporal, TemporalField field, int defaultValue) {
+        if(temporal.isSupported(field)) {
+            return temporal.get(field);
+        } else {
+            return defaultValue;
+        }
     }
 }
