@@ -39,6 +39,7 @@ import static org.elasticsearch.hadoop.serialization.FieldType.BINARY;
 import static org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN;
 import static org.elasticsearch.hadoop.serialization.FieldType.BYTE;
 import static org.elasticsearch.hadoop.serialization.FieldType.DATE;
+import static org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS;
 import static org.elasticsearch.hadoop.serialization.FieldType.DOUBLE;
 import static org.elasticsearch.hadoop.serialization.FieldType.FLOAT;
 import static org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT;
@@ -53,6 +54,7 @@ import static org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT;
 import static org.elasticsearch.hadoop.serialization.FieldType.SHORT;
 import static org.elasticsearch.hadoop.serialization.FieldType.STRING;
 import static org.elasticsearch.hadoop.serialization.FieldType.TEXT;
+
 import static org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils.findTypos;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -134,7 +136,7 @@ public class MappingTest {
         MappingSet mappings = getMappingsForResource("primitives.json");
         Mapping mapping = ensureAndGet("index", "primitives", mappings);
         Field[] props = mapping.getFields();
-        assertEquals(14, props.length);
+        assertEquals(15, props.length);
         assertEquals("field01", props[0].name());
         assertEquals(BOOLEAN, props[0].type());
         assertEquals("field02", props[1].name());
@@ -163,6 +165,8 @@ public class MappingTest {
         assertEquals(HALF_FLOAT, props[12].type());
         assertEquals("field14", props[13].name());
         assertEquals(SCALED_FLOAT, props[13].type());
+        assertEquals("field15", props[14].name());
+        assertEquals(DATE_NANOS, props[14].type());
     }
 
     @Test

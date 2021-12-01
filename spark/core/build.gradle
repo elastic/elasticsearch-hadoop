@@ -65,6 +65,7 @@ sparkVariants {
             }
 
             add(variant.configuration('itest', 'implementation'), project(":test:shared"))
+            add(variant.configuration('test', 'implementation'), "org.elasticsearch:securemock:1.2")
 
             if (variant.scalaMajorVersion == '2.10') {
                 add(variant.configuration('implementation'), "org.apache.spark:spark-unsafe_${variant.scalaMajorVersion}:${variant.sparkVersion}")

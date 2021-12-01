@@ -45,6 +45,9 @@
           "field14" : {
             "type" : "scaled_float",
             "scaling_factor" : 100.0
+          },
+          "field15" : {
+            "type" : "date_nanos"
           }
         }
       }
