@@ -18,18 +18,18 @@
  */
 package org.elasticsearch.spark.serialization
 
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
-import org.junit.Test
-import org.junit.Assert._
-import java.io.ByteArrayOutputStream
-
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.TestSettings
-import org.elasticsearch.spark.serialization.testbeans.Contact
-import org.elasticsearch.spark.serialization.testbeans.ContactBook
+import org.elasticsearch.spark.serialization.testbeans.{Contact, ContactBook}
+import org.junit.Assert._
+import org.junit.Test
 
+import java.io.ByteArrayOutputStream
+import java.sql.Timestamp
+import java.time.ZoneId
+import java.util.Date
 import scala.beans.BeanProperty
 
 class ScalaValueWriterTest {
@@ -151,6 +151,23 @@ class ScalaValueWriterTest {
     node2.node = node1
 
     println(serialize(node1))
+  }
+
+  @Test
+  def testDate(): Unit = {
+    val date = new Date(1420114230123l)
+    val actual = serialize(date);
+    val expected = "\"" + date.toInstant.atZone(ZoneId.systemDefault).toOffsetDateTime.toString + "\""
+    assertEquals(expected, actual)
+  }
+
+  @Test
+  def testDateWithNanos(): Unit = {
+    val timestamp = new Timestamp(1420114230123l)
+    timestamp.setNanos(123456789)
+    val actual = serialize(timestamp);
+    val expected = "\"" + timestamp.toInstant.atZone(ZoneId.systemDefault).toOffsetDateTime.toString + "\""
+    assertEquals(expected, actual)
   }
 
 }
