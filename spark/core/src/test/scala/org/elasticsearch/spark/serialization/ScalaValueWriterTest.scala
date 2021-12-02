@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.spark.serialization
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
