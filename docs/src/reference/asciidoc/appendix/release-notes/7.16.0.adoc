@@ -1,0 +1,14 @@
+[[eshadoop-7.16.0]]
+== Elasticsearch for Apache Hadoop version 7.16.0
+
+[[new-7.16.0]]
+=== New Features
+Core::
+* Setting X-Opaque-ID header for all reads and writes for MapReduce and Spark
+https://github.com/elastic/elasticsearch-hadoop/pull/1770[#1770]
+
+[[bugs-7.16.0]]
+=== Bug Fixes
+Rest::
+* Closing RestRepository to avoid a connection leak
+https://github.com/elastic/elasticsearch-hadoop/pull/1781[#1781]
