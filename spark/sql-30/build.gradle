@@ -9,7 +9,7 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.sql.variant'
-    setDefaultVariant "spark30scala212", spark30Version, scala212Version
+    setDefaultVariant "spark30scala212", spark32Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -156,21 +156,6 @@ sparkVariants {
             title = "${rootProject.description} ${version} API"
         }
     }
-}
-
-// deal with the messy conflicts out there
-// Ignore the scalaCompilerPlugin configurations since it is immediately resolved to configure the scala compiler tasks
-configurations.matching{ it.name.contains('CompilerPlugin') == false }.all { Configuration conf ->
-//    conf.resolutionStrategy {
-//        eachDependency { details ->
-//            // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
-//            // SecurityException (signer information wrong)
-//            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
-//                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
-//            }
-//        }
-//    }
-//    conf.exclude group: "org.mortbay.jetty"
 }
 
 tasks.withType(ScalaCompile) { ScalaCompile task ->
