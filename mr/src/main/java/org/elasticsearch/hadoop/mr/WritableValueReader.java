@@ -71,6 +71,7 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = BooleanWritable.class;
             break;
         case DATE:
+        case DATE_NANOS:
             arrayType = dateType();
             break;
         case BINARY:

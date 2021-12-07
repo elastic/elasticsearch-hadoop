@@ -18,15 +18,18 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
+import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+
+import javax.xml.bind.DatatypeConverter;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.xml.bind.DatatypeConverter;
-
-import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 
 /**
  * Value writer for JDK types.
@@ -126,7 +129,12 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
             }
             generator.writeEndArray();
         }
-        // handles Timestamp also
+        else if (value instanceof Timestamp) {
+            Timestamp timestamp = (Timestamp) value;
+            LocalDateTime localDateTime = timestamp.toLocalDateTime();
+            OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, OffsetDateTime.now().getOffset());
+            generator.writeString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(offsetDateTime));
+        }
         else if (value instanceof Date) {
             Calendar cal = Calendar.getInstance();
             cal.setTime((Date) value);
