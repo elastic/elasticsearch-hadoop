@@ -314,11 +314,6 @@ class BuildPlugin implements Plugin<Project>  {
                     if (details.requested.name.contains("org.apache.logging.log4j") && details.requested.name.contains("log4j-")) {
                         details.useVersion project.ext.log4jVersion
                     }
-                    // Convert any references to the servlet-api into the jetty servlet artifact.
-                    if (details.requested.name.equals("servlet-api")) {
-                        details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
-                    }
-
                 }
             }
         }
