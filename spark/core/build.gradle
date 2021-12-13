@@ -131,7 +131,6 @@ sparkVariants {
 // deal with the messy conflicts out there
 // Ignore the scalaCompilerPlugin configurations since it is immediately resolved to configure the scala compiler tasks
 configurations.matching{ it.name.contains('CompilerPlugin') == false && (it.name.contains("spark30") || it.name.contains("Spark30")) == false}.all { Configuration conf ->
-    println conf.name
     conf.resolutionStrategy {
         eachDependency { details ->
             // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
