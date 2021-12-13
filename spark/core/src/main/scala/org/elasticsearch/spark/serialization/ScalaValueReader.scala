@@ -126,7 +126,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
     }
   }
 
-  def nullValue() = { None }
+  def nullValue() = { null }
   def textValue(value: String, parser: Parser) = { checkNull (parseText, value, parser) }
   protected def parseText(value:String, parser: Parser) = { value }
 
