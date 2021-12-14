@@ -2324,6 +2324,50 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(2, df.count())
   }
 
+  @Test
+  def testReadFieldInclude(): Unit = {
+    val data = Seq(
+      Row(Row(List(Row("hello","2"), Row("world","1"))))
+    )
+    val rdd: RDD[Row] = sc.parallelize(data)
+    val schema = new StructType()
+      .add("features", new StructType()
+        .add("hashtags", new ArrayType(new StructType()
+          .add("text", StringType)
+          .add("count", StringType), true)))
+
+    val inputDf = sqc.createDataFrame(rdd, schema)
+    inputDf.write
+      .format("org.elasticsearch.spark.sql")
+      .save("read_field_include_test")
+    val reader = sqc.read.format("org.elasticsearch.spark.sql").option("es.read.field.as.array.include","features.hashtags")
+
+    // No "es.read.field.include", so everything is included:
+    var df = reader.load("read_field_include_test")
+    var result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(2, result(0).size)
+    assertEquals("hello", result(0).getAs("text"))
+    assertEquals("2", result(0).getAs("count"))
+
+    // "es.read.field.include" has trailing wildcard, so everything included:
+    df = reader.option("es.read.field.include","features.hashtags.*").load("read_field_include_test")
+    result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(2, result(0).size)
+    assertEquals("hello", result(0).getAs("text"))
+    assertEquals("2", result(0).getAs("count"))
+
+    // "es.read.field.include" includes text but not count
+    df = reader.option("es.read.field.include","features.hashtags.text").load("read_field_include_test")
+    result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(1, result(0).size)
+    assertEquals("hello", result(0).getAs("text"))
+
+    // "es.read.field.include" does not include the leaves in the hierarchy so they won't be returned
+    df = reader.option("es.read.field.include","features.hashtags").load("read_field_include_test")
+    result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(0, result(0).size)
+  }
+
   /**
    * Take advantage of the fixed method order and clear out all created indices.
    * The indices will last in Elasticsearch for all parameters of this test suite.
