@@ -2369,6 +2369,31 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(0, result(0).size)
   }
 
+  @Test
+  def testWildcard() {
+    val mapping = wrapMapping("data", s"""{
+                                         |      "properties": {
+                                         |        "name": {
+                                         |          "type": "wildcard"
+                                         |        }
+                                         |      }
+                                         |  }
+    """.stripMargin)
+
+    val index = wrapIndex("sparksql-test-wildcard")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    RestUtils.touch(index)
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+    val wildcardDocument = """{ "name" : "Chipotle Mexican Grill"}""".stripMargin
+    sc.makeRDD(Seq(wildcardDocument)).saveJsonToEs(target)
+    RestUtils.refresh(index)
+    val df = sqc.read.format("es").load(index)
+    val dataType = df.schema("name").dataType
+    assertEquals("string", dataType.typeName)
+    val head = df.head()
+    assertThat(head.getString(0), containsString("Chipotle"))
+  }
 
   /**
    * Take advantage of the fixed method order and clear out all created indices.

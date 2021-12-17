@@ -54,6 +54,7 @@ import static org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT;
 import static org.elasticsearch.hadoop.serialization.FieldType.SHORT;
 import static org.elasticsearch.hadoop.serialization.FieldType.STRING;
 import static org.elasticsearch.hadoop.serialization.FieldType.TEXT;
+import static org.elasticsearch.hadoop.serialization.FieldType.WILDCARD;
 
 import static org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils.findTypos;
 import static org.junit.Assert.assertEquals;
@@ -167,6 +168,8 @@ public class MappingTest {
         assertEquals(SCALED_FLOAT, props[13].type());
         assertEquals("field15", props[14].name());
         assertEquals(DATE_NANOS, props[14].type());
+        assertEquals("field16", props[15].name());
+        assertEquals(WILDCARD, props[15].type());
     }
 
     @Test
