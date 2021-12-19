@@ -1,0 +1,8 @@
+[[eshadoop-7.16.2]]
+== Elasticsearch for Apache Hadoop version 7.16.2
+
+[[new-7.16.2]]
+=== Enhancements
+Build::
+* Bump: log4j 2.10.0 to 2.15.0
+https://github.com/elastic/elasticsearch-hadoop/pull/1817[#1817]
