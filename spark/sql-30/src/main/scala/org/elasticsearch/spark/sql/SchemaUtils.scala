@@ -52,6 +52,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BINARY
 import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
@@ -148,7 +149,6 @@ private[sql] object SchemaUtils {
     val absoluteName = if (parentName != null) parentName + "." + field.name() else field.name()
     val matched = FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false)
     val createArray = !arrayIncludes.isEmpty() && matched.matched
-
     var dataType = Utils.extractType(field) match {
       case NULL         => NullType
       case BINARY       => BinaryType
@@ -166,6 +166,7 @@ private[sql] object SchemaUtils {
       case TEXT         => StringType
       case KEYWORD      => StringType
       case DATE         => if (cfg.getMappingDateRich) TimestampType else StringType
+      case DATE_NANOS   => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT       => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED       => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
       case JOIN         => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
