@@ -27,7 +27,6 @@ import java.nio.file.Paths
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsJavaMapConverter
@@ -86,6 +85,8 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
+import org.apache.spark.rdd.RDD
+
 import javax.xml.bind.DatatypeConverter
 import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
@@ -437,6 +438,33 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     //dataFrame.take(5).foreach(println)
     val results = sqc.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10")
     //results.take(5).foreach(println)
+  }
+
+  @Test
+  def testEmptyStrings(): Unit = {
+    val data = Seq(("Java", "20000"), ("Python", ""), ("Scala", "3000"))
+    val rdd: RDD[Row] = sc.parallelize(data).map(row => Row(row._1, row._2))
+    val schema = StructType( Array(
+      StructField("language", StringType,true),
+      StructField("description", StringType,true)
+    ))
+    val inputDf = sqc.createDataFrame(rdd, schema)
+    inputDf.write
+      .format("org.elasticsearch.spark.sql")
+      .save("empty_strings_test")
+    val reader = sqc.read.format("org.elasticsearch.spark.sql")
+    val outputDf = reader.load("empty_strings_test")
+    assertEquals(data.size, outputDf.count)
+    val nullDescriptionsDf = outputDf.filter(row => row.getAs("description") == null)
+    assertEquals(1, nullDescriptionsDf.count)
+
+    val reader2 = sqc.read.format("org.elasticsearch.spark.sql").option("es.field.read.empty.as.null", "no")
+    val outputDf2 = reader2.load("empty_strings_test")
+    assertEquals(data.size, outputDf2.count)
+    val nullDescriptionsDf2 = outputDf2.filter(row => row.getAs("description") == null)
+    assertEquals(0, nullDescriptionsDf2.count)
+    val emptyDescriptionsDf = outputDf2.filter(row => row.getAs("description") == "")
+    assertEquals(1, emptyDescriptionsDf.count)
   }
   
   @Test

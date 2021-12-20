@@ -49,7 +49,7 @@ class ScalaExtendedBooleanValueReaderTest(jsonString: String, expected: Expected
 
   def isNull: Matcher[AnyRef] = {
     return new BaseMatcher[AnyRef] {
-      override def matches(item: scala.Any): Boolean = item == None
+      override def matches(item: scala.Any): Boolean = item == null
       override def describeTo(description: Description): Unit = description.appendText("null")
     }
   }
