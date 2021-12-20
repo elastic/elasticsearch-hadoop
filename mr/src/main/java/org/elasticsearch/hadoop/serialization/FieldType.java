@@ -39,6 +39,7 @@ public enum FieldType {
     DOUBLE,
     STRING,
     DATE,
+    DATE_NANOS,
     BINARY,
     TOKEN_COUNT,
     // ES 5.x
@@ -75,6 +76,7 @@ public enum FieldType {
         CAST_HIERARCHY.put(FLOAT,            new LinkedHashSet<FieldType>(Arrays.asList(DOUBLE, KEYWORD)));
         CAST_HIERARCHY.put(STRING,           new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
         CAST_HIERARCHY.put(DATE,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(DATE_NANOS,       new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
         CAST_HIERARCHY.put(BINARY,           new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
         CAST_HIERARCHY.put(TOKEN_COUNT,      new LinkedHashSet<FieldType>(Arrays.asList(LONG, KEYWORD)));
         CAST_HIERARCHY.put(TEXT,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));

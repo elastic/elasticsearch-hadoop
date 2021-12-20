@@ -18,14 +18,6 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.Parser;
@@ -38,6 +30,14 @@ import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -86,6 +86,8 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
             return binaryValue(binValue);
         case DATE:
             return date(value, parser);
+        case DATE_NANOS:
+            return dateNanos(value, parser);
         case JOIN:
             // In the case of a join field reaching this point it is because it is the short-hand form for a parent.
             // construct a container and place the short form name into the name subfield.
@@ -416,12 +418,37 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
         return processDate(val);
     }
 
+    protected Object dateNanos(String value, Parser parser) {
+        Object val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            // UNIX time format
+            if (tk == Token.VALUE_NUMBER) {
+                val = parseDate(parser.longValue(), richDate);
+            }
+            else {
+                val = parseDateNanos(value, richDate);
+            }
+        }
+
+        return processDate(val);
+    }
+
     protected Object parseDate(Long value, boolean richDate) {
         return (richDate ? createDate(value) : value);
     }
 
     protected Object parseDate(String value, boolean richDate) {
         return (richDate ? createDate(DateUtils.parseDate(value).getTimeInMillis()) : parseString(value));
+    }
+
+    protected Object parseDateNanos(String value, boolean richDate) {
+        return (richDate ? DateUtils.parseDateNanos(value) : parseString(value));
     }
 
     protected Object createDate(long timestamp) {

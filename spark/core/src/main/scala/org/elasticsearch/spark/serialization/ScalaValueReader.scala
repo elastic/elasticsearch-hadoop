@@ -21,7 +21,6 @@ package org.elasticsearch.spark.serialization
 import java.util.Collections
 import java.util.Date
 import java.util.{List => JList}
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.Seq
 import scala.collection.mutable.LinkedHashMap
@@ -32,6 +31,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BINARY
 import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
@@ -60,6 +60,9 @@ import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.unit.Booleans
 
+import java.sql.Timestamp
+import java.time.Instant
+import java.time.temporal.TemporalAccessor
 import scala.annotation.tailrec
 
 class ScalaValueReader extends AbstractValueReader with SettingsAware {
@@ -91,6 +94,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
         case BOOLEAN => booleanValue(value, parser)
         case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
         case DATE => date(value, parser)
+        case DATE_NANOS => dateNanos(value, parser)
         // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
         case GEO_POINT | GEO_SHAPE => {
           if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser)
@@ -162,8 +166,10 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
 
   def date(value: String, parser: Parser) = { checkNull(parseDate, value, parser) }
 
+  def dateNanos(value: String, parser: Parser) = { checkNull(parseDateNanos, value, parser) }
+
   protected def parseDate(value: String, parser:Parser) = {
-    if (parser.currentToken()== VALUE_NUMBER) {
+    if (parser.currentToken() == VALUE_NUMBER) {
      if (richDate) createDate(parser.longValue()) else parser.longValue()
     }
     else {
@@ -171,12 +177,25 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
     }
   }
 
-  protected def createDate(value: Long):Any = {
+  protected def parseDateNanos(value: String, parser:Parser) = {
+    if (parser.currentToken() == VALUE_NUMBER) {
+      if (richDate) createDate(parser.longValue()) else parser.longValue()
+    }
+    else {
+      if (richDate) createDateNanos(value) else value
+    }
+  }
+
+  protected[serialization] def createDate(value: Long): Any = {
     new Date(value)
   }
 
   protected def createDate(value: String):Any = {
     createDate(DateUtils.parseDate(value).getTimeInMillis())
+  }
+
+  protected[serialization] def createDateNanos(value: String) = {
+    DateUtils.parseDateNanos(value)
   }
 
   def setSettings(settings: Settings) = {
