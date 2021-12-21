@@ -1,5 +1,6 @@
 package org.elasticsearch.spark.serialization
 
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
 import org.elasticsearch.hadoop.serialization.Parser
 import org.junit.Assert._
 import org.junit.Test
