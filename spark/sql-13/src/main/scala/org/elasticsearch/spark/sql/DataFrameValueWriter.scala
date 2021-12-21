@@ -21,13 +21,11 @@ package org.elasticsearch.spark.sql
 import java.sql.Date
 import java.sql.Timestamp
 import java.util.{Map => JMap}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.types.ArrayType
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, MapType, StructType}
 import org.apache.spark.sql.types.DataTypes.BinaryType
 import org.apache.spark.sql.types.DataTypes.BooleanType
 import org.apache.spark.sql.types.DataTypes.ByteType
@@ -39,8 +37,6 @@ import org.apache.spark.sql.types.DataTypes.LongType
 import org.apache.spark.sql.types.DataTypes.ShortType
 import org.apache.spark.sql.types.DataTypes.StringType
 import org.apache.spark.sql.types.DataTypes.TimestampType
-import org.apache.spark.sql.types.MapType
-import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
@@ -51,7 +47,7 @@ import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 import org.elasticsearch.hadoop.util.unit.Booleans
 
 
-class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[(Row, StructType)] with SettingsAware {
+class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[Any] with SettingsAware {
 
   def this() {
     this(false)
@@ -64,11 +60,25 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     writeNullValues = settings.getDataFrameWriteNullValues
   }
 
-  override def write(value: (Row, StructType), generator: Generator): Result = {
-    val row = value._1
-    val schema = value._2
+  override def write(value: Any, generator: Generator): Result = {
+    value match {
+      case Tuple2(row, schema: StructType) =>
+        writeStruct(schema, row, generator)
+      case seq: Seq[Row] =>
+        writeArray(seq, generator)
+    }
+  }
 
-    writeStruct(schema, row, generator)
+  private[spark] def writeArray(value: Seq[Row], generator: Generator): Result = {
+    if (value.nonEmpty) {
+      val schema = value.head.schema
+      val result = write(DataTypes.createArrayType(schema), value, generator)
+      if (!result.isSuccesful) {
+        return handleUnknown(value, generator)
+      }
+      Result.SUCCESFUL()
+    }
+    Result.FAILED()
   }
 
   private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {
