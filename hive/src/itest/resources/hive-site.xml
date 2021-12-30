@@ -1,0 +1,73 @@
+<!--
+  ~ Licensed to Elasticsearch under one or more contributor
+  ~ license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright
+  ~ ownership. Elasticsearch licenses this file to you under
+  ~ the Apache License, Version 2.0 (the "License"); you may
+  ~ not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<configuration>
+    <property>
+        <name>hive.metastore.local</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+        <description>Hive attempts to verify the metastore schema and fails if schematool hasn't run</description>
+    </property>
+    <property>
+        <name>hive.metastore.schema.verification.record.version</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>true</value>
+        <description>The Metastore does not exist at the start, this instructs it to be created</description>
+    </property>
+    <property>
+        <name>hive.metastore.fastpath</name>
+        <value>true</value>
+        <description>Hive uses lots of proxies for its client objects, this cuts that down a bit to make debugging easier</description>
+    </property>
+    <property>
+        <name>metastore.try.direct.sql</name>
+        <value>false</value>
+        <description>For some reason, direct SQL does not run well on the local metastore. Disable it and rely on ORM only</description>
+    </property>
+    <property>
+        <name>hive.exec.scratchdir</name>
+        <value>/tmp/hive</value>
+        <description>Throw the scratch dir to a new location</description>
+    </property>
+    <property>
+        <name>fs.permissions.umask-mode</name>
+        <value>022</value>
+    </property>
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/tmp/hive/warehouse_${testSeed}</value>
+        <description>A new warehouse dir each run</description>
+    </property>
+    <property>
+        <name>hive.metastore.metadb.dir</name>
+        <value>/tmp/hive/metastore_db_${testSeed}</value>
+        <description>A new metastore dir each run</description>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:derby:;databaseName=/tmp/hive/metastore_db_${testSeed};create=true</value>
+        <description>Point db connection to testing metastore</description>
+    </property>
+</configuration>

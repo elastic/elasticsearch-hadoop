@@ -20,10 +20,10 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.apache.tools.ant.DefaultLogger
-import org.elasticsearch.gradle.LoggedExec
 import org.elasticsearch.gradle.Version
-import org.elasticsearch.gradle.test.Fixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
+import org.elasticsearch.hadoop.gradle.buildtools.Fixture
+import org.elasticsearch.hadoop.gradle.buildtools.LoggedExec
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
@@ -237,6 +237,11 @@ class HadoopClusterFormationTasks {
         setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
         setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
 
+        // Give the service descriptor a chance to provide service-specific setup tasks
+        SetupTaskFactory setupTaskFactory = new SetupTaskFactory(project, { String name -> taskName(prefix, node, name) }, setup)
+        node.config.getServiceDescriptor().configureSetupTasks(node.config, setupTaskFactory)
+        setup = setupTaskFactory.getLastSetupTask()
+
         // If the role for this instance is not a process, we skip creating start and stop tasks for it.
         if (!node.getConfig().getRoleDescriptor().isExecutableProcess()) {
             // Go through the given dependencies for the instance and if any of them are Fixtures, pick the stop tasks off
@@ -313,6 +318,7 @@ class HadoopClusterFormationTasks {
             from {
                 project.tarTree(project.resources.gzip(distributionConfiguration.files.first()))
             }
+            exclude(node.config.serviceDescriptor.excludeFromArchiveExtraction(node.config))
             into node.baseDir
         }
     }

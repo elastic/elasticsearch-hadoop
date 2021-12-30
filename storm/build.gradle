@@ -33,6 +33,7 @@ dependencies {
     itestImplementation("com.twitter:carbonite:1.4.0")
 
     additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
 }
 
 jar {
@@ -41,6 +42,21 @@ jar {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
+    }
+}
+
+// add clojars repo to pom
+publishing {
+    publications {
+        main {
+            getPom().withXml { XmlProvider xml ->
+                Node root = xml.asNode()
+                Node repositories = root.appendNode('repositories')
+                Node repository = repositories.appendNode('repository')
+                repository.appendNode('id', 'clojars.org')
+                repository.appendNode('url', 'https://clojars.org/repo')
+            }
+        }
     }
 }
 

@@ -20,11 +20,11 @@ package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.NoOpLog;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -51,16 +51,17 @@ public class FindPartitionsTest {
 
     private static final PartitionDefinition[] EXPECTED_SHARDS_PARTITIONS;
     static {
+        PartitionDefinition.PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(null, null);
         List<PartitionDefinition> expected =
                 new ArrayList<PartitionDefinition>();
         for (int i = 0; i < 15; i++) {
-            expected.add(new PartitionDefinition(null, null, "index1", i));
+            expected.add(partitionBuilder.build("index1", i));
         }
         for (int i = 0; i < 18; i++) {
-            expected.add(new PartitionDefinition(null, null, "index2", i));
+            expected.add(partitionBuilder.build("index2", i));
         }
         for (int i = 0; i < 1; i++) {
-            expected.add(new PartitionDefinition(null, null, "index3", i));
+            expected.add(partitionBuilder.build("index3", i));
         }
         Collections.sort(expected);
         EXPECTED_SHARDS_PARTITIONS = expected.toArray(new PartitionDefinition[0]);

@@ -53,9 +53,8 @@ props.put("elasticsearch", esVersion)
 props.put("build-tools", buildToolsVersion)
 
 repositories {
-    jcenter()
+    gradlePluginPortal()
     mavenCentral()
-
     // For Elasticsearch snapshots.
     if (localRepo) {
         // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
@@ -66,16 +65,17 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
+    compileOnly gradleApi()
+    compileOnly localGroovy()
+
+    // Required for dependency licenses task
+    implementation 'org.apache.rat:apache-rat:0.11'
+    implementation 'commons-codec:commons-codec:1.12'
 
     if (localRepo) {
-        compile name: "build-tools-${buildToolsVersion}"
-        // Required for dependency licenses task (explicitly added in case of localRepo missing transitive dependencies)
-        compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
-        compile group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
+        implementation name: "build-tools-${buildToolsVersion}"
     } else {
-        compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
+        implementation group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
 }
 

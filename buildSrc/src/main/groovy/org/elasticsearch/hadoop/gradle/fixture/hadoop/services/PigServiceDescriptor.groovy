@@ -23,6 +23,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.SetupTaskFactory
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
@@ -71,6 +72,13 @@ class PigServiceDescriptor implements ServiceDescriptor {
     @Override
     String artifactName(ServiceConfiguration configuration) {
         return "pig-${configuration.getVersion()}"
+    }
+
+    @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // Seems like Pig has a ton of extra stuff in it that we don't really need.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/docs/", "$rootName/ivy/", "$rootName/src/", "$rootName/test/", "$rootName/tutorial/"]
     }
 
     @Override
@@ -148,6 +156,11 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
         env.put('HADOOP_HOME', hadoopHomeDir.toString())
         env.put('HADOOP_CONF_DIR', hadoopConfDir.toString())
+    }
+
+    @Override
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
+
     }
 
     @Override

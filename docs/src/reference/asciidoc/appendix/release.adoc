@@ -6,31 +6,13 @@
 This section summarizes the changes in each release.
 
 [float]
-[[release-notes-7]]
-===== 7.x
+[[release-notes-8]]
+===== 8.x
 
-* <<eshadoop-7.7.0>>
-* <<eshadoop-7.6.2>>
-* <<eshadoop-7.6.1>>
-* <<eshadoop-7.6.0>>
-* <<eshadoop-7.5.2>>
-* <<eshadoop-7.5.1>>
-* <<eshadoop-7.5.0>>
-* <<eshadoop-7.4.0>>
-* <<eshadoop-7.3.2>>
-* <<eshadoop-7.3.1>>
-* <<eshadoop-7.3.0>>
-* <<eshadoop-7.2.1>>
-* <<eshadoop-7.2.0>>
-* <<eshadoop-7.1.1>>
-* <<eshadoop-7.1.0>>
-* <<eshadoop-7.0.1>>
-* <<eshadoop-7.0.0>>
-* <<eshadoop-7.0.0-rc2>>
-* <<eshadoop-7.0.0-rc1>>
-* <<eshadoop-7.0.0-beta1>>
-* <<eshadoop-7.0.0-alpha2>>
-* <<eshadoop-7.0.0-alpha1>>
+* <<eshadoop-8.0.0-beta1>>
+* <<eshadoop-8.0.0-alpha2>>
+* <<eshadoop-8.0.0-alpha1>>
+
 --
 
 ////////////////////////
@@ -67,38 +49,8 @@ Section::
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[docs-5.3.1]]
-=== Documentation
-* Summary
-http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
-
-[[nonissue-5.3.1]]
-=== Non-issue
-Section::
-* Summary
-http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
-
 ////////////////////////
 
-include::release-notes/7.7.0.adoc[]
-include::release-notes/7.6.2.adoc[]
-include::release-notes/7.6.1.adoc[]
-include::release-notes/7.6.0.adoc[]
-include::release-notes/7.5.2.adoc[]
-include::release-notes/7.5.1.adoc[]
-include::release-notes/7.5.0.adoc[]
-include::release-notes/7.4.0.adoc[]
-include::release-notes/7.3.2.adoc[]
-include::release-notes/7.3.1.adoc[]
-include::release-notes/7.3.0.adoc[]
-include::release-notes/7.2.1.adoc[]
-include::release-notes/7.2.0.adoc[]
-include::release-notes/7.1.1.adoc[]
-include::release-notes/7.1.0.adoc[]
-include::release-notes/7.0.1.adoc[]
-include::release-notes/7.0.0.adoc[]
-include::release-notes/7.0.0-rc2.adoc[]
-include::release-notes/7.0.0-rc1.adoc[]
-include::release-notes/7.0.0-beta1.adoc[]
-include::release-notes/7.0.0-alpha2.adoc[]
-include::release-notes/7.0.0-alpha1.adoc[]
+include::release-notes/8.0.0-alpha1.adoc[]
+include::release-notes/8.0.0-alpha2.adoc[]
+include::release-notes/8.0.0-beta1.adoc[]

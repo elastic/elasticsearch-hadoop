@@ -42,16 +42,33 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
     private final String serializedSettings, serializedMapping;
     private final String[] locations;
 
-    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId) {
-        this(settings, mapping, index, shardId, null, EMPTY_ARRAY);
+    public static class PartitionDefinitionBuilder {
+        private final String serializedSettings, serializedMapping;
+
+        private PartitionDefinitionBuilder(Settings settings, Mapping resolvedMapping) {
+            this.serializedSettings = settings == null ? null : settings.save();
+            this.serializedMapping = resolvedMapping == null ? null : IOUtils.serializeToBase64(resolvedMapping);
+        }
+
+        public PartitionDefinition build(String index, int shardId) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, null, EMPTY_ARRAY);
+        }
+
+        public PartitionDefinition build(String index, int shardId, String[] locations) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, null, locations);
+        }
+
+        public PartitionDefinition build(String index, int shardId, Slice slice) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, slice, EMPTY_ARRAY);
+        }
+
+        public PartitionDefinition build(String index, int shardId, Slice slice, String[] locations) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, slice, locations);
+        }
     }
 
-    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, String[] locations) {
-        this(settings, mapping, index, shardId, null, locations);
-    }
-
-    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, Slice slice) {
-        this(settings, mapping, index, shardId, slice, EMPTY_ARRAY);
+    public static PartitionDefinitionBuilder builder(Settings settings, Mapping resolvedMapping) {
+        return new PartitionDefinitionBuilder(settings, resolvedMapping);
     }
 
     /**
@@ -63,19 +80,11 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
      * @param slice The slice the partition will be executed on or null
      * @param locations The locations where to find nodes (hostname:port or ip:port) that can execute the partition locally
      */
-    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, Slice slice, String[] locations) {
+    private PartitionDefinition(String serializedSettings, String serializedMapping, String index, int shardId, Slice slice, String[] locations) {
         this.index = index;
         this.shardId = shardId;
-        if (settings != null) {
-            this.serializedSettings = settings.save();
-        } else {
-            this.serializedSettings = null;
-        }
-        if (mapping != null) {
-            this.serializedMapping = IOUtils.serializeToBase64(mapping);
-        } else {
-            this.serializedMapping = null;
-        }
+        this.serializedSettings = serializedSettings;
+        this.serializedMapping = serializedMapping;
         this.slice = slice;
         this.locations = locations;
     }

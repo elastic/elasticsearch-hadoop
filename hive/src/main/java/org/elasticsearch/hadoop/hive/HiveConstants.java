@@ -31,6 +31,8 @@ interface HiveConstants {
     String DATE_WRITABLE = "org.apache.hadoop.hive.serde2.io.DateWritable";
     String VARCHAR_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveVarcharWritable";
     String CHAR_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveCharWritable";
+    String TIMESTAMP_WRITABLE_V2 = "org.apache.hadoop.hive.serde2.io.TimestampWritableV2";
+    String DATE_WRITABLE_V2 = "org.apache.hadoop.hive.serde2.io.DateWritableV2";
     String TABLE_LOCATION = "location";
 
     String MAPPING_NAMES = "es.mapping.names";

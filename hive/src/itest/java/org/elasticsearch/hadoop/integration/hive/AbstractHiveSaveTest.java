@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.EsAssume;
 import org.elasticsearch.hadoop.rest.RestUtils;
@@ -30,6 +29,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
+import java.sql.SQLException;
 
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
 import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
@@ -442,7 +443,7 @@ public class AbstractHiveSaveTest {
                         : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
-    @Test(expected = HiveSQLException.class)
+    @Test(expected = SQLException.class)
     public void testCreateWithDuplicates() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -516,7 +517,7 @@ public class AbstractHiveSaveTest {
                         : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
-    @Test(expected = HiveSQLException.class)
+    @Test(expected = SQLException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one

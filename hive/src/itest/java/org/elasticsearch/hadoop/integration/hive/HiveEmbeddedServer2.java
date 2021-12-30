@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,7 +39,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils;
+import org.apache.hadoop.hive.metastore.utils.MetaStoreUtils;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
@@ -59,6 +58,8 @@ import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 
+import static org.junit.Assert.fail;
+
 /**
  * Utility starting a local/embedded Hive server for testing purposes.
  * Uses sensible defaults to properly clean between reruns.
@@ -68,6 +69,7 @@ import org.elasticsearch.hadoop.util.TestUtils;
 class HiveEmbeddedServer2 implements HiveInstance {
     private static Log log = LogFactory.getLog(Hive.class);
 
+    private boolean initialized = false;
     private HiveServer2 hiveServer;
 
     private final Properties testSettings;
@@ -81,14 +83,20 @@ class HiveEmbeddedServer2 implements HiveInstance {
     @Override
     public void start() throws Exception {
         log.info("Starting Hive Local/Embedded Server...");
-        if (hiveServer == null) {
-            config = configure();
-            hiveServer = new HiveServer2();
-            port = MetaStoreUtils.findFreePort();
-            config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
-            hiveServer.init(config);
-            hiveServer.start();
-            waitForStartup();
+        try {
+            if (hiveServer == null) {
+                config = configure();
+                hiveServer = new HiveServer2();
+                port = MetaStoreUtils.findFreePort();
+                config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
+                hiveServer.init(config);
+                hiveServer.start();
+                waitForStartup();
+                initialized = true;
+            }
+        } catch (Exception e) {
+            log.error("Encountered exception while starting HiveServer2", e);
+            fail("HiveServer2 could not start");
         }
     }
 
@@ -207,14 +215,6 @@ class HiveEmbeddedServer2 implements HiveInstance {
             scratchDirFile.setWritable(true, false);
         }
 
-        int random = new Random().nextInt();
-
-        conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse" + random);
-        conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db" + random);
-        conf.set("hive.exec.scratchdir", scratchDir);
-        conf.set("fs.permissions.umask-mode", "022");
-        conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + random + ";create=true");
-        conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");
         conf.set("hive.added.jars.path", "");
         conf.set("hive.added.files.path", "");
@@ -275,6 +275,9 @@ class HiveEmbeddedServer2 implements HiveInstance {
 
     @Override
     public List<String> execute(String cmd) throws Exception {
+        if (initialized == false || hiveServer == null) {
+            throw new RuntimeException("HiveServer has not correctly initialized. See logs for details.");
+        }
         if (cmd.toUpperCase().startsWith("ADD JAR")) {
             // skip the jar since we're running in local mode
             System.out.println("Skipping ADD JAR in local/embedded mode");
@@ -313,6 +316,7 @@ class HiveEmbeddedServer2 implements HiveInstance {
             hiveServer.stop();
             hiveServer = null;
             config = null;
+            initialized = false;
         }
     }
 

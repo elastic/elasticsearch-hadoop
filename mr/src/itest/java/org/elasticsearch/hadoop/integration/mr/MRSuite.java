@@ -40,7 +40,7 @@ public class MRSuite {
 
     @BeforeClass
     public static void setupHdfs() throws Exception {
-        HdfsUtils.copyFromLocal(testData.sampleArtistsDatUri().toString());
-        HdfsUtils.copyFromLocal(testData.sampleArtistsJsonUri().toString());
+        HdfsUtils.copyFromLocal(testData.sampleArtistsDatUri().getPath(), TestData.ARTISTS_DAT);
+        HdfsUtils.copyFromLocal(testData.sampleArtistsJsonUri().getPath(), TestData.ARTISTS_JSON);
     }
 }

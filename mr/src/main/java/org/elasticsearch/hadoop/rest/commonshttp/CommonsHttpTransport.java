@@ -18,27 +18,21 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.auth.AuthChallengeParser;
-import org.apache.commons.httpclient.auth.AuthPolicy;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.AuthState;
-import org.apache.commons.httpclient.methods.*;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.rest.*;
+import org.elasticsearch.hadoop.rest.DelegatingInputStream;
+import org.elasticsearch.hadoop.rest.EsHadoopInvalidRequest;
+import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
+import org.elasticsearch.hadoop.rest.HeaderProcessor;
+import org.elasticsearch.hadoop.rest.Request;
+import org.elasticsearch.hadoop.rest.Response;
+import org.elasticsearch.hadoop.rest.ReusableInputStream;
+import org.elasticsearch.hadoop.rest.SimpleResponse;
+import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsApiKeyAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsApiKeyCredentials;
@@ -49,11 +43,42 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HostConfiguration;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpClient;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpConnection;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpConnectionManager;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpState;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpStatus;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.SimpleHttpConnectionManager;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URI;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URIException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthChallengeParser;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthPolicy;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScheme;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScope;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthState;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.GetMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.HeadMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.PostMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.PutMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpClientParams;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpMethodParams;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.Protocol;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -62,10 +87,10 @@ import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 /**
  * Transport implemented on top of Commons Http. Provides transport retries.
@@ -670,8 +695,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
         }
 
+        // Parse headers
+        Map<String, List<String>> headers = new HashMap<>();
+        for (Header responseHeader : http.getResponseHeaders()) {
+            List<String> headerValues = headers.computeIfAbsent(responseHeader.getName(), k -> new ArrayList<>());
+            headerValues.add(responseHeader.getValue());
+        }
+
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
-        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
+        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo, headers);
     }
 
     /**

@@ -19,9 +19,9 @@
 
 package org.elasticsearch.hadoop.gradle
 
-import org.elasticsearch.gradle.info.BuildParams
-import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
-import org.elasticsearch.gradle.info.JavaHome
+import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
+import org.elasticsearch.hadoop.gradle.buildtools.info.GlobalBuildInfoPlugin
+import org.elasticsearch.hadoop.gradle.buildtools.info.JavaHome
 import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -113,9 +113,13 @@ class BaseBuildPlugin implements Plugin<Project> {
             println "Using Gradle [${project.gradle.gradleVersion}]"
 
             // Hadoop versions
-            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopYarn"
+            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoop3"
             switch (project.rootProject.ext.hadoopDistro) {
             // Hadoop YARN/2.0.x
+                case "hadoop3":
+                    project.rootProject.ext.hadoopVersion = project.hadoop3Version
+                    println "Using Apache Hadoop on YARN [$project.hadoop3Version]"
+                    break
                 case "hadoopYarn":
                     project.rootProject.ext.hadoopVersion = project.hadoop2Version
                     println "Using Apache Hadoop on YARN [$project.hadoop2Version]"
@@ -147,14 +151,8 @@ class BaseBuildPlugin implements Plugin<Project> {
         if (!project.rootProject.ext.has('settingsConfigured')) {
             // Force any Elasticsearch test clusters to use packaged java versions if they have them available
             project.rootProject.ext.isRuntimeJavaHomeSet = false
-
-            File gitHead = gitBranch(project)
-            project.rootProject.ext.gitHead = gitHead
-            project.rootProject.ext.revHash = gitHash(gitHead)
             project.rootProject.ext.settingsConfigured = true
         }
-        project.ext.gitHead = project.rootProject.ext.gitHead
-        project.ext.revHash = project.rootProject.ext.revHash
         project.ext.javaVersions = BuildParams.javaVersions
         project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
     }
@@ -165,9 +163,8 @@ class BaseBuildPlugin implements Plugin<Project> {
      */
     private static void configureRepositories(Project project) {
         project.repositories.mavenCentral()
-        project.repositories.maven { url "https://conjars.org/repo" }
         project.repositories.maven { url "https://clojars.org/repo" }
-        project.repositories.maven { url 'https://repo.spring.io/plugins-release' }
+        project.repositories.maven { url 'https://repo.spring.io/plugins-release-local' }
 
         // For Elasticsearch snapshots.
         project.repositories.maven { url "https://snapshots.elastic.co/maven/" } // default
@@ -181,7 +178,7 @@ class BaseBuildPlugin implements Plugin<Project> {
         for (String repo : ['snapshots', 'artifacts']) {
             project.repositories.ivy {
                 url "https://${repo}.elastic.co/downloads"
-                layout "pattern", {
+                patternLayout {
                     artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
                 }
             }
@@ -196,45 +193,5 @@ class BaseBuildPlugin implements Plugin<Project> {
                 url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
-    }
-
-    /**
-     * @param project that belongs to a git repo
-     * @return the file containing the hash for the current branch
-     */
-    private static File gitBranch(Project project) {
-        // parse the git files to find out the revision
-        File gitHead =  project.file("${project.rootDir}/.git/HEAD")
-        if (gitHead != null && !gitHead.exists()) {
-            // Try as a sub module
-            File subModuleGit = project.file("${project.rootDir}/.git")
-            if (subModuleGit != null && subModuleGit.exists()) {
-                String content = subModuleGit.text.trim()
-                if (content.startsWith("gitdir:")) {
-                    gitHead = project.file("${project.rootDir}/" + content.replace('gitdir: ','') + "/HEAD")
-                }
-            }
-        }
-
-        if (gitHead != null && gitHead.exists()) {
-            String content = gitHead.text.trim()
-            if (content.startsWith("ref:")) {
-                return project.file("${project.rootDir}/.git/" + content.replace('ref: ',''))
-            }
-            return gitHead
-        }
-        return null
-    }
-
-    /**
-     * @param gitHead file containing the the currently checked out ref
-     * @return the current commit version hash
-     */
-    private static String gitHash(File gitHead) {
-        String rev = "unknown"
-        if (gitHead != null && gitHead.exists()) {
-            rev = gitHead.text.trim()
-        }
-        return rev
     }
 }

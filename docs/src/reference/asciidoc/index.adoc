@@ -15,6 +15,7 @@
 :pg-v:	0.15.0
 :hv-v:	1.2.1
 :cs-v:	2.6.3
+:hadoop-docs-v: 2.7.6
 
 include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
