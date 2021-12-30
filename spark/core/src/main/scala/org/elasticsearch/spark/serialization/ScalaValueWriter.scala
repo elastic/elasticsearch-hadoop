@@ -61,7 +61,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         generator.writeBeginObject()
         for ((k, v) <- m) {
           if (shouldKeep(parentField, k.toString)) {
-            if (v != None && v!= null && v != () | hasWriteNullValues) {
+            if (v != None && v!= null && v != () || hasWriteNullValues) {
               generator.writeFieldName(k.toString)
               val result = doWrite(v, generator, k.toString)
               if (!result.isSuccesful) {
