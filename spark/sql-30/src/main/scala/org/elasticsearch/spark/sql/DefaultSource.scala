@@ -344,7 +344,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       case EqualTo(attribute, value)            => {
         // if we get a null, translate it into a missing query (we're extra careful - Spark should translate the equals into isMissing anyway)
-        if (value == null || value == None || value == Unit) {
+        if (value == null || value == None || value == ()) {
           if (isES50) {
             s"""{"bool":{"must_not":{"exists":{"field":"$attribute"}}}}"""
           }

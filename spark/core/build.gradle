@@ -10,6 +10,7 @@ apply plugin: 'spark.variants'
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
     setCoreDefaultVariant "spark20scala212", spark24Version, scala212Version
+    addCoreFeatureVariant "spark30scala213", spark30Version, scala213Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
     addCoreFeatureVariant "spark20scala211", spark24Version, scala211Version
     addCoreFeatureVariant "spark20scala210", spark22Version, scala210Version
@@ -50,7 +51,7 @@ sparkVariants {
             add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
 
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.6.7.1")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.9.10")
             add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
             add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
             add(variant.configuration('compileOnly'), "com.google.protobuf:protobuf-java:2.5.0")
@@ -100,7 +101,7 @@ sparkVariants {
             String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
             Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
             scalaCompilerPlugin.defaultDependencies { dependencies ->
-                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
+                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.18"))
             }
 
             ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile

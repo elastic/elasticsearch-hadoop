@@ -259,7 +259,7 @@ private[sql] object SchemaUtils {
     for (prop <- rowOrderProps.asScala) {
       val value = StringUtils.tokenize(prop._2).asScala
       if (!value.isEmpty) {
-        order.put(prop._1, new ArrayBuffer() ++= value)
+        order.put(prop._1, value.toSeq)
       }
     }
 
