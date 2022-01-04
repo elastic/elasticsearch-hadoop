@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -583,6 +584,22 @@ public class ScrollReaderTest {
         assertThat(scroll.getTotalHits(), equalTo(196L));
         assertThat(scroll.getHits().size(), equalTo(1));
         assertEquals(4L, JsonUtils.query("number").apply(scroll.getHits().get(0)[1]));
+    }
+
+    @Test
+    public void testNoScrollIdFromFrozenIndex() throws IOException {
+        MappingSet mappings = getMappingSet("numbers-as-strings"); // The schema doesn't matter since there's no data
+        InputStream stream = getClass().getResourceAsStream(scrollData("no-scroll-id"));
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "fix");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".fix" , CorrectingHandler.class.getName());
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
+        ScrollReader.Scroll scroll = reader.read(stream);
+        assertNull(scroll);
     }
 
     /**

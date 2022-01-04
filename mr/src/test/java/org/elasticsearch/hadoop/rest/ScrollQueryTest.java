@@ -85,4 +85,33 @@ public class ScrollQueryTest {
 
         return mocked;
     }
+
+    @Test
+    public void testFrozen() throws Exception {
+        // Frozen indices return a null scroll
+        RestRepository repository = mockRepositoryFrozenIndex();
+        ScrollReader scrollReader = Mockito.mock(ScrollReader.class);
+
+        String query = "/index/type/_search?scroll=10m&etc=etc";
+        BytesArray body = new BytesArray("{}");
+        long size = 100;
+
+        ScrollQuery scrollQuery = new ScrollQuery(repository, query, body, size, scrollReader);
+
+        Assert.assertFalse(scrollQuery.hasNext());
+        scrollQuery.close();
+        Mockito.verify(repository).close();
+        Stats stats = scrollQuery.stats();
+        Assert.assertEquals(0, stats.docsReceived);
+    }
+
+    private RestRepository mockRepositoryFrozenIndex() throws Exception {
+        RestRepository mocked = Mockito.mock(RestRepository.class);
+        Mockito.doReturn(null).when(mocked).scroll(Matchers.anyString(), Matchers.any(BytesArray.class), Matchers.any(ScrollReader.class));
+        RestClient mockClient = Mockito.mock(RestClient.class);
+        Mockito.when(mockClient.deleteScroll(Matchers.eq("mnop"))).thenReturn(true);
+        Mockito.when(mockClient.deleteScroll(Matchers.anyString())).thenReturn(false);
+        Mockito.doReturn(mockClient).when(mocked).getRestClient();
+        return mocked;
+    }
 }
