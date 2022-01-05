@@ -47,6 +47,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.elasticsearch.storm.cfg.StormConfigurationOptions.ES_STORM_BOLT_ACK;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Deprecated
 public class EsBolt implements IRichBolt {
 
     private transient static Log log = LogFactory.getLog(EsBolt.class);

@@ -49,6 +49,7 @@ import org.elasticsearch.storm.security.EsClusterInfoSelector;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Deprecated
 public class EsSpout implements IRichSpout {
 
     private transient static Log log = LogFactory.getLog(EsSpout.class);

@@ -26,8 +26,10 @@ import org.elasticsearch.spark.sql.EsSparkSQL
 
 package object sql {
 
+  @deprecated(message="Support for Spark 1 is deprecated. Use Spark 2 or 3")
   implicit def sqlContextFunctions(sc: SQLContext)= new SQLContextFunctions(sc)
 
+  @deprecated(message="Support for Spark 1 is deprecated. Use Spark 2 or 3")
   class SQLContextFunctions(sc: SQLContext) extends Serializable {
     def esDF() = EsSparkSQL.esDF(sc)
     def esDF(resource: String) = EsSparkSQL.esDF(sc, resource)
@@ -37,8 +39,10 @@ package object sql {
     def esDF(resource: String, query: String, cfg: scala.collection.Map[String, String]) = EsSparkSQL.esDF(sc, resource, query, cfg)
   }
 
+  @deprecated(message="Support for Spark 1 is deprecated. Use Spark 2 or 3")
   implicit def sparkDataFrameFunctions(df: DataFrame) = new SparkDataFrameFunctions(df)
 
+  @deprecated(message="Support for Spark 1 is deprecated. Use Spark 2 or 3")
   class SparkDataFrameFunctions(df: DataFrame) extends Serializable {
     def saveToEs(resource: String): Unit = { EsSparkSQL.saveToEs(df, resource) }
     def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit = { EsSparkSQL.saveToEs(df, resource, cfg) }
