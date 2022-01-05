@@ -74,6 +74,7 @@ public class EsBolt implements IRichBolt {
     }
 
     private EsBolt(String target, Boolean writeAck, Map configuration) {
+        log.warn("Support for Storm has been deprecated and will be removed in a future release.");
         boltConfig.put(ES_RESOURCE_WRITE, target);
 
         if (writeAck != null) {

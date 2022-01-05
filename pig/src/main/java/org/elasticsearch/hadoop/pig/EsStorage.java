@@ -118,6 +118,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                 throw new EsHadoopIllegalArgumentException("Cannot parse options " + Arrays.toString(configuration), ex);
             }
         }
+        log.warn("Support for Pig has been deprecated and will be removed in a future release.");
     }
 
     @Override
