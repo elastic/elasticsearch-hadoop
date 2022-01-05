@@ -8,10 +8,6 @@ Core::
 * Boost default scroll size to 1000
 https://github.com/elastic/elasticsearch-hadoop/pull/1429[#1429]
 
-Build::
-* Remove Scala 2.10 Support
-https://github.com/elastic/elasticsearch-hadoop/pull/1350[#1350]
-
 [[new-8.0.0-alpha1]]
 [float]
 === Enhancements
