@@ -1,3 +1,22 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.elasticsearch.hadoop.gradle
 
 import org.gradle.api.GradleException
@@ -68,13 +87,13 @@ class RootBuildPlugin implements Plugin<Project> {
         Zip distZip = project.getTasks().create('distZip', Zip.class)
         distZip.dependsOn(project.getTasks().getByName('pack'))
         distZip.setGroup('Distribution')
-        distZip.setDescription("Builds -${distZip.getClassifier()} archive, containing all jars and docs, suitable for download page.")
+        distZip.setDescription("Builds -${distZip.archiveClassifier.get()} archive, containing all jars and docs, suitable for download page.")
 
         Task distribution = project.getTasks().getByName('distribution')
         distribution.dependsOn(distZip)
 
         // Location of the zip dir
-        project.rootProject.ext.folderName = "${distZip.baseName}" + "-" + "${project.version}"
+        project.rootProject.ext.folderName = "${distZip.archiveBaseName.get()}" + "-" + "${project.version}"
 
         // Copy root directory files to zip
         distZip.from(project.rootDir) { CopySpec spec ->
@@ -87,8 +106,8 @@ class RootBuildPlugin implements Plugin<Project> {
         // Copy master jar, sourceJar, and javadocJar to zip
         project.afterEvaluate {
             // Do not copy the hadoop testing jar
-            project.getTasks().withType(Jar.class).findAll { it.name != 'hadoopTestingJar' }.each { Jar jarTask ->
-                distZip.from(jarTask.archivePath) { CopySpec spec ->
+            project.getTasks().withType(Jar.class) { Jar jarTask ->
+                distZip.from(jarTask.archiveFile) { CopySpec spec ->
                     spec.into("${project.rootProject.ext.folderName}/dist")
                 }
             }

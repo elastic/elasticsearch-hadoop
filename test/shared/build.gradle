@@ -29,12 +29,51 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+configurations {
+    // Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be
+    // used in other projects instead of requiring a jar operation to happen. We have artifacts that are being shaded into
+    // a third-party jar that this depends on, which inherently means there is no classes output to share for compilation.
+    // This will force the MR project to require jars from upstream project dependencies, which shouldn't be a problem since
+    // there should only be one upstream project.
+    compileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+    testCompileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+    itestCompileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+}
+
+tasks.named("test").configure {
+    onlyIf { JavaVersion.current() >= JavaVersion.VERSION_16 }
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+}
+
 dependencies {
     api(project(':elasticsearch-hadoop-mr'))
-    
-    api(project.ext.hadoopClient)
+    api(project.ext.hadoopClient) {
+        exclude group: "commons-httpclient"
+        exclude group: 'com.fasterxml.jackson.core'
+    }
 
     api("junit:junit:${project.ext.junitVersion}")
+
+    implementation(project(path: ":thirdparty", configuration: "shadow"))
+
     implementation("org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
 
     implementation("io.netty:netty-all:4.0.29.Final") {
@@ -46,5 +85,6 @@ dependencies {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+        exclude group: 'com.fasterxml.jackson.core'
     }
 }

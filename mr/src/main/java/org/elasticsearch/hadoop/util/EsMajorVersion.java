@@ -96,6 +96,27 @@ public class EsMajorVersion implements Serializable {
                 "Highest supported version is [" + LATEST.version + "]. You may need to upgrade ES-Hadoop.");
     }
 
+    public int parseMinorVersion(String versionString) {
+        String majorPrefix = "" + major + ".";
+        if (versionString.startsWith(majorPrefix) == false) {
+            throw new EsHadoopIllegalArgumentException("Invalid version string for major version; " +
+                    "Received [" + versionString + "] for major version [" + version + "]");
+        }
+        String minorRemainder = versionString.substring(majorPrefix.length());
+        int dot = minorRemainder.indexOf('.');
+        if (dot < 1) {
+            throw new EsHadoopIllegalArgumentException("Could not parse Elasticsearch minor version [" +
+                    versionString + "]. Invalid version format.");
+        }
+        String rawMinorVersion = minorRemainder.substring(0, dot);
+        try {
+            return Integer.parseInt(rawMinorVersion);
+        } catch (NumberFormatException e) {
+            throw new EsHadoopIllegalArgumentException("Could not parse Elasticsearch minor version [" +
+                    versionString + "]. Non-numeric minor version [" + rawMinorVersion + "].", e);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

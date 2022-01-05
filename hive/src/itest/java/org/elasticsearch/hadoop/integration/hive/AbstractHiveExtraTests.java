@@ -69,14 +69,17 @@ public class AbstractHiveExtraTests {
                 + HiveSuite.tableProps(resource, null, "'es.mapping.names'='alias:&c'");
 
         String query = "SELECT * from cars2";
-        String count = "SELECT count(1) from cars2";
+        String count = "SELECT count(*) from cars2";
 
         server.execute(drop);
         server.execute(create);
         List<String> result = server.execute(query);
+        System.out.println("Cars Result: " + result);
         assertEquals(6, result.size());
         assertTrue(result.get(0).contains("foobar"));
+        server.execute("ANALYZE TABLE cars2 COMPUTE STATISTICS"); // Hive caches counts on external data and so it needs to be updated.
         result = server.execute(count);
+        System.out.println("Count Result: " + result);
         assertEquals("6", result.get(0));
     }
 

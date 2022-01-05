@@ -19,6 +19,8 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 public interface Response {
 
@@ -43,4 +45,11 @@ public interface Response {
     boolean hasSucceeded();
 
     boolean hasFailed();
+
+    /**
+     * Returns the headers with the given name
+     * @param headerName, case-insensitive
+     * @return The list of matching headers
+     */
+    List<String> getHeaders(String headerName);
 }

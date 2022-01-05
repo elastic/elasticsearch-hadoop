@@ -61,7 +61,7 @@ public class PigWrapper {
         Properties properties = HdpBootstrap.asProperties(new QueryTestParams(stagingDir).provisionQueries(HdpBootstrap.hadoopConfig()));
         String pigHost = properties.getProperty("pig");
         // remote Pig instance
-        if (StringUtils.hasText(pigHost) && !"local".equals(pig)) {
+        if (StringUtils.hasText(pigHost) && !"local".equals(pigHost)) {
             LogFactory.getLog(PigWrapper.class).info("Executing Pig in Map/Reduce mode");
             return new PigServer(ExecType.MAPREDUCE, properties);
         }
@@ -86,7 +86,7 @@ public class PigWrapper {
             List<ExecJob> executeBatch = pig.executeBatch();
             for (ExecJob execJob : executeBatch) {
                 if (execJob.getStatus() == ExecJob.JOB_STATUS.FAILED) {
-                    throw new EsHadoopIllegalStateException("Pig execution failed");
+                    throw new EsHadoopIllegalStateException("Pig execution failed", execJob.getException());
                 }
             }
         } finally {

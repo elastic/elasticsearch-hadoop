@@ -33,7 +33,7 @@ subprojects {
     buildscript {
         boolean localRepo = project.getProperties().containsKey("localRepo")
         repositories {
-            jcenter()
+            gradlePluginPortal()
             mavenCentral()
             if (localRepo) {
                 // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.

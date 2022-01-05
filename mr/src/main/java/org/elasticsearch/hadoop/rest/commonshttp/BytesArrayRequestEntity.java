@@ -18,11 +18,11 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.RequestEntity;
+import org.elasticsearch.hadoop.util.ByteSequence;
+
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.apache.commons.httpclient.methods.RequestEntity;
-import org.elasticsearch.hadoop.util.ByteSequence;
 
 /**
  * Wrapper around byte arrays that are not fully filled up.

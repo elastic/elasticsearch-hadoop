@@ -23,6 +23,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.SetupTaskFactory
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
@@ -55,7 +56,13 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 4)
+        return new Version(3, 0, 1)
+    }
+
+    String hadoopVersionCompatibility() {
+        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
+        // This version is not always a version that Hadoop still distributes.
+        return "3.2"
     }
 
     @Override
@@ -70,10 +77,16 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String artifactName(ServiceConfiguration configuration) {
-        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
         Version version = configuration.getVersion()
-        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP).getVersion()
-        return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
+        return "spark-$version-bin-hadoop${hadoopVersionCompatibility()}"
+    }
+
+    @Override
+    Collection<String> excludeFromArchiveExtraction(InstanceConfiguration configuration) {
+        // It's nice all these projects have example data, but we'll scrap it all for now. I don't think we'll need to
+        // run anything on kubernetes for a while. Might bring R back in if we ever deem it necessary to test on.
+        String rootName = artifactName(configuration.serviceConf)
+        return ["$rootName/data/", "$rootName/examples/", "$rootName/kubernetes/", "$rootName/R/"]
     }
 
     @Override
@@ -146,6 +159,11 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
         // HADOOP_CONF_DIR -> ...../etc/hadoop/
         env.put('HADOOP_CONF_DIR', confDir.toString())
+    }
+
+    @Override
+    void configureSetupTasks(InstanceConfiguration configuration, SetupTaskFactory taskFactory) {
+
     }
 
     @Override

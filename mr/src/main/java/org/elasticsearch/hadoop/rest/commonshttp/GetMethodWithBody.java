@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.EntityEnclosingMethod;
 
 public class GetMethodWithBody extends EntityEnclosingMethod {
 

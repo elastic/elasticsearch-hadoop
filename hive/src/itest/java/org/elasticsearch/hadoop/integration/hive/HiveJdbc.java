@@ -61,9 +61,14 @@ public class HiveJdbc implements HiveInstance {
                     ResultSetMetaData md = rs.getMetaData();
 
                     while (rs.next()) {
+                        StringBuilder rowBuilder = new StringBuilder();
                         for (int i = 0; i < md.getColumnCount(); i++) {
-                            results.add(rs.getString(i + 1));
+                            if (i > 0) {
+                                rowBuilder.append(",");
+                            }
+                            rowBuilder.append(rs.getString(i + 1));
                         }
+                        results.add(rowBuilder.toString());
                     }
                 } finally {
                     rs.close();

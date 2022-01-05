@@ -53,12 +53,8 @@ props.put("elasticsearch", esVersion)
 props.put("build-tools", buildToolsVersion)
 
 repositories {
-    jcenter()
+    gradlePluginPortal()
     mavenCentral()
-
-    // For resolving propdeps (provided/optional dependencies)
-    maven { url 'https://repo.spring.io/plugins-release' }
-
     // For Elasticsearch snapshots.
     if (localRepo) {
         // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
@@ -69,20 +65,17 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
+    compileOnly gradleApi()
+    compileOnly localGroovy()
 
-    // Provided/Optional Dependencies
-    compile 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
-    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
+    // Required for dependency licenses task
+    implementation 'org.apache.rat:apache-rat:0.11'
+    implementation 'commons-codec:commons-codec:1.12'
 
     if (localRepo) {
-        compile name: "build-tools-${buildToolsVersion}"
-        // Required for dependency licenses task (explicitly added in case of localRepo missing transitive dependencies)
-        compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
-        compile group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
+        implementation name: "build-tools-${buildToolsVersion}"
     } else {
-        compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
+        implementation group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
 }
 

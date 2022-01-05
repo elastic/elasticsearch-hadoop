@@ -1,3 +1,4 @@
+import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
 
 apply plugin: 'es.hadoop.build.integration'
 
@@ -15,16 +16,33 @@ configurations {
     }
 }
 
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.apache.hadoop') {
+            details.useVersion project.ext.hadoopVersion
+        }
+    }
+}
+
 dependencies {
     embedded(project(":elasticsearch-hadoop-mr"))
 
-    provided("org.apache.hive:hive-service:$hiveVersion") {
+    implementation("org.apache.hive:hive-service:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
-    provided("org.apache.hive:hive-exec:$hiveVersion")
-    provided("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("org.apache.hive:hive-exec:$hiveVersion")
+    implementation("org.apache.hive:hive-metastore:$hiveVersion")
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation(project(":test:shared"))
+    testImplementation("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    testImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
 
     itestImplementation(project(":test:shared"))
     itestImplementation("org.apache.hive:hive-service:$hiveVersion") {
@@ -33,9 +51,21 @@ dependencies {
     itestImplementation("org.apache.hive:hive-jdbc:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
+    itestImplementation("org.apache.tez:tez-dag:0.9.1")
+    itestImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
+
+    additionalSources(project(":elasticsearch-hadoop-mr"))
+    javadocSources(project(":elasticsearch-hadoop-mr"))
+}
+
+tasks.named("test").configure {
+    onlyIf { JavaVersion.current() >= JavaVersion.VERSION_16 }
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+    jvmArgs "--add-opens=java.base/java.net=ALL-UNNAMED" // Needed for org.apache.hadoop.hive.common.StringInternUtils
 }
 
 jar {
+    dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
@@ -43,11 +73,18 @@ jar {
     }
 }
 
-javadoc {
-    source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
+def hiveSiteProperties = ['testSeed': BuildParams.testSeed]
+processItestResources {
+    filesMatching("**/hive-site.xml") {
+        expand(hiveSiteProperties)
+    }
 }
 
-sourcesJar {
-    from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
+itestJar {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
 }

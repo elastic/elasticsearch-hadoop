@@ -64,14 +64,14 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-spark-20_2.10</artifactId> <1>
+  <artifactId>elasticsearch-spark-30_2.12</artifactId> <1>
   <version>{version}</version>
 </dependency>
 ----
 
-<1> 'spark' artifact. Notice the `-20` part of the suffix which indicates the
-Spark version compatible with the artifact. Use `20` for Spark 2.0+ and `13` for
-Spark 1.3-1.6. Notice the `_2.10` suffix which indicates the Scala version
+<1> 'spark' artifact. Notice the `-30` part of the suffix which indicates the
+Spark version compatible with the artifact. Use `30` for Spark 3.0+, `20` for Spark 2.0+,
+and `13` for Spark 1.3-1.6. Notice the `_2.12` suffix which indicates the Scala version
 compatible with the artifact. Currently it is the same as the version used by
 Spark itself.
 
@@ -85,6 +85,8 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | 1.3 - 1.6 | 2.11 | elasticsearch-spark-13_2.11
 | 2.0+ | 2.10 | elasticsearch-spark-20_2.10
 | 2.0+ | 2.11 | elasticsearch-spark-20_2.11
+| 2.0+ | 2.12 | elasticsearch-spark-20_2.12
+| 3.0+ | 2.12 | elasticsearch-spark-30_2.12
 |==========================================================
 
 .Storm

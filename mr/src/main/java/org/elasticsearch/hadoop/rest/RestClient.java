@@ -18,10 +18,8 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
@@ -40,6 +38,10 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -71,10 +73,18 @@ import static org.elasticsearch.hadoop.rest.Request.Method.GET;
 import static org.elasticsearch.hadoop.rest.Request.Method.HEAD;
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_6_X;
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_7_X;
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_8_X;
 
 public class RestClient implements Closeable, StatsAware {
 
-    private final static int MAX_BULK_ERROR_MESSAGES = 5;
+    private static final Log LOG = LogFactory.getLog(RestClient.class);
+
+    static final String ELASTIC_PRODUCT_HEADER = "X-elastic-product";
+    static final String ELASTIC_PRODUCT_HEADER_VALUE = "Elasticsearch";
+    static final String ELASTICSEARCH_BUILD_FLAVOR = "default";
+    static final String ELASTICSEARCH_TAGLINE = "You Know, for Search";
 
     private NetworkClient network;
     private final ObjectMapper mapper;
@@ -742,7 +752,8 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public ClusterInfo mainInfo() {
-        Map<String, Object> result = get("", null);
+        Response response = execute(GET, "", true);
+        Map<String, Object> result = parseContent(response.body(), null);
         if (result == null) {
             throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch main cluster info.");
         }
@@ -753,7 +764,38 @@ public class RestClient implements Closeable, StatsAware {
         if (versionBody == null || !StringUtils.hasText(versionBody.get("number"))) {
             throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch version.");
         }
-        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), EsMajorVersion.parse(versionBody.get("number")));
+        String versionNumber = versionBody.get("number");
+        EsMajorVersion major = EsMajorVersion.parse(versionNumber);
+        if (major.before(EsMajorVersion.V_6_X)) {
+            throw new EsHadoopIllegalStateException("Invalid major version [" + major + "]. " +
+                    "Version is lower than minimum required version [" + EsMajorVersion.V_6_X + "].");
+        } else if (major.onOrAfter(V_6_X)) {
+            String tagline = result.get("tagline").toString();
+            if (ELASTICSEARCH_TAGLINE.equals(tagline) == false) {
+                LOG.warn("Could not verify server is Elasticsearch! Invalid main action response body format [tag].");
+            }
+            if (major.onOrAfter(V_7_X)) {
+                String buildFlavor = versionBody.get("build_flavor");
+                if (ELASTICSEARCH_BUILD_FLAVOR.equals(buildFlavor) == false) {
+                    LOG.warn("Could not verify server is Elasticsearch! Invalid main action response body format [build_flavor].");
+                }
+
+                List<String> productHeader = response.getHeaders(ELASTIC_PRODUCT_HEADER);
+                boolean validElasticsearchHeader = productHeader != null && productHeader.size() == 1 && productHeader.get(0).equals(ELASTIC_PRODUCT_HEADER_VALUE);
+                boolean verifyServer = (major.on(V_7_X) && major.parseMinorVersion(versionNumber) >= 14) || major.onOrAfter(V_8_X);
+                if (validElasticsearchHeader == false) {
+                    if (verifyServer) {
+                        throw new EsHadoopTransportException("Connected, but could not verify server is Elasticsearch. Response missing [" +
+                                ELASTIC_PRODUCT_HEADER + "] header. Please check that you are connecting to an Elasticsearch instance, and " +
+                                "that any networking filters are preserving that header.");
+                    } else {
+                        LOG.warn("Could not verify server is Elasticsearch! ES-Hadoop will require server validation when connecting to an " +
+                                "Elasticsearch cluster if that Elasticsearch cluster is v7.14 and up.");
+                    }
+                }
+            }
+        }
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), EsMajorVersion.parse(versionNumber));
     }
 
     /**

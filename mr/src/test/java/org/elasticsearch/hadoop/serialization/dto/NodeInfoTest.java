@@ -18,8 +18,8 @@
  */
 package org.elasticsearch.hadoop.serialization.dto;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;

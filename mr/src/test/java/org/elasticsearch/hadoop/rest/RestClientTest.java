@@ -19,6 +19,7 @@
 
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -31,6 +32,11 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -422,12 +428,91 @@ public class RestClientTest {
     }
 
     @Test
+    public void testMainInfo() {
+        String response = "{\n" +
+                "\"name\": \"node\",\n" +
+                "\"cluster_name\": \"cluster\",\n" +
+                "\"cluster_uuid\": \"uuid\",\n" +
+                "\"version\": {\n" +
+                "  \"number\": \"7.14.0\"\n" +
+                "},\n" +
+                "\"tagline\": \"You Know, for Search\"\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.computeIfAbsent(RestClient.ELASTIC_PRODUCT_HEADER.toLowerCase(Locale.ROOT), k -> new ArrayList<>()).add(RestClient.ELASTIC_PRODUCT_HEADER_VALUE);
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200", headers));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        ClusterInfo clusterInfo = client.mainInfo();
+
+        assertNotNull(clusterInfo.getClusterName());
+        assertNotNull(clusterInfo.getClusterName().getUUID());
+    }
+
+    @Test
+    public void testMainInfoWithClusterTooOld() {
+        String response = "{\n" +
+                "\"name\": \"node\",\n" +
+                "\"cluster_name\": \"cluster\",\n" +
+                "\"version\": {\n" +
+                "  \"number\": \"2.0.0\"\n" +
+                "},\n" +
+                "\"tagline\": \"You Know, for Search\"\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        try {
+            client.mainInfo();
+            fail("Shouldn't operate on main version that is too old.");
+        } catch (EsHadoopIllegalStateException e) {
+            assertEquals("Invalid major version [2.0.0]. Version is lower than minimum required version [6.x].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMainInfoWithoutRequiredHeaders() {
+        String response = "{\n" +
+                "\"name\": \"node\",\n" +
+                "\"cluster_name\": \"cluster\",\n" +
+                "\"cluster_uuid\": \"uuid\",\n" +
+                "\"version\": {\n" +
+                "  \"number\": \"7.14.0\"\n" +
+                "},\n" +
+                "\"tagline\": \"You Know, for Search\"\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        try {
+            client.mainInfo();
+            fail("Shouldn't operate on request that does not contain the required headers.");
+        } catch (EsHadoopTransportException e) {
+            assertEquals("Connected, but could not verify server is Elasticsearch. Response missing [X-elastic-product] header. " +
+                    "Please check that you are connecting to an Elasticsearch instance, and that any networking filters are " +
+                    "preserving that header.", e.getMessage());
+        }
+    }
+
+    @Test
     public void testMainInfoWithClusterNotProvidingUUID() {
         String response = "{\n" +
                 "\"name\": \"node\",\n" +
                 "\"cluster_name\": \"cluster\",\n" +
                 "\"version\": {\n" +
-                "  \"number\": \"2.0.1\"\n" +
+                "  \"number\": \"6.0.1\"\n" +
                 "},\n" +
                 "\"tagline\": \"You Know, for Search\"\n" +
                 "}";

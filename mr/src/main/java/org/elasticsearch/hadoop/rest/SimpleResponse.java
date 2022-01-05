@@ -19,17 +19,27 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SimpleResponse implements Response {
 
     private final int status;
     private final InputStream body;
     private final CharSequence uri;
+    private final Map<String, List<String>> headers;
 
     public SimpleResponse(int status, InputStream body, CharSequence uri) {
+        this(status, body, uri, Collections.emptyMap());
+    }
+
+    public SimpleResponse(int status, InputStream body, CharSequence uri, Map<String, List<String>> headers) {
         this.status = status;
         this.body = body;
         this.uri = uri;
+        this.headers = headers;
     }
 
     @Override
@@ -90,5 +100,11 @@ public class SimpleResponse implements Response {
     @Override
     public boolean hasFailed() {
         return !hasSucceeded();
+    }
+
+    @Override
+    public List<String> getHeaders(String headerName) {
+        return headers.entrySet().stream().filter(entry -> entry.getKey().equalsIgnoreCase(headerName)).map(Map.Entry::getValue)
+                .flatMap(List::stream).collect(Collectors.toList());
     }
 }

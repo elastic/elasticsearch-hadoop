@@ -19,9 +19,11 @@
 package org.elasticsearch.hadoop.cfg;
 
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.HadoopIOUtils;
 import org.elasticsearch.hadoop.util.Assert;
@@ -33,6 +35,11 @@ public class HadoopSettings extends Settings {
     public HadoopSettings(Configuration cfg) {
         Assert.notNull(cfg, "Non-null properties expected");
         this.cfg = cfg;
+        String jobName = cfg.get(JobContext.JOB_NAME, "");
+        String user = cfg.get(JobContext.USER_NAME, "");
+        String taskAttemptId = cfg.get(JobContext.TASK_ATTEMPT_ID, "");
+        String opaqueId = String.format(Locale.ROOT, "[mapreduce] [%s] [%s] [%s]", user, jobName, taskAttemptId);
+        setOpaqueId(opaqueId);
     }
 
     @Override

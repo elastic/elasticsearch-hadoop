@@ -18,12 +18,14 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
@@ -38,10 +40,12 @@ import static org.hamcrest.Matchers.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractPigTests {
 
+    static Configuration testConfiguration;
     static PigWrapper pig;
 
     @BeforeClass
     public static void startup() throws Exception {
+        testConfiguration = HdpBootstrap.hadoopConfig();
         pig = new PigWrapper(PigSuite.tempFolder);
         pig.start();
     }
@@ -52,34 +56,33 @@ public abstract class AbstractPigTests {
     }
 
     public static String getResults(String outputFolder) {
-        File fl = new File(outputFolder);
-        assertThat(String.format("Folder [%s] not found", outputFolder), fl.exists(), is(true));
-        assertThat(new File(outputFolder, "_SUCCESS").exists(), is(true));
+        Path fl = new Path(outputFolder);
+        try {
+            FileSystem fileSystem = FileSystem.get(testConfiguration);
+            assertThat(String.format("Folder [%s] not found", outputFolder), fileSystem.exists(fl), is(true));
+            assertThat(fileSystem.exists(new Path(outputFolder, "_SUCCESS")), is(true));
 
-        File[] files = fl.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return (name.startsWith("part-r-") || name.startsWith("part-m-"));
-            }
-        });
+            FileStatus[] files = fileSystem.listStatus(fl, new PathFilter() {
+                @Override
+                public boolean accept(Path path) {
+                    return (path.getName().startsWith("part-r-") || path.getName().startsWith("part-m-"));
+                }
+            });
 
-        StringBuilder content = new StringBuilder();
+            StringBuilder content = new StringBuilder();
 
-        for (File file : files) {
-            try {
-                String data = IOUtils.asString(new FileInputStream(file)).trim();
+            for (FileStatus file : files) {
+                String data = IOUtils.asString(fileSystem.open(file.getPath())).trim();
                 if (StringUtils.hasText(data)) {
                     content.append(data);
                     content.append("\n");
                 }
-            } catch (FileNotFoundException ex) {
-                throw new RuntimeException(ex);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
             }
-        }
 
-        return content.toString();
+            return content.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String tabify(String...strings) {

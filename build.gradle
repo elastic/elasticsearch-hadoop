@@ -1,10 +1,17 @@
-import org.elasticsearch.gradle.ConcatFilesTask
+import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
 
 description = 'Elasticsearch for Apache Hadoop'
 
 apply plugin: 'es.hadoop.build.root'
 
 defaultTasks 'build'
+
+allprojects {
+    group = "org.elasticsearch"
+    tasks.withType(AbstractCopyTask) {
+      duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
 
 // Simple utility task to help with downloading artifacts and jars
 if (project.hasProperty("find-artifact")) {
@@ -37,8 +44,9 @@ if (project.hasProperty("find-artifact")) {
     }
 }
 
-// Add a task in the root project that collects all the dependencyReport data for each project
+// Add a task in the project that collects all the dependencyReport data for each project
 // Concatenates the dependencies CSV files into a single file
+// usage: ./gradlew :dist:generateDependenciesReport -Dcsv=/tmp/deps.csv
 task generateDependenciesReport(type: ConcatFilesTask) {
     files = fileTree(dir: project.rootDir,  include: '**/dependencies.csv' )
     headerLine = "name,version,url,license"

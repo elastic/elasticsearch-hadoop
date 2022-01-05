@@ -39,27 +39,28 @@ package org.elasticsearch.hadoop.serialization.json;
  * limitations under the License.
  */
 
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonFactory;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonGenerator;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonProcessingException;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationContext;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializerProvider;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.JsonDeserializer;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.JsonMappingException;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.deser.StdDeserializationContext;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.introspect.VisibilityChecker;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.jsontype.TypeResolverBuilder;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.type.ArrayType;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.type.TypeFactory;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.type.JavaType;
+import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.DeserializationContext;
-import org.codehaus.jackson.map.DeserializerProvider;
-import org.codehaus.jackson.map.JsonDeserializer;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.deser.StdDeserializationContext;
-import org.codehaus.jackson.map.introspect.VisibilityChecker;
-import org.codehaus.jackson.map.jsontype.TypeResolverBuilder;
-import org.codehaus.jackson.map.type.TypeFactory;
-import org.codehaus.jackson.type.JavaType;
-import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 /**
  * Backported class from Jackson 1.8.8 for Jackson 1.5.2.
@@ -140,7 +141,7 @@ public class BackportedObjectReader implements ObjectReader {
      * a new instance is created, if non-null, properties of
      * this value object will be updated instead.
      * Note that value can be of almost any type, except not
-     * {@link org.codehaus.jackson.map.type.ArrayType}; array
+     * {@link ArrayType}; array
      * types can not be modified because array size is immutable.
      */
     protected final Object _valueToUpdate;

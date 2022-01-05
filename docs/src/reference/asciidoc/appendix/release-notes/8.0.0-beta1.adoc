@@ -1,0 +1,16 @@
+[[eshadoop-8.0.0-beta1]]
+== Elasticsearch for Apache Hadoop version 8.0.0-beta1
+
+[[enhancement-8.0.0-beta1]]
+[float]
+=== Enhancements
+Core::
+- Setting X-Opaque-ID header for all reads and writes for mapreduce and spark
+https://github.com/elastic/elasticsearch-hadoop/pull/1770[#1770]
+
+[[bug-8.0.0-beta1]]
+[float]
+=== Bug fixes
+Core::
+- Close RestRepository to avoid a connection leak
+https://github.com/elastic/elasticsearch-hadoop/pull/1781[#1781]

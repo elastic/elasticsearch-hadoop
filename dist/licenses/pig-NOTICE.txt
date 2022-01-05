@@ -1,0 +1,61 @@
+Apache Pig
+Copyright 2008-2014 The Apache Software Foundation
+
+This product includes software developed by The Apache Software
+Foundation (http://www.apache.org/).
+
+This product includes/uses the JavaCC (https://javacc.dev.java.net/),
+Copyright (c) 2003 Sun Microsystems, Inc.
+
+This product includes/uses Jetty (http://jetty.mortbay.org/),
+Copyright (c) Mort Bay Consulting Pty. Ltd. (Australia)
+
+This product includes/uses Jsch (http://www.jcraft.com/jsch/),
+Copyright (c) 2002,2003,2004,2005,2006,2007,2008 Atsuhiko Yamanaka,
+JCraft,Inc. All rights reserved.
+
+This product includes/uses Jline (http://jline.sourceforge.net/)
+Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
+All rights reserved.
+
+This product includes/uses ANTLR (http://www.antlr.org/)
+Copyright (c) 2003-2006 Terence Parr
+All rights reserved.
+
+This product includes/uses Guava (http://code.google.com/p/guava-libraries/)
+Copyright (C) 2006 Google Inc.
+
+This product includes/uses Jackson (http://jackson.codehaus.org/)
+Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+
+This product includes/uses SLF4J (http://www.slf4j.org/)
+Copyright (c) 2004-2008 QOS.ch
+All rights reserved.
+
+This product includes/uses HyperSQL (http://hsqldb.org/)
+Copyright (c) 2001-2010, The HSQL Development Group
+All rights reserved.
+
+This product includes/uses xmlenc (http://xmlenc.sourceforge.net/)
+Copyright 2003-2005, Ernst de Haan <wfe.dehaan@gmail.com>
+All rights reserved.
+
+This product includes/uses Joda (http://joda-time.sourceforge.net/)
+Copyright 2001-2006 Stephen Colebourne
+
+This product includes/uses Jython (http://www.jython.org/)
+Copyright (c) 2000-2009 Jython Developers.
+All rights reserved.
+
+This product includes/uses JSch (http://www.jcraft.com/jsch/)
+JSch is copyrighted by ymnk, JCraft,Inc.
+
+This product includes/uses JetS3t (http://www.jets3t.org/)
+Copyright 2006-2010 James Murty
+
+This product includes/uses Netty (http://www.jboss.org/netty)
+Copyright 2009 Red Hat, Inc.
+
+This product includes/uses dk.brics.automton (http://www.brics.dk/automaton/)
+This package is Copyright © 2001-2011 Anders Møller.
+All rights reserved.

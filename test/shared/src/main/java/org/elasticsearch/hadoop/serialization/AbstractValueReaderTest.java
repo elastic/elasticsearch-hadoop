@@ -18,11 +18,11 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import org.codehaus.jackson.Base64Variants;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.Base64Variants;
 import org.junit.Before;
 import org.junit.Test;
 

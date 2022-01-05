@@ -1,0 +1,11 @@
+{
+    "index": {
+        "mappings": {
+            "properties" : {
+                "&t" : {
+                    "type" : "date"
+                }
+            }
+        }
+    }
+}

@@ -1,4 +1,0 @@
-[[eshadoop-7.0.0-rc2]]
-== Elasticsearch for Apache Hadoop version 7.0.0-rc2
-
-This is the second release candidate for 7.0.0. No major changes.

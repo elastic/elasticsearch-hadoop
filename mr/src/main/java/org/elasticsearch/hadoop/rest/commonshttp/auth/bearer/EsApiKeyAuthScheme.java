@@ -20,13 +20,13 @@
 package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.auth.AuthenticationException;
-import org.apache.commons.httpclient.auth.BasicScheme;
-import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.security.EsToken;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthenticationException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.BasicScheme;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**

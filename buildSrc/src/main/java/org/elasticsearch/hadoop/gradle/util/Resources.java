@@ -24,19 +24,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 
-import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin;
-
 public class Resources {
 
     /**
-     * Duplicated from org.elasticsearch.gradle.info.GlobalBuildInfoPlugin#getResourceContents(java.lang.String)
+     * Duplicated from org.elasticsearch.hadoop.gradle.buildtools.info.GlobalBuildInfoPlugin#getResourceContents(java.lang.String)
      * Needed in BuildPlugin for reading ES-Hadoop specific minimum runtime and compile versions
      * @param resourcePath the classpath resource to load
      * @return The contents of the resource file
      */
     public static String getResourceContents(String resourcePath) {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(GlobalBuildInfoPlugin.class.getResourceAsStream(resourcePath))
+                new InputStreamReader(Resources.class.getResourceAsStream(resourcePath))
         )) {
             StringBuilder b = new StringBuilder();
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {

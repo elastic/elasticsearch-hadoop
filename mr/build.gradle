@@ -1,33 +1,85 @@
+import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
 
 apply plugin: 'es.hadoop.build.integration'
 
 description = "Elasticsearch Hadoop Map/Reduce"
 
-dependencies {
-    provided(project.ext.hadoopClient)
-    provided("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
-    provided("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
-    
-    provided("commons-logging:commons-logging:1.1.1")
-    provided("commons-httpclient:commons-httpclient:3.0.1")
-    provided("commons-codec:commons-codec:1.4")
+configurations {
+    embedded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom project.configurations.embedded
+    }
+    itestEmbedded {
+        transitive = false
+        canBeResolved = true
+    }
+    itestImplementation {
+        extendsFrom project.configurations.itestEmbedded
+    }
+    // Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be
+    // used in other projects instead of requiring a jar operation to happen. We have artifacts that are being shaded into
+    // a third-party jar that this depends on, which inherently means there is no classes output to share for compilation.
+    // This will force the MR project to require jars from upstream project dependencies, which shouldn't be a problem since
+    // there should only be one upstream project.
+    compileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+    testCompileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+    itestCompileClasspath {
+        beforeLocking {
+            attributes {
+                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+            }
+        }
+    }
+}
 
-    provided("javax.xml.bind:jaxb-api:2.3.1")
+dependencies {
+    api(project.ext.hadoopClient)
+    api("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}") {
+        // Hadoop has updated its jackson module to be further ahead in version than
+        // Spark can support. The two libraries are unlikely to co-exist in a deployed
+        // environment, but depending on one or the other creates problems for library
+        // tests. Instead, we exclude it from our dependencies and shade it with the
+        // thirdparty submodule. Downstream users of the library can pull it in as needed
+        // for tests.
+        exclude group: 'com.fasterxml.jackson.core'
+    }
+    api("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}") {
+        exclude group: 'com.fasterxml.jackson.core'
+    }
     
-    provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-    provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-    
-    testImplementation(project.ext.hadoopClient)
+    embedded(project(path: ":thirdparty", configuration: "shadow"))
+    implementation("commons-logging:commons-logging:1.1.1")
+    implementation("commons-codec:commons-codec:1.4")
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+
+    testImplementation(project(":test:shared"))
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
+
+    itestEmbedded(project(":test:shared"))
+    itestImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
     itestImplementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+        exclude group: 'com.fasterxml.jackson.core'
     }
-
-    testImplementation(project(":test:shared"))
-    itestImplementation(project(":test:shared"))
 }
 
 String generatedResources = "$buildDir/generated-resources/main"
@@ -39,18 +91,46 @@ sourceSets {
 }
 
 task generateGitHash {
-    inputs.file project.ext.gitHead
+    inputs.property "revision", BuildParams.gitRevision
     outputs.dir generatedResources
 
     doLast {
         Properties props = new Properties()
         props.put("version", version)
-        props.put("hash", project.ext.revHash)
+        props.put("hash", BuildParams.gitRevision)
         File output = new File(generatedResources, "esh-build.properties")
         new File(generatedResources).mkdirs()
         output.createNewFile()
         props.store(output.newWriter(), null)
     }
+}
+
+jar {
+    dependsOn(project.configurations.embedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+itestJar {
+    dependsOn(project.configurations.embedded)
+    dependsOn(project.configurations.itestEmbedded)
+    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+    from(project.configurations.itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+        include "org/elasticsearch/hadoop/**"
+        include "esh-build.properties"
+        include "META-INF/services/*"
+    }
+}
+
+tasks.named("test").configure {
+    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
 }
 
 eclipse.classpath.file {

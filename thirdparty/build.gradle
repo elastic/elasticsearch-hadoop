@@ -1,0 +1,32 @@
+import org.elasticsearch.hadoop.gradle.BuildPlugin
+
+plugins {
+    id 'com.github.johnrengelman.shadow'
+    id 'es.hadoop.build'
+}
+
+description = "Elasticsearch Hadoop Shaded Third-Party Libraries"
+
+configurations {
+    shaded {
+        transitive = false
+        canBeResolved = true
+    }
+    implementation {
+        extendsFrom shaded
+    }
+}
+
+BuildPlugin.disableTransitiveDependencies(project, configurations.shaded)
+
+dependencies {
+    shaded("commons-httpclient:commons-httpclient:3.0.1")
+    shaded("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    shaded("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+}
+
+shadowJar {
+    configurations = [project.configurations.shaded]
+    relocate 'org.apache.commons.httpclient', 'org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient'
+    relocate 'org.codehaus.jackson', 'org.elasticsearch.hadoop.thirdparty.codehaus.jackson'
+}

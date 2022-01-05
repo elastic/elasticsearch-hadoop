@@ -20,8 +20,9 @@ package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.Provisioner;
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.EsAssume;
 import org.elasticsearch.hadoop.rest.RestUtils;
@@ -41,6 +42,7 @@ import static org.elasticsearch.hadoop.util.TestUtils.resource;
 public class AbstractPigSaveJsonTest extends AbstractPigTests {
 
     private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
+    private final Configuration configuration = HdpBootstrap.hadoopConfig();
 
     @BeforeClass
     public static void startup() throws Exception {
@@ -58,7 +60,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     public void testTuple() throws Exception {
         String script =
                 "SET mapred.map.tasks 2;" +
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 //"ILLUSTRATE A;" +
                 "STORE A INTO '"+resource("json-pig-tupleartists", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
@@ -69,7 +70,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test
     public void testFieldAlias() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-fieldalias", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true','es.mapping.names=data:@json');";
 
@@ -79,7 +79,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test
     public void testCreateWithId() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-createwithid", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
@@ -96,7 +95,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test(expected = Exception.class)
     public void testUpdateWithoutId() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-updatewoid", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update',"
@@ -107,7 +105,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test
     public void testUpdateWithId() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-update", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
@@ -119,7 +116,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test(expected = EsHadoopIllegalStateException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-updatewoupsert", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
@@ -135,7 +131,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         RestUtils.putMapping("json-pig-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO 'json-pig-pc/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=number','"
@@ -147,7 +142,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test
     public void testIndexPattern() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-pattern-{tag}", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
@@ -157,7 +151,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     @Test
     public void testIndexPatternFormat() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO '"+resource("json-pig-pattern-format-{@timestamp|YYYY-MM-dd}", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
@@ -165,6 +158,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
     }
 
     private String loadSource() throws IOException {
-        return "A = LOAD '" + PigSuite.testData.sampleArtistsJsonUri().toString() + "' USING PigStorage() AS (json: chararray);";
+        return "A = LOAD '" + PigSuite.testData.sampleArtistsJson(configuration) + "' USING PigStorage() AS (json: chararray);";
     }
 }
