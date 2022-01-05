@@ -87,6 +87,8 @@ Hive version {hv-v}
 
 Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently {pg-v}).
 
+Note that support for Storm in {eh} is now deprecated.
+
 In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
 
 ["source","bash",subs="attributes"]
@@ -98,8 +100,8 @@ Apache Pig version {pg-v}
 [[requirements-spark]]
 === Apache Spark
 
-Spark 1.3.0 or higher. We recommend using the latest release of Spark (currently {sp-v}). As {eh} provides
-native integration (which is recommended) with {sp} it does not matter what binary one is using.
+Spark 1.3.0 or higher (support for Spark 1.x in {eh} is now deprecated). We recommend using the latest release of Spark (currently
+{sp-v}). As {eh} provides native integration (which is recommended) with {sp} it does not matter what binary one is using.
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
 
@@ -145,6 +147,8 @@ Note that Spark 1.0-1.2 are no longer supported (again due to backwards incompat
 
 Storm 1.0.0 or higher. Do note that Storm 1.0.0 broke backwards compatibility with the previous versions (by changing the package name)
 however upgrading is easy and recommended. We recommend using the latest release of Storm (currently {st-v}).
+
+Note that support for Storm in {eh} is now deprecated.
 
 One can discover the Storm version by looking at its folder or by invoking the command:
 
