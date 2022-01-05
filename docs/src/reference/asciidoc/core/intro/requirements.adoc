@@ -10,7 +10,7 @@ TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built o
 [[requirements-jdk]]
 === JDK
 
-JDK level 6.0 (or above) just like Hadoop. As JDK 6 as well as JDK 7 have been both EOL-ed and are not supported by recent product updates, we strongly recommend using the latest JDK 8 (at least u20 or higher). If that is not an option, use JDK 7.0 update u55 (required for Elasticsearch 1.2 or higher). An up-to-date support matrix for Elasticsearch is available https://www.elastic.co/subscriptions/matrix[here]. Do note that the JVM versions are *critical* for a stable environment as an incorrect version can corrupt the data underneath as explained in this http://www.elastic.co/blog/java-1-7u55-safe-use-elasticsearch-lucene/[blog post].
+JDK level 8 (at least u20 or higher). An up-to-date support matrix for Elasticsearch is available https://www.elastic.co/subscriptions/matrix[here]. Do note that the JVM versions are *critical* for a stable environment as an incorrect version can corrupt the data underneath as explained in this http://www.elastic.co/blog/java-1-7u55-safe-use-elasticsearch-lucene/[blog post].
 
 One can check the available JDK version from the command line:
 
@@ -54,20 +54,16 @@ $ curl -XGET http://localhost:9200
 [[requirements-hadoop]]
 === Hadoop
 
-Hadoop 2.x (ideally the latest stable version, currently 2.7.3). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
+{eh} is compatible with Hadoop 2 and Hadoop 3 (ideally the latest stable version). It is tested daily against Apache Hadoop, but any distro
+compatible with Apache Hadoop should work just fine.
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
 [source, bash]
 ----
 $ bin/hadoop version
-Hadoop 2.4.1
+Hadoop 3.3.1
 ----
-
-[[requirements-yarn]]
-=== Apache YARN / Hadoop 2.x
-
-{eh} binary is tested against Hadoop 2.x and designed to run on Yarn without any changes or modifications.
 
 [[requirements-hive]]
 === Apache Hive
@@ -103,7 +99,7 @@ native integration (which is recommended) with {sp} it does not matter what bina
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
 
-The Spark version can be typically discovery by looking at its folder name:
+The Spark version can be typically discovered by looking at its folder name:
 
 ["source","bash",subs="attributes"]
 ----
@@ -129,16 +125,13 @@ Welcome to
 [[requirements-spark-sql]]
 ==== Apache Spark SQL
 
-If planning on using Spark SQL make sure to download the appropriate jar. While it is part of the Spark distribution,
-it is _not_ part of Spark core but rather has its own jar. Thus, when constructing the classpath make sure to
+If planning on using Spark SQL make sure to add the appropriate Spark SQL jar as a dependency. While it is part of the Spark distribution,
+it is _not_ part of the Spark core jar but rather has its own jar. Thus, when constructing the classpath make sure to
 include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-{sp-v}-<distro>.jar+
 
-{eh} supports Spark SQL 1.3 though 1.6 and also Spark SQL 2.0. Since Spark 2.x is not compatible with Spark 1.x,
-two different artifacts are provided by {eh}.
-{eh} supports Spark SQL {sp-v} through its main jar. Since Spark SQL 2.0 is _not_
-https://spark.apache.org/docs/latest/sql-programming-guide.html#upgrading-from-spark-sql-10-12-to-13[backwards compatible]
-with Spark SQL 1.6 or lower, {eh} provides a dedicated jar. See the Spark chapter for more information.
-Note that Spark 1.0-1.2 are no longer supported (again due to backwards incompatible changes in Spark).
+{eh} supports Spark SQL 1.3 though 1.6, Spark SQL 2.x, and Spark SQL 3.x. {eh} supports Spark SQL 2.x on Scala 2.11 through its main jar.
+Since Spark 1.x, 2.x, and 3.x are not compatible with each other, and Scala versions are not compatible, multiple different artifacts are
+provided by {eh}. Choose the jar appropriate for your Spark and Scala version. See the Spark chapter for more information.
 
 [[requirements-storm]]
 === Apache Storm
