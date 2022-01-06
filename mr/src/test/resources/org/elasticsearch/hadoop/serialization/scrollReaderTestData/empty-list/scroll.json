@@ -1,0 +1,55 @@
+{
+  "_scroll_id" : "FGluY2x1ZGVfY29udGV4dF91dWlkDXF1ZXJ5QW5kRmV0Y2gBFmJUOHBDZ0pjU1dPUm9CbThxUWp1M3cAAAAAAABtCxZzRFItZkxtWFRjZWxXZ3pZamhZZWZ3",
+  "took" : 0,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : {
+      "value" : 3,
+      "relation" : "eq"
+    },
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "empty_list",
+        "_type" : "_doc",
+        "_id" : "1",
+        "_score" : 1.0,
+        "_source" : {
+          "status_code" : null,
+          "ts" : 12345678910,
+          "name" : "john"
+        }
+      },
+      {
+        "_index" : "empty_list",
+        "_type" : "_doc",
+        "_id" : "2",
+        "_score" : 1.0,
+        "_source" : {
+          "status_code" : [
+            123
+          ],
+          "ts" : null,
+          "name" : "johnny"
+        }
+      },
+      {
+        "_index" : "empty_list",
+        "_type" : "_doc",
+        "_id" : "3",
+        "_score" : 1.0,
+        "_source" : {
+          "status_code" : [ ],
+          "ts" : 12345678910,
+          "name" : null
+        }
+      }
+    ]
+  }
+}
