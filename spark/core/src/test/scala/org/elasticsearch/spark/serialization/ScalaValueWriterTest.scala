@@ -196,14 +196,14 @@ class ScalaValueWriterTest {
   @Test
   def testCaseClassWithInnerObjectAndNullSetting(): Unit = {
 
-    case class TestCaseClass(option1: Option[String], option2: Option[TestCaseClassInner])
+    case class TestCaseClass(option1: Option[String], option2: Option[TestCaseClassInner], option3: Any)
     case class TestCaseClassInner(option1: Option[String], option2: Option[String])
-    val caseClass = TestCaseClass(None, Some(TestCaseClassInner(option1 = Some("value1"), option2 = None)))
+    val caseClass = TestCaseClass(None, Some(TestCaseClassInner(option1 = Some("value1"), option2 = None)), ())
 
     val settings = new TestSettings()
     settings.setProperty(ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, "true")
 
-    assertEquals("""{"option1":null,"option2":{"option1":"value1","option2":null}}""", serialize(caseClass, settings))
+    assertEquals("""{"option1":null,"option2":{"option1":"value1","option2":null},"option3":null}""", serialize(caseClass, settings))
   }
 
   @Test
