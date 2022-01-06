@@ -23,29 +23,37 @@ We've increased the `es.scroll.size` default from `50` to `1000`. If you deploy
 ES-hadoop in a low memory environment, consider lowering `es.scroll.size` to
 avoid issues.
 
-==== Deprecations
+// end::notable-v8-breaking-changes[]
 
-The following are deprecated and will be removed in a future release:
+[[deprecations-8.0]]
+=== Deprecations in 8.0
 
-===== Spark 1.x
+The following functionality has been deprecated in {eh} 8.0 and will be removed
+in a future version. While this won’t have an immediate impact on your
+applications, we strongly encourage you take the described steps to update your
+code after upgrading to 8.0.
+
+// tag::notable-v8-breaking-changes[]
+
+==== Spark 1.x support is deprecated
 
 Spark 1.x is no longer maintained. Spark 2 and Spark 3 are still supported.
 
-===== Scala 2.10 support for Spark 2.x
+==== Scala 2.10 support for Spark 2.x is deprecated
 
 Spark deprecated support for Scala 2.10 in the Spark 2.0.0 release and removed it in the 2.3.0 release. Scala 2.11 and 2.12 are supported
 for Spark 2.x.
 
-===== Hadoop 1
+==== Hadoop 1.x support is deprecated
 
 Hadoop 1.x is no longer maintained. Support for it has not been tested since {eh} 6.0. Support is now formally deprecated. Hadoop 2 and
 Hadoop 3 are supported.
 
-===== Pig
+==== Apache Pig support is deprecated
 
 Apache Pig is no longer maintained.
 
-===== Storm
+==== Apache Storm support is deprecated
 
 Apache Storm has not been a popular {es} integration.
 

@@ -83,7 +83,7 @@ public class EsSpout implements IRichSpout {
     }
 
     public EsSpout(String target, String query, Map configuration) {
-        log.warn("Support for Storm has been deprecated and will be removed in a future release.");
+        log.warn("Support for Apache Storm has been deprecated and will be removed in a future release.");
         if (configuration != null) {
             spoutConfig.putAll(configuration);
         }

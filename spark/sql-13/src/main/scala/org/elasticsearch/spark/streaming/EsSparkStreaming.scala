@@ -27,7 +27,7 @@ import org.elasticsearch.spark.rdd.EsSpark
 
 import scala.collection.Map
 
-@deprecated(message="Support for Spark 1 is deprecated. Use Spark 2 or 3")
+@deprecated(message="Support for Apache Spark 1 is deprecated. Use Spark 2 or 3.")
 object EsSparkStreaming {
 
   // Save methods
