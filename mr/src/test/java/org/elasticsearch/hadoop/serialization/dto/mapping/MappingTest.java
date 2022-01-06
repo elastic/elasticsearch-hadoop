@@ -137,7 +137,7 @@ public class MappingTest {
         MappingSet mappings = getMappingsForResource("primitives.json");
         Mapping mapping = ensureAndGet("index", "primitives", mappings);
         Field[] props = mapping.getFields();
-        assertEquals(15, props.length);
+        assertEquals(16, props.length);
         assertEquals("field01", props[0].name());
         assertEquals(BOOLEAN, props[0].type());
         assertEquals("field02", props[1].name());

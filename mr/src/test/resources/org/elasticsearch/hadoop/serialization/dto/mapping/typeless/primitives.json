@@ -47,6 +47,9 @@
         },
         "field15" : {
           "type" : "date_nanos"
+        },
+        "field16" : {
+          "type" : "wildcard"
         }
       }
     }
