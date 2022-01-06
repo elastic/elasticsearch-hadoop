@@ -19,12 +19,13 @@
 package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
 class ScriptTemplateBulk extends TemplatedBulk {
 
@@ -40,7 +41,11 @@ class ScriptTemplateBulk extends TemplatedBulk {
     protected void doWriteObject(Object object, BytesArray storage, ValueWriter<?> writer) {
         if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(settings.getOperation())) {
             if (settings.hasScriptUpsert()) {
-                super.doWriteObject(Collections.emptyMap(), storage, writer);
+                FastByteArrayOutputStream bos = new FastByteArrayOutputStream(storage);
+                JacksonJsonGenerator generator = new JacksonJsonGenerator(bos);
+                generator.writeBeginObject();
+                generator.writeEndObject();
+                generator.close();
             } else super.doWriteObject(object, storage, writer);
         }
     }

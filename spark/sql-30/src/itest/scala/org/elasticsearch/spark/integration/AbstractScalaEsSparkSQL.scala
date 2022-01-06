@@ -2369,6 +2369,29 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(0, result(0).size)
   }
 
+  @Test
+  def testScriptedUpsert(): Unit = {
+    val testIndex = "scripted_upsert_test"
+    val updateParams = "count: <4>"
+    val updateScript = "if ( ctx.op == 'create' ) {ctx._source.counter = params.count} else {ctx._source.counter += params.count}"
+    val conf = Map("es.mapping.id" -> "id", "es.mapping.exclude" -> "id", "es.write.operation" -> "upsert", "es.update.script.params" ->
+      updateParams, "es.update.script.upsert" -> "true", "es.update.script.inline" -> updateScript)
+    val data = Seq(Row("1", 3))
+    val rdd: RDD[Row] = sc.parallelize(data)
+    val schema = new StructType().add("id", StringType, nullable = false).add("count", IntegerType, nullable = false)
+    val df = sqc.createDataFrame(rdd, schema)
+    df.write.format("es").options(conf).mode(SaveMode.Append).save(testIndex)
+
+    val reader = sqc.read.format("es")
+    var readerDf = reader.load(testIndex)
+    var result = readerDf.select("counter").first().get(0)
+    assertEquals(4l, result)
+
+    df.write.format("es").options(conf).mode(SaveMode.Append).save(testIndex)
+    readerDf = reader.load(testIndex)
+    result = readerDf.select("counter").first().get(0)
+    assertEquals(8l, result)
+  }
 
   /**
    * Take advantage of the fixed method order and clear out all created indices.
