@@ -1,0 +1,7 @@
+[[eshadoop-6.8.23]]
+== Elasticsearch for Apache Hadoop version 6.8.23
+
+coming::[6.8.23]
+
+ES-Hadoop 6.8.23 is a version compatibility release,
+tested specifically against Elasticsearch 6.8.23.
