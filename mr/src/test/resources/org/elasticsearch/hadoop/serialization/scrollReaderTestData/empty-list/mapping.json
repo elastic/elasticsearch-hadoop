@@ -1,0 +1,29 @@
+{
+  "artists" : {
+    "mappings" : {
+      "properties" : {
+        "name" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "status_code" : {
+          "type" : "long",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "ts" : {
+          "type" : "long"
+        }
+      }
+    }
+  }
+}
