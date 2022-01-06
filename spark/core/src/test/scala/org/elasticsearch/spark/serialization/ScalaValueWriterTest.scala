@@ -155,6 +155,58 @@ class ScalaValueWriterTest {
   }
 
   @Test
+  def testCaseClassWithNone(): Unit = {
+
+    case class TestCaseClass(option : Option[String])
+    val caseClass = TestCaseClass(None)
+
+    assertEquals("""{}""", serialize(caseClass))
+  }
+
+  @Test
+  def testCaseClassWithSome(): Unit = {
+
+    case class TestCaseClass(option : Option[String])
+    val caseClass = TestCaseClass(Some("value"))
+
+    assertEquals("""{"option":"value"}""", serialize(caseClass))
+  }
+
+
+  @Test
+  def testCaseClassWithSomeAndNone(): Unit = {
+
+    case class TestCaseClass(option1 : Option[String], option2 : Option[String])
+    val caseClass = TestCaseClass(None, Some("value2"))
+
+    assertEquals("""{"option2":"value2"}""", serialize(caseClass))
+  }
+
+
+  @Test
+  def testCaseClassWithInnerObject(): Unit = {
+
+    case class TestCaseClass(option1 : Option[String], option2 : Option[TestCaseClassInner])
+    case class TestCaseClassInner(option1 : Option[String], option2 : Option[String])
+    val caseClass = TestCaseClass(None, Some(TestCaseClassInner(option1 = Some("value1") , option2 = None)))
+
+    assertEquals("""{"option2":{"option1":"value1"}}""", serialize(caseClass))
+  }
+
+  @Test
+  def testCaseClassWithInnerObjectAndNullSetting(): Unit = {
+
+    case class TestCaseClass(option1: Option[String], option2: Option[TestCaseClassInner])
+    case class TestCaseClassInner(option1: Option[String], option2: Option[String])
+    val caseClass = TestCaseClass(None, Some(TestCaseClassInner(option1 = Some("value1"), option2 = None)))
+
+    val settings = new TestSettings()
+    settings.setProperty(ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, "true")
+
+    assertEquals("""{"option1":null,"option2":{"option1":"value1","option2":null}}""", serialize(caseClass, settings))
+  }
+
+  @Test
   def testDate(): Unit = {
     val date = new Date(1420114230123l)
     val actual = serialize(date);
