@@ -1,0 +1,21 @@
+[[eshadoop-8.0.0-rc1]]
+== Elasticsearch for Apache Hadoop version 8.0.0-rc1
+
+coming::[8.0.0-rc1]
+
+[[enhancement-8.0.0-rc1]]
+[float]
+=== Enhancements
+Build::
+- Setting Java boot classpath so that Scala 2.10 works on Gradle 7.2
+https://github.com/elastic/elasticsearch-hadoop/pull/1800[#1800]
+
+- Build Hadoop with Java 17
+https://github.com/elastic/elasticsearch-hadoop/pull/1808[#1808]
+
+- Update Gradle wrapper to 7.3
+https://github.com/elastic/elasticsearch-hadoop/pull/1809[#1809]
+
+Spark::
+- Add support for Spark 3.1 and 3.2 
+https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
