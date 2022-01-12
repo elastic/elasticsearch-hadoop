@@ -14,6 +14,28 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1808[#1808]
 - Update Gradle wrapper to 7.3
 https://github.com/elastic/elasticsearch-hadoop/pull/1809[#1809]
 
+- Update log4j version
+https://github.com/elastic/elasticsearch-hadoop/pull/1828[#1828]
+
+Serialization::
+- Add support for the `date_nanos` field type
+https://github.com/elastic/elasticsearch-hadoop/pull/1803[#1803]
+
 Spark::
 - Add support for Spark 3.1 and 3.2 
 https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
+
+[[bug-8.0.0-rc1]]
+[float]
+=== Bug fixes
+
+Core::
+- Resolve `saveToEs` saves case classes fields with `NULL` values
+https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
+
+- Correctly reading empty fields in as null rather than throwing exception
+https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
+
+Spark::
+- Setting es.read.fields.include could throw a NullPointerException in older spark version
+https://github.com/elastic/elasticsearch-hadoop/pull/1822[#1822]
