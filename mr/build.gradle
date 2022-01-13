@@ -19,6 +19,10 @@ configurations {
     itestImplementation {
         extendsFrom project.configurations.itestEmbedded
     }
+    itestJarConfig {
+        canBeConsumed = true
+        canBeResolved = false
+    }
     // Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be
     // used in other projects instead of requiring a jar operation to happen. We have artifacts that are being shaded into
     // a third-party jar that this depends on, which inherently means there is no classes output to share for compilation.
@@ -82,12 +86,17 @@ dependencies {
     }
 }
 
+
 String generatedResources = "$buildDir/generated-resources/main"
 
 sourceSets {
     main {
         output.dir(generatedResources, builtBy: "generateGitHash")
     }
+}
+
+artifacts {
+    add("itestJarConfig", itestJar)
 }
 
 task generateGitHash {
