@@ -13,10 +13,6 @@ configurations {
     implementation {
         extendsFrom project.configurations.embedded
     }
-    itestJarConfig {
-        canBeConsumed = true
-        canBeResolved = false
-    }
 }
 
 dependencies {
@@ -39,10 +35,6 @@ dependencies {
     additionalSources(project(":elasticsearch-hadoop-mr"))
     javadocSources(project(":elasticsearch-hadoop-mr"))
 
-}
-
-artifacts {
-    add("itestJarConfig", itestJar)
 }
 
 jar {
