@@ -822,6 +822,12 @@ class BuildPlugin implements Plugin<Project>  {
         commonItestTaskConfiguration(project, integrationTest)
         // TODO: Should this be the case? It is in Elasticsearch, but we may have to update some CI jobs?
         project.tasks.check.dependsOn(integrationTest)
+
+        Configuration itestJarConfig = project.getConfigurations().maybeCreate("itestJarConfig")
+        itestJarConfig.canBeConsumed = Boolean.TRUE
+        itestJarConfig.canBeResolved = Boolean.FALSE
+        project.getArtifacts().add(itestJarConfig.getName(), itestJar)
+
         return integrationTest
     }
 

@@ -83,8 +83,8 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
     implementation("org.apache.spark:spark-sql_2.12:$project.ext.spark30Version")
 
-    implementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
-    implementation(project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath)
+    implementation( project(path: ':elasticsearch-hadoop-mr', configuration: 'itestJarConfig'))
+    implementation( project(path: ':elasticsearch-storm', configuration: 'itestJarConfig'))
 
     kdcFixture project(':test:fixtures:minikdc')
 
