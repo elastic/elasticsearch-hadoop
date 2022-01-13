@@ -75,9 +75,10 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
       if (!result.isSuccesful) {
         return handleUnknown(value, generator)
       }
-      Result.SUCCESFUL()
+    } else {
+      generator.writeBeginArray().writeEndArray()
     }
-    Result.FAILED()
+    Result.SUCCESFUL()
   }
 
   private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {

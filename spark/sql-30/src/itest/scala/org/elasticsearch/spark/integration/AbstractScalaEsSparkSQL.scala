@@ -2375,38 +2375,51 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val update_script = "ctx._source.samples = params.new_samples"
     val es_conf = Map(
       "es.mapping.id" -> "id",
-      "es.mapping.exclude" -> "id",
       "es.write.operation" -> "upsert",
       "es.update.script.params" -> update_params,
       "es.update.script.inline" -> update_script
     )
-    val sqlContext = new SQLContext(sc)
-    var data = Seq(Row("1", List(Row("hello"), Row("world"))))
+    // First do an upsert with two completely new rows:
+    var data = Seq(Row("2", List(Row("hello"), Row("world"))), Row("1", List()))
     var rdd: RDD[Row] = sc.parallelize(data)
     val schema = new StructType()
       .add("id", StringType, nullable = false)
       .add("samples", new ArrayType(new StructType()
         .add("text", StringType), true))
-    var df = sqlContext.createDataFrame(rdd, schema)
+    var df = sqc.createDataFrame(rdd, schema)
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("nested_fields_upsert_test")
 
-    val reader = sqc.read.format("org.elasticsearch.spark.sql").option("es.read.field.as.array.include","samples")
+    val reader = sqc.read.schema(schema).format("org.elasticsearch.spark.sql").option("es.read.field.as.array.include","samples")
     var resultDf = reader.load("nested_fields_upsert_test")
-    var samples = resultDf.select("samples").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(2, resultDf.count())
+    var samples = resultDf.select("samples").where("id = '2'").first().getAs[IndexedSeq[Row]](0)
     assertEquals(2, samples.size)
     assertEquals("hello", samples(0).get(0))
     assertEquals("world", samples(1).get(0))
 
+    //Now, do an upsert on the one with the empty samples list:
     data = Seq(Row("1", List(Row("goodbye"), Row("world"))))
     rdd = sc.parallelize(data)
-    df = sqlContext.createDataFrame(rdd, schema)
+    df = sqc.createDataFrame(rdd, schema)
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("nested_fields_upsert_test")
 
     resultDf = reader.load("nested_fields_upsert_test")
-    samples = resultDf.select("samples").first().getAs[IndexedSeq[Row]](0)
+    samples = resultDf.select("samples").where("id = '1'").first().getAs[IndexedSeq[Row]](0)
     assertEquals(2, samples.size)
     assertEquals("goodbye", samples(0).get(0))
     assertEquals("world", samples(1).get(0))
+
+    // Finally, an upsert on the row that had samples values:
+    data = Seq(Row("2", List(Row("goodbye"), Row("again"))))
+    rdd = sc.parallelize(data)
+    df = sqc.createDataFrame(rdd, schema)
+    df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("nested_fields_upsert_test")
+
+    resultDf = reader.load("nested_fields_upsert_test")
+    samples = resultDf.select("samples").where("id = '2'").first().getAs[IndexedSeq[Row]](0)
+    assertEquals(2, samples.size)
+    assertEquals("goodbye", samples(0).get(0))
+    assertEquals("again", samples(1).get(0))
   }
 
   /**
