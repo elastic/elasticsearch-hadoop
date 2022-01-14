@@ -2442,7 +2442,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     var df = sqc.createDataFrame(rdd, schema)
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("map_fields_upsert_test")
 
-    val reader = sqc.read.format("org.elasticsearch.spark.sql")//.option("es.read.field.as.array.include","samples")
+    val reader = sqc.read.format("org.elasticsearch.spark.sql")
     var resultDf = reader.load("map_fields_upsert_test")
     assertEquals(2, resultDf.count())
     var samples = resultDf.select("samples").where("id = '2'").first()
@@ -2456,7 +2456,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("map_fields_upsert_test")
 
     resultDf = reader.load("map_fields_upsert_test")
-    samples = resultDf.select("samples").where("id = '1'").first()//.getAs[IndexedSeq[Row]](0)
+    samples = resultDf.select("samples").where("id = '1'").first()
     assertEquals(1, samples.size)
     assertEquals("all", samples.get(0).asInstanceOf[Row].get(0))
 
@@ -2467,7 +2467,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("map_fields_upsert_test")
 
     resultDf = reader.load("map_fields_upsert_test")
-    samples = resultDf.select("samples").where("id = '2'").first()//.getAs[IndexedSeq[Row]](0)
+    samples = resultDf.select("samples").where("id = '2'").first()
     assertEquals(1, samples.size)
     assertEquals("again", samples.get(0).asInstanceOf[Row].get(0))
   }
