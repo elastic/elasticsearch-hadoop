@@ -47,6 +47,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.FieldType.TEXT
 import org.elasticsearch.hadoop.serialization.FieldType.TOKEN_COUNT
+import org.elasticsearch.hadoop.serialization.FieldType.WILDCARD
 import org.elasticsearch.hadoop.serialization.Parser
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_BOOLEAN
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NULL
@@ -82,6 +83,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
         case STRING => textValue(value, parser)
         case TEXT => textValue(value, parser)
         case KEYWORD => textValue(value, parser)
+        case WILDCARD => textValue(value, parser)
         case BYTE => byteValue(value, parser)
         case SHORT => shortValue(value, parser)
         case INTEGER => intValue(value, parser)

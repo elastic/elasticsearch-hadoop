@@ -895,7 +895,12 @@ public class ScrollReader implements Closeable {
             String rawValue = parser.text();
             try {
                 if (isArrayField(fieldMapping)) {
-                    return singletonList(fieldMapping, parseValue(parser, esType), parser);
+                    Object parsedValue = parseValue(parser, esType);
+                    if (parsedValue == null) {
+                        return null; //There is not a null element in the array. The array itself is null.
+                    } else {
+                        return singletonList(fieldMapping, parsedValue, parser);
+                    }
                 } else {
                     return parseValue(parser, esType);
                 }

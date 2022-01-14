@@ -44,6 +44,7 @@ public enum FieldType {
     TOKEN_COUNT,
     // ES 5.x
     TEXT, KEYWORD, HALF_FLOAT, SCALED_FLOAT,
+    WILDCARD,
 
     GEO_POINT,
     GEO_SHAPE,
@@ -81,6 +82,7 @@ public enum FieldType {
         CAST_HIERARCHY.put(TOKEN_COUNT,      new LinkedHashSet<FieldType>(Arrays.asList(LONG, KEYWORD)));
         CAST_HIERARCHY.put(TEXT,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
         CAST_HIERARCHY.put(KEYWORD,          new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(WILDCARD,         new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
         CAST_HIERARCHY.put(HALF_FLOAT,       new LinkedHashSet<FieldType>(Arrays.asList(FLOAT, DOUBLE, KEYWORD)));
         CAST_HIERARCHY.put(SCALED_FLOAT,     new LinkedHashSet<FieldType>(Arrays.asList(DOUBLE, KEYWORD)));
         CAST_HIERARCHY.put(GEO_POINT,        new LinkedHashSet<FieldType>());
