@@ -2326,6 +2326,26 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testArraysAndNulls() {
+    val index = wrapIndex("sparksql-test-arrays-and-nulls")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    RestUtils.touch(index)
+    val document1 = """{ "id": 1, "status_code" : [123]}""".stripMargin
+    val document2 = """{ "id" : 2, "status_code" : []}""".stripMargin
+    val document3 = """{ "id" : 3, "status_code" : null}""".stripMargin
+    sc.makeRDD(Seq(document1, document2, document3)).saveJsonToEs(target)
+    RestUtils.refresh(index)
+    val df = sqc.read.format("es").option("es.read.field.as.array.include","status_code").load(index)
+      .select("id", "status_code")
+    var result = df.where("id = 1").first().getList(1)
+    assertEquals(123, result.get(0))
+    result = df.where("id = 2").first().getList(1)
+    assertTrue(result.isEmpty)
+    assertTrue(df.where("id = 3").first().isNullAt(1))
+  }
+
+  @Test
   def testReadFieldInclude(): Unit = {
     val data = Seq(
       Row(Row(List(Row("hello","2"), Row("world","1"))))
@@ -2391,6 +2411,32 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     readerDf = reader.load(testIndex)
     result = readerDf.select("counter").first().get(0)
     assertEquals(8l, result)
+  }
+
+  @Test
+  def testWildcard() {
+    val mapping = wrapMapping("data", s"""{
+                                         |      "properties": {
+                                         |        "name": {
+                                         |          "type": "wildcard"
+                                         |        }
+                                         |      }
+                                         |  }
+    """.stripMargin)
+
+    val index = wrapIndex("sparksql-test-wildcard")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    RestUtils.touch(index)
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+    val wildcardDocument = """{ "name" : "Chipotle Mexican Grill"}""".stripMargin
+    sc.makeRDD(Seq(wildcardDocument)).saveJsonToEs(target)
+    RestUtils.refresh(index)
+    val df = sqc.read.format("es").load(index)
+    val dataType = df.schema("name").dataType
+    assertEquals("string", dataType.typeName)
+    val head = df.head()
+    assertThat(head.getString(0), containsString("Chipotle"))
   }
 
   /**

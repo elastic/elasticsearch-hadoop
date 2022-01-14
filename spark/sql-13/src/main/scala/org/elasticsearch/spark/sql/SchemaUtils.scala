@@ -68,6 +68,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.FieldType.TEXT
+import org.elasticsearch.hadoop.serialization.FieldType.WILDCARD
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
@@ -163,6 +164,7 @@ private[sql] object SchemaUtils {
       case STRING    => StringType
       case TEXT      => StringType
       case KEYWORD   => StringType
+      case WILDCARD  => StringType
       case HALF_FLOAT => FloatType
       case SCALED_FLOAT => FloatType
       case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType

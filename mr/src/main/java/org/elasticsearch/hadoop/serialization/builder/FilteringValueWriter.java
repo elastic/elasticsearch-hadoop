@@ -27,11 +27,13 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.util.StringUtils;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT;
 
 public abstract class FilteringValueWriter<T> implements ValueWriter<T>, SettingsAware {
 
     private List<NumberedInclude> includes;
     private List<String> excludes;
+    private Boolean writeNullValues = Boolean.parseBoolean(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT);
 
     @Override
     public void setSettings(Settings settings) {
@@ -41,10 +43,15 @@ public abstract class FilteringValueWriter<T> implements ValueWriter<T>, Setting
             includes.add(new NumberedInclude(include));
         }
         excludes = StringUtils.tokenize(settings.getMappingExcludes());
+        writeNullValues = settings.getDataFrameWriteNullValues();
     }
 
     protected boolean shouldKeep(String parentField, String name) {
         name = StringUtils.hasText(parentField) ? parentField + "." + name : name;
         return FieldFilter.filter(name, includes, excludes).matched;
+    }
+
+    protected boolean hasWriteNullValues() {
+        return writeNullValues;
     }
 }
