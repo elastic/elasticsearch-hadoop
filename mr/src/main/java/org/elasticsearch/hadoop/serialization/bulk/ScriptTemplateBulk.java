@@ -46,7 +46,9 @@ class ScriptTemplateBulk extends TemplatedBulk {
                 generator.writeBeginObject();
                 generator.writeEndObject();
                 generator.close();
-            } else super.doWriteObject(object, storage, writer);
+            } else {
+                super.doWriteObject(object, storage, writer);
+            }
         }
     }
 }
