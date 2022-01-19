@@ -49,7 +49,7 @@ public class SetupKerberosUsers {
         ExtendedClient client = new ExtendedClient(settings);
 
         for (String user : StringUtils.tokenize(rawUsers)) {
-            client.post("_xpack/security/user/" + user, (
+            client.post("_security/user/" + user, (
                     "{\n" +
                     "  \"enabled\" : true,\n" +
                     "  \"password\" : \"password\",\n" +
@@ -61,7 +61,7 @@ public class SetupKerberosUsers {
         }
 
         for (String principal : StringUtils.tokenize(rawPrincipals)) {
-            client.post("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
+            client.post("_security/role_mapping/kerberos_client_mapping_"+idx,
                     ("{" +
                         "\"roles\":[\"superuser\"]," +
                         "\"enabled\":true," +
@@ -77,7 +77,7 @@ public class SetupKerberosUsers {
         }
 
         System.out.println("Creating proxy role");
-        client.post("_xpack/security/role/proxier", (
+        client.post("_security/role/proxier", (
                 "{\n" +
                 "  \"cluster\": [\n" +
                 "    \"all\"\n" +
@@ -111,7 +111,7 @@ public class SetupKerberosUsers {
                 "}").getBytes());
 
         for (String proxier : StringUtils.tokenize(rawProxiers)) {
-            client.post("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
+            client.post("_security/role_mapping/kerberos_client_mapping_"+idx,
                     ("{" +
                         "\"roles\":[\"proxier\"]," +
                         "\"enabled\":true," +

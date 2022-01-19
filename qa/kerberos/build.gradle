@@ -104,7 +104,7 @@ dependencies {
 
 // Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
 // in the file path on CI.
-boolean disableTests = true
+boolean disableTests = false
 if (disableTests) {
     // Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
     // in the file path on CI.
@@ -270,7 +270,7 @@ if (disableTests) {
         doLast {
             project.javaexec {
                 executable = project.runtimeJavaHome.toString() + "/bin/java"
-                main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
+                mainClass = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
                 classpath = sourceSets.main.runtimeClasspath
                 systemProperty('es.nodes', esAddress)
                 systemProperty('es.net.http.auth.user', 'test_admin')
@@ -281,6 +281,7 @@ if (disableTests) {
             }
         }
     }
+    setupUsers.dependsOn(kdcFixture)
     integrationTest.dependsOn(setupUsers)
     
     // =============================================================================
@@ -610,7 +611,7 @@ if (disableTests) {
                 'TEST_LIB': jar.archivePath.toString()
         ])
     }
-    integrationTest.dependsOn(hiveLoadData)
+    //integrationTest.dependsOn(hiveLoadData)
     
     HiveBeeline hiveReadData = config.createClusterTask('hiveReadData', HiveBeeline.class) {
         clusterConfiguration = config
@@ -627,7 +628,7 @@ if (disableTests) {
                 'TEST_LIB': jar.archivePath.toString()
         ])
     }
-    integrationTest.dependsOn(hiveReadData)
+    //integrationTest.dependsOn(hiveReadData)
     
     // =============================================================================
     // Pig Jobs
@@ -675,7 +676,7 @@ if (disableTests) {
     Map<String, Task> readJobs = [
             'mr': mrReadData,
             'spark': sparkReadData,
-            'hive': hiveReadData,
+            //'hive': hiveReadData,
             'pig': pigReadData
     ]
     

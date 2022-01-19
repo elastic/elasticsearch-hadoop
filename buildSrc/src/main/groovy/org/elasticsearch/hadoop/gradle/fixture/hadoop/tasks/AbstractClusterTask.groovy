@@ -22,11 +22,15 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.gradle.api.tasks.Internal
 
 abstract class AbstractClusterTask extends DefaultTestClustersTask {
 
+    @Internal
     HadoopClusterConfiguration clusterConfiguration
+    @Internal
     InstanceConfiguration executedOn
+    @Internal
     Map<String, String> environmentVariables = [:]
 
     AbstractClusterTask() {
@@ -41,6 +45,7 @@ abstract class AbstractClusterTask extends DefaultTestClustersTask {
     abstract InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration)
     abstract Map<String, String> taskEnvironmentVariables()
 
+    @Internal
     protected getInstance() {
         return executedOn == null ? defaultInstance(this.clusterConfiguration) : executedOn
     }

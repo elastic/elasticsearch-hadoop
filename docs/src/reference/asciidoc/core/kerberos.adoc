@@ -283,7 +283,7 @@ in {es}.
 
 [source,js]
 ----
-PUT _xpack/security/role/hive_user_role <1>
+PUT _security/role/hive_user_role <1>
 {
   "run_as": [],
   "cluster": ["monitor", "manage_token"], <2>
@@ -309,7 +309,7 @@ a list of roles that they will be granted after authentication.
 
 [source,js]
 ----
-POST /_xpack/security/role_mapping/hive_user_1_mapping
+POST /_security/role_mapping/hive_user_1_mapping
 {
   "roles": [ "hive_user_role" ], <1>
   "enabled": true,
@@ -338,7 +338,7 @@ so:
 
 [source,js]
 ----
-PUT /_xpack/security/user/hive.user.1 <1>
+PUT /_security/user/hive.user.1 <1>
 {
   "enabled" : true,
   "password" : "swordfish", <2>
@@ -365,7 +365,7 @@ must create a role that Hive will use to impersonate those users.
 
 [source,js]
 ----
-PUT _xpack/security/role/hive_proxier
+PUT _security/role/hive_proxier
 {
   "run_as": ["hive.user.1"] <1>
 }
@@ -384,7 +384,7 @@ user.
 
 [source,js]
 ----
-POST /_xpack/security/role_mapping/hive_hiveserver2_mapping
+POST /_security/role_mapping/hive_hiveserver2_mapping
 {
   "roles": [
     "hive_user_role", <1>

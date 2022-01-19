@@ -23,6 +23,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.SparkYarnServiceDescriptor
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
@@ -38,14 +39,23 @@ class SparkApp extends AbstractClusterTask {
         CLIENT, CLUSTER
     }
 
+    @Internal
     String jobClass
+    @Internal
     File jobJar
+    @Internal
     Master master = Master.YARN
+    @Internal
     DeployMode deployMode = DeployMode.CLIENT
+    @Internal
     Map<String, Object> jobSettings = [:]
+    @Internal
     String principal
+    @Internal
     String keytab
+    @Internal
     List<File> libJars = []
+    @Internal
     List<String> args = []
 
     void deployMode(DeployMode mode) {
