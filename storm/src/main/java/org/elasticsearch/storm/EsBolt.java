@@ -46,6 +46,9 @@ import org.elasticsearch.storm.serialization.StormValueWriter;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.elasticsearch.storm.cfg.StormConfigurationOptions.ES_STORM_BOLT_ACK;
 
+/**
+ * @deprecated Support for Apache Storm is deprecated and will be removed in the future. Consider moving to Spark or Mapreduce.
+ */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 @Deprecated
 public class EsBolt implements IRichBolt {
