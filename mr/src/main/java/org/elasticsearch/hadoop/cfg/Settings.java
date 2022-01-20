@@ -768,8 +768,25 @@ public abstract class Settings {
     public abstract Properties asProperties();
 
     public Settings setOpaqueId(String opaqueId) {
-        setProperty(ES_NET_HTTP_HEADER_OPAQUE_ID, opaqueId);
+        setProperty(ES_NET_HTTP_HEADER_OPAQUE_ID, cleanOpaqueId(opaqueId));
         return this;
+    }
+
+    /**
+     * Headers can't contain newlines or non-ascii characters. This method strips them out, returning whatever is left.
+     * @param opaqueId
+     * @return
+     */
+    private String cleanOpaqueId(String opaqueId) {
+        char[] chars = opaqueId.toCharArray();
+        StringBuilder cleanedOpaqueId = new StringBuilder(chars.length);
+        for (int i = 0; i < chars.length; i++) {
+            int character = chars[i];
+            if (character > 31 && character < 127) { //visible ascii
+                cleanedOpaqueId.append(chars[i]);
+            }
+        }
+        return cleanedOpaqueId.toString();
     }
 
     public String getOpaqueId() {
