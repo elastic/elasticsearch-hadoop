@@ -76,7 +76,7 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
     private var foundExpectedException: Boolean = false
     private var encounteredException: Option[String] = None
 
-    private val latch = new CountDownLatch(1)
+    private var latch = new CountDownLatch(1) // expects just a single batch
 
     def incrementExpected(): Unit = inputsRequired = inputsRequired + 1
 
@@ -153,6 +153,10 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
 
     def waitOnComplete(timeValue: TimeValue): Boolean = latch.await(timeValue.millis, TimeUnit.MILLISECONDS)
 
+    def expectAnotherBatch(): Unit = {
+      latch = new CountDownLatch(1)
+    }
+
     def assertExpectedExceptions(message: Option[String]): Unit = {
       expectingToThrow match {
         case Some(exceptionClass) =>
@@ -211,7 +215,7 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
    * Add input to test server. Updates listener's bookkeeping to know when it's safe to shut down the stream
    */
   def withInput(data: S): StreamingQueryTestHarness[S] = {
-    ensureState(Init) {
+    ensureState(Init, Running) {
       testingServer.sendData(TestingSerde.serialize(data))
       listener.incrementExpected()
     }
@@ -316,6 +320,30 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
           testingServer.shutdownNow()
           currentQuery.foreach(_.stop())
           currentState = Closed
+      }
+    }
+  }
+
+  /**
+   * Waits until all inputs are processed on the streaming query, but leaves the query open with the listener still in place, expecting
+   * another batch of inputs.
+   */
+  def waitForPartialCompletion(): Unit = {
+    ensureState(Running) {
+      currentState match {
+        case Running =>
+          try {
+            // Wait for query to complete consuming records
+            if (!listener.waitOnComplete(testTimeout)) {
+              throw new TimeoutException("Timed out on waiting for stream to complete.")
+            }
+            listener.expectAnotherBatch()
+          } catch {
+            case e: Throwable =>
+              // Best effort to shutdown queries before throwing
+              scrubState()
+              throw e
+          }
       }
     }
   }
