@@ -34,6 +34,7 @@ import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.InitializationUtils
 
+@deprecated(message="Support for Apache Spark 1 is deprecated. Use Spark 2 or 3.")
 object EsSparkSQL {
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }

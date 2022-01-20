@@ -408,6 +408,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
     // Note: data written to the JobConf will be silently discarded
     @Override
+    @Deprecated // Hadoop 1 support is deprecated
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
         Settings settings = HadoopSettingsManager.loadFrom(job);
@@ -424,6 +425,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
     @SuppressWarnings("unchecked")
     @Override
+    @Deprecated // Hadoop 1 support is deprecated
     public EsInputRecordReader<K, V> getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
         return (EsInputRecordReader<K, V>) (isOutputAsJson(job) ? new JsonWritableEsInputRecordReader(split, job, reporter) : new WritableEsInputRecordReader(split, job, reporter));
     }

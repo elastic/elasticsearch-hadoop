@@ -23,10 +23,40 @@ We've increased the `es.scroll.size` default from `50` to `1000`. If you deploy
 ES-hadoop in a low memory environment, consider lowering `es.scroll.size` to
 avoid issues.
 
-==== Support for Scala 2.10 has been removed
+// end::notable-v8-breaking-changes[]
 
-Our compatibility artifacts no longer support Scala 2.10. Spark deprecated
-support for Scala 2.10 in the Spark 2.0.0 release.
+[[deprecations-8.0]]
+=== Deprecations in 8.0
+
+The following functionality has been deprecated in {eh} 8.0 and will be removed
+in a future version. While this won’t have an immediate impact on your
+applications, we strongly encourage you take the described steps to update your
+code after upgrading to 8.0.
+
+// tag::notable-v8-breaking-changes[]
+
+==== Spark 1.x support is deprecated
+
+Spark 1.x is no longer maintained. Spark 2 and Spark 3 are still supported.
+
+==== Scala 2.10 support for Spark 2.x is deprecated
+
+Spark deprecated support for Scala 2.10 in the Spark 2.0.0 release and removed it in the 2.3.0 release. Scala 2.11 and 2.12 are supported
+for Spark 2.x.
+
+==== Hadoop 1.x support is deprecated
+
+Hadoop 1.x is no longer maintained. Support for it has not been tested since {eh} 6.0. Support is now formally deprecated. Hadoop 2 and
+Hadoop 3 are supported.
+
+==== Apache Pig support is deprecated
+
+Apache Pig is no longer maintained.
+
+==== Apache Storm support is deprecated
+
+Apache Storm has not been a popular {es} integration.
+
 // end::notable-v8-breaking-changes[]
 
 [[breaking-changes-7.0]]

@@ -46,7 +46,11 @@ import org.elasticsearch.storm.serialization.StormValueWriter;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.elasticsearch.storm.cfg.StormConfigurationOptions.ES_STORM_BOLT_ACK;
 
+/**
+ * @deprecated Support for Apache Storm is deprecated and will be removed in the future. Consider moving to Spark or Mapreduce.
+ */
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Deprecated
 public class EsBolt implements IRichBolt {
 
     private transient static Log log = LogFactory.getLog(EsBolt.class);
@@ -74,6 +78,7 @@ public class EsBolt implements IRichBolt {
     }
 
     private EsBolt(String target, Boolean writeAck, Map configuration) {
+        log.warn("Support for Apache Storm has been deprecated and will be removed in a future release.");
         boltConfig.put(ES_RESOURCE_WRITE, target);
 
         if (writeAck != null) {
