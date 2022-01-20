@@ -21,13 +21,11 @@ package org.elasticsearch.spark.sql
 import java.sql.Date
 import java.sql.Timestamp
 import java.util.{Map => JMap}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.types.ArrayType
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes, MapType, StructType}
 import org.apache.spark.sql.types.DataTypes.BinaryType
 import org.apache.spark.sql.types.DataTypes.BooleanType
 import org.apache.spark.sql.types.DataTypes.ByteType
@@ -39,8 +37,6 @@ import org.apache.spark.sql.types.DataTypes.LongType
 import org.apache.spark.sql.types.DataTypes.ShortType
 import org.apache.spark.sql.types.DataTypes.StringType
 import org.apache.spark.sql.types.DataTypes.TimestampType
-import org.apache.spark.sql.types.MapType
-import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
@@ -50,7 +46,7 @@ import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 import org.elasticsearch.hadoop.util.unit.Booleans
 
 
-class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[(Row, StructType)] {
+class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[Any] {
 
   def this() {
     this(false)
@@ -63,11 +59,28 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     writeNullValues = settings.getDataFrameWriteNullValues
   }
 
-  override def write(value: (Row, StructType), generator: Generator): Result = {
-    val row = value._1
-    val schema = value._2
+  override def write(value: Any, generator: Generator): Result = {
+    value match {
+      case Tuple2(row, schema: StructType) =>
+        writeStruct(schema, row, generator)
+      case map: Map[_, _] =>
+        writeMapWithInferredSchema(map, generator)
+      case seq: Seq[Row] =>
+        writeArray(seq, generator)
+    }
+  }
 
-    writeStruct(schema, row, generator)
+  private[spark] def writeArray(value: Seq[Row], generator: Generator): Result = {
+    if (value.nonEmpty) {
+      val schema = value.head.schema
+      val result = write(DataTypes.createArrayType(schema), value, generator)
+      if (!result.isSuccesful) {
+        return handleUnknown(value, generator)
+      }
+    } else {
+      generator.writeBeginArray().writeEndArray()
+    }
+    Result.SUCCESFUL()
   }
 
   private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {
@@ -154,6 +167,81 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
 
     generator.writeEndObject()
     Result.SUCCESFUL()
+  }
+
+  private def writeMapWithInferredSchema(value: Any, generator: Generator): Result = {
+    value match {
+      case sm: SMap[_, _] => doWriteMapWithInferredSchema(sm, generator)
+      case jm: JMap[_, _] => doWriteMapWithInferredSchema(jm.asScala, generator)
+      // unknown map type
+      case _              => handleUnknown(value, generator)
+    }
+  }
+
+  private def doWriteMapWithInferredSchema(map: SMap[_, _], generator: Generator): Result = {
+    if (map != null && map.valuesIterator.hasNext) {
+      val sampleValueOption = getFirstNotNullElement(map.valuesIterator)
+      val schema = inferMapSchema(sampleValueOption)
+      doWriteMap(schema, map, generator)
+    } else {
+      writeEmptyMap(generator)
+    }
+  }
+
+  private def writeEmptyMap(generator: Generator): Result = {
+    generator.writeBeginObject().writeEndObject()
+    Result.SUCCESFUL()
+  }
+
+  private def inferMapSchema(valueOption: Option[Any]): MapType = {
+    if(valueOption.isDefined) {
+      val valueType = inferType(valueOption.get)
+      MapType(StringType, valueType) //The key type is never read
+    } else {
+      MapType(StringType, StringType) //Does not matter if the map is empty or has no values
+    }
+  }
+
+  def inferArraySchema(array: Array[_]): DataType = {
+    val EMPTY_ARRAY_TYPE = StringType  //Makes no difference for an empty array
+    if (array.isEmpty) {
+      EMPTY_ARRAY_TYPE
+    } else {
+      val sampleValueOption = getFirstNotNullElement(array.iterator)
+      if (sampleValueOption.isDefined) {
+        inferType(sampleValueOption.get)
+      }
+      else {
+        EMPTY_ARRAY_TYPE
+      }
+    }
+  }
+
+  def getFirstNotNullElement(iterator: Iterator[_]): Option[Any] = {
+    iterator.find(value => Option(value).isDefined)
+  }
+
+  private def inferType(value: Any): DataType = {
+    value match {
+      case _: String               => StringType
+      case _: Int                  => IntegerType
+      case _: Integer              => IntegerType
+      case _: Boolean              => BooleanType
+      case _: java.lang.Boolean    => BooleanType
+      case _: Short                => ShortType
+      case _: java.lang.Short      => ShortType
+      case _: Long                 => LongType
+      case _: java.lang.Long       => LongType
+      case _: Double               => DoubleType
+      case _: java.lang.Double     => DoubleType
+      case _: Float                => FloatType
+      case _: java.lang.Float      => FloatType
+      case _: Timestamp            => TimestampType
+      case _: Date                 => DateType
+      case _: Array[Byte]          => BinaryType
+      case array: Array[_]         => ArrayType(inferArraySchema(array))
+      case map: Map[_, _]          => inferMapSchema(getFirstNotNullElement(map.valuesIterator))
+    }
   }
 
   private[spark] def writePrimitive(schema: DataType, value: Any, generator: Generator): Result = {

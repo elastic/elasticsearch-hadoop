@@ -22,7 +22,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-
 import javax.xml.bind.DatatypeConverter
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.rdd.RDD
@@ -63,6 +62,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_WRITE_OPERATION
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY
 import org.elasticsearch.hadoop.cfg.Settings
@@ -122,12 +122,6 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
     // Verify compatiblity versions for alpha:
     StructuredStreamingVersionLock.checkCompatibility(sparkSession)
 
-    // For now we only support Append style output mode
-    if (outputMode != OutputMode.Append()) {
-      throw new EsHadoopIllegalArgumentException("Append is only supported OutputMode for Elasticsearch. " +
-        s"Cannot continue with [$outputMode].")
-    }
-
     // Should not support partitioning. We already allow people to split data into different
     // indices with the index pattern functionality. Potentially could add this later if a need
     // arises by appending patterns to the provided index, but that's probably feature overload.
@@ -141,6 +135,19 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
     val jobSettings = new SparkSettingsManager()
         .load(sqlContext.sparkContext.getConf)
         .merge(streamParams(mapConfig.toMap, sparkSession).asJava)
+
+    // For now we only support Update and Append style output modes
+    if (outputMode == OutputMode.Update()) {
+      val writeOperation = jobSettings.getProperty(ES_WRITE_OPERATION);
+      if (writeOperation == null) {
+        jobSettings.setProperty(ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPSERT)
+      } else if (writeOperation != ConfigurationOptions.ES_OPERATION_UPSERT) {
+        throw new EsHadoopIllegalArgumentException("Output mode update is only supported if es.write.operation is unset or set to upsert")
+      }
+    } else if (outputMode != OutputMode.Append()) {
+      throw new EsHadoopIllegalArgumentException("Append and update are the only supported OutputModes for Elasticsearch. " +
+        s"Cannot continue with [$outputMode].")
+    }
 
     InitializationUtils.discoverClusterInfo(jobSettings, LogFactory.getLog(classOf[DefaultSource]))
     InitializationUtils.checkIdForOperation(jobSettings)
@@ -344,7 +351,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       case EqualTo(attribute, value)            => {
         // if we get a null, translate it into a missing query (we're extra careful - Spark should translate the equals into isMissing anyway)
-        if (value == null || value == None || value == Unit) {
+        if (value == null || value == None || value == ()) {
           if (isES50) {
             s"""{"bool":{"must_not":{"exists":{"field":"$attribute"}}}}"""
           }

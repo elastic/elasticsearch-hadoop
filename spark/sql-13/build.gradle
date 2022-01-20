@@ -125,7 +125,7 @@ sparkVariants {
             String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
             Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
             scalaCompilerPlugin.defaultDependencies { dependencies ->
-                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.13"))
+                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.18"))
             }
 
             ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
