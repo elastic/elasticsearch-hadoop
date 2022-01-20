@@ -225,23 +225,24 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
 
   private def inferType(value: Any): DataType = {
     value match {
-      case _: String            => StringType
-      case Int                  => IntegerType
-      case _: Integer           => IntegerType
-      case Boolean              => BooleanType
-      case _: java.lang.Boolean => BooleanType
-      case Short                => ShortType
-      case Long                 => LongType
-      case _: java.lang.Long    => LongType
-      case Double               => DoubleType
-      case _: java.lang.Double  => DoubleType
-      case Float                => FloatType
-      case _: java.lang.Float   => FloatType
-      case _: Timestamp         => TimestampType
-      case _: Date              => DateType
-      case _: Array[Byte]       => BinaryType
-      case array: Array[_]      => ArrayType(inferArraySchema(array))
-      case map: Map[_, _]       => inferMapSchema(getFirstNotNullElement(map.valuesIterator))
+      case _: String               => StringType
+      case _: Int                  => IntegerType
+      case _: Integer              => IntegerType
+      case _: Boolean              => BooleanType
+      case _: java.lang.Boolean    => BooleanType
+      case _: Short                => ShortType
+      case _: java.lang.Short      => ShortType
+      case _: Long                 => LongType
+      case _: java.lang.Long       => LongType
+      case _: Double               => DoubleType
+      case _: java.lang.Double     => DoubleType
+      case _: Float                => FloatType
+      case _: java.lang.Float      => FloatType
+      case _: Timestamp            => TimestampType
+      case _: Date                 => DateType
+      case _: Array[Byte]          => BinaryType
+      case array: Array[_]         => ArrayType(inferArraySchema(array))
+      case map: Map[_, _]          => inferMapSchema(getFirstNotNullElement(map.valuesIterator))
     }
   }
 
