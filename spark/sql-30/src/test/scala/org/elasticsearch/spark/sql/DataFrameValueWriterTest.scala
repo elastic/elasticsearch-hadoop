@@ -120,4 +120,40 @@ class DataFrameValueWriterTest {
     assertEquals("""{"skey":{"jkey":"value"}}""", serialized)
   }
 
+  @Test
+  def testWriteMaps(): Unit = {
+    val settings = new TestSettings()
+    val writer = new DataFrameValueWriter()
+    if (settings != null) {
+      writer.setSettings(settings)
+    }
+    {
+      val out = new ByteArrayOutputStream()
+      val generator = new JacksonJsonGenerator(out)
+      val inputMap = Map(("key1", Map(("key2", Array(1, 2, 3)))))
+      val result = writer.write(inputMap, generator)
+      assertTrue(result.isSuccesful)
+      generator.flush()
+      assertEquals("{\"key1\":{\"key2\":[1,2,3]}}", new String(out.toByteArray))
+    }
+    {
+      val out = new ByteArrayOutputStream()
+      val generator = new JacksonJsonGenerator(out)
+      val inputMap = Map(("key1", "value1"), ("key2", "value2"))
+      val result = writer.write(inputMap, generator)
+      assertTrue(result.isSuccesful)
+      generator.flush()
+      assertEquals("{\"key1\":\"value1\",\"key2\":\"value2\"}", new String(out.toByteArray))
+    }
+    {
+      val out = new ByteArrayOutputStream()
+      val generator = new JacksonJsonGenerator(out)
+      val inputMap = Map()
+      val result = writer.write(inputMap, generator)
+      assertTrue(result.isSuccesful)
+      generator.flush()
+      assertEquals("{}", new String(out.toByteArray))
+    }
+  }
+
 }

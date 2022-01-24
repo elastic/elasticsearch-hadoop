@@ -48,7 +48,11 @@ import org.elasticsearch.storm.security.EsClusterInfoSelector;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
+/**
+ * @deprecated Support for Apache Storm is deprecated and will be removed in the future. Consider moving to Spark or Mapreduce.
+ */
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Deprecated
 public class EsSpout implements IRichSpout {
 
     private transient static Log log = LogFactory.getLog(EsSpout.class);
@@ -82,6 +86,7 @@ public class EsSpout implements IRichSpout {
     }
 
     public EsSpout(String target, String query, Map configuration) {
+        log.warn("Support for Apache Storm has been deprecated and will be removed in a future release.");
         if (configuration != null) {
             spoutConfig.putAll(configuration);
         }

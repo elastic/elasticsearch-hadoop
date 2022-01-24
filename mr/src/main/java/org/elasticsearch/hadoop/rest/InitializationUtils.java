@@ -51,7 +51,7 @@ public abstract class InitializationUtils {
     public static void checkIdForOperation(Settings settings) {
         String operation = settings.getOperation();
 
-        if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
+        if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation) || ConfigurationOptions.ES_OPERATION_UPSERT.equals(operation)) {
             Assert.isTrue(StringUtils.hasText(settings.getMappingId()),
                     String.format("Operation [%s] requires an id but none (%s) was specified", operation, ConfigurationOptions.ES_MAPPING_ID));
         }

@@ -18,10 +18,8 @@
  */
 package org.elasticsearch.spark.serialization
 
-import scala.collection.GenMapLike
 import scala.collection.Map
 
-import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor
 import org.elasticsearch.hadoop.serialization.MapFieldExtractor
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor._
 import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
