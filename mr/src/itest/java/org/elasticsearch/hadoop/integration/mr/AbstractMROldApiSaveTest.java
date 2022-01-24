@@ -287,7 +287,7 @@ public class AbstractMROldApiSaveTest {
     }
 
 
-    @Test(expected = IOException.class)
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
