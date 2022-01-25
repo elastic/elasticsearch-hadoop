@@ -19,12 +19,15 @@
 package org.elasticsearch.spark.integration;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.DatatypeConverter;
@@ -63,7 +66,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 import static org.hamcrest.Matchers.*;
 
-import static scala.collection.JavaConversions.*;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkSQLTest implements Serializable {
@@ -207,5 +210,35 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		});
 
         return sqc.createDataFrame(rowData, schema);
+	}
+
+	/*
+	 * Scala renamed scala.collection.JavaConversions to jdk.CollectionConverters in 2.13.
+	 */
+	public static scala.collection.Map<String, String> propertiesAsScalaMap(Properties props) {
+		Class conversionsClass;
+		try {
+			conversionsClass = Class.forName("scala.collection.JavaConversions");
+		} catch (ClassNotFoundException e) {
+			try {
+				conversionsClass = Class.forName("jdk.CollectionConverters");
+			} catch (ClassNotFoundException classNotFoundException) {
+				throw new RuntimeException("No collection converter class found");
+			}
+		}
+		Method method;
+		try {
+			method = conversionsClass.getMethod("propertiesAsScalaMap", Properties.class);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("No propertiesAsScalaMap method on " + conversionsClass);
+		}
+		try {
+			Object result = method.invoke(null, props);
+			return (scala.collection.Map<String, String>) result;
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

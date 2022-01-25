@@ -27,9 +27,8 @@ import java.nio.file.Paths
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.JavaConverters.mapAsJavaMapConverter
+import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
+import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
@@ -116,7 +115,7 @@ object AbstractScalaEsScalaSparkSQL {
 
   @BeforeClass
   def setup() {
-    conf.setAll(TestSettings.TESTING_PROPS);
+    conf.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
 
@@ -231,7 +230,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def test1KryoScalaEsRow() {
     val kryo = SparkUtils.sparkSerializer(sc.getConf)
-    val row = new ScalaEsRow(new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala)
+    val row = new ScalaEsRow((new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala).toSeq)
 
     val storage = Array.ofDim[Byte](512)
     val output = new KryoOutput(storage)
@@ -733,7 +732,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsDataFrame3WriteWithRichMapping() {
     val path = Paths.get(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
     // because Windows... 
-    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala.toSeq
 
     val data = sc.parallelize(lines)
 
@@ -2561,7 +2560,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
     val path = Paths.get(uri)
     // because Windows
-    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala.toSeq
     sc.parallelize(lines)
   }
 }
