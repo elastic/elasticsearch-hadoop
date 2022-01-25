@@ -24,7 +24,7 @@ package org.elasticsearch.spark.rdd
  * warning in any Scala version.
  * From https://github.com/scala/scala-collection-compat/issues/208#issuecomment-497735669
  */
-private[rdd] object JDKCollectionConvertersCompat {
+private[elasticsearch] object JDKCollectionConvertersCompat {
   object Scope1 {
     object jdk {
       type CollectionConverters = Int

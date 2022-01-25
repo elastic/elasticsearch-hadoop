@@ -53,7 +53,7 @@ import static org.elasticsearch.spark.rdd.Metadata.*;
 
 import static org.hamcrest.Matchers.*;
 
-import static scala.collection.JavaConversions.*;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 import scala.Tuple2;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
