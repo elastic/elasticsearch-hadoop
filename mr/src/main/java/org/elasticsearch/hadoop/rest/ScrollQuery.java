@@ -92,6 +92,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             
             try {
                 Scroll scroll = repository.scroll(query, body, reader);
+                if (scroll == null) {
+                    finished = true;
+                    return false;
+                }
                 // size is passed as a limit (since we can't pass it directly into the request) - if it's not specified (<1) just scroll the whole index
                 size = (size < 1 ? scroll.getTotalHits() : size);
                 scrollId = scroll.getScrollId();
@@ -115,6 +119,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
             try {
                 Scroll scroll = repository.scroll(scrollId, reader);
+                if (scroll == null) {
+                    finished = true;
+                    return false;
+                }
                 scrollId = scroll.getScrollId();
                 batch = scroll.getHits();
                 finished = scroll.isConcluded();
