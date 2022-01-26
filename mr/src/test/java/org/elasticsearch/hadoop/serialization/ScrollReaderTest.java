@@ -585,6 +585,22 @@ public class ScrollReaderTest {
         assertEquals(4L, JsonUtils.query("number").apply(scroll.getHits().get(0)[1]));
     }
 
+    @Test
+    public void testNoScrollIdFromFrozenIndex() throws IOException {
+        MappingSet mappings = getMappingSet("numbers-as-strings"); // The schema doesn't matter since there's no data
+        InputStream stream = getClass().getResourceAsStream(scrollData("no-scroll-id"));
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "fix");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".fix" , CorrectingHandler.class.getName());
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
+        ScrollReader.Scroll scroll = reader.read(stream);
+        assertNull(scroll);
+    }
+
     /**
      * Case: Handler throws random Exceptions
      * Outcome: Processing fails fast.
