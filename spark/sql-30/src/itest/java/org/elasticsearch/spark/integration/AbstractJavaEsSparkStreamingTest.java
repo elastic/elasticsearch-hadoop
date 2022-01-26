@@ -78,7 +78,7 @@ import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
 import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static scala.collection.JavaConversions.propertiesAsScalaMap;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)

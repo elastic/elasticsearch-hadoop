@@ -63,7 +63,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 import static org.hamcrest.Matchers.*;
 
-import static scala.collection.JavaConversions.*;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkSQLTest implements Serializable {

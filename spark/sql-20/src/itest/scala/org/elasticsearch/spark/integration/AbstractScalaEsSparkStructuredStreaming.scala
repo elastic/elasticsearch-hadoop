@@ -65,6 +65,7 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.io.Codec
 import scala.io.Source
 
@@ -622,8 +623,8 @@ class AbstractScalaEsSparkStructuredStreaming(prefix: String, something: Boolean
     searchResult = RestUtils.get(target + "/_search?version=true")
     val result: java.util.Map[String, Object] = new ObjectMapper().readValue(searchResult, classOf[java.util.Map[String, Object]])
     val hits = result.get("hits").asInstanceOf[java.util.Map[String, Object]].get("hits").asInstanceOf[java.util.List[java.util.Map[String,
-      Object]]]
-    hits.forEach(hit => {
+      Object]]].asScala
+    hits.foreach(hit => {
       hit.get("_id").asInstanceOf[String] match {
         case "1" => {
           assertEquals(1, hit.get("_version"))

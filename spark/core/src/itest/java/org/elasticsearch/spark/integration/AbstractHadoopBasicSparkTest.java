@@ -56,7 +56,7 @@ import static org.junit.Assert.*;
 
 import static org.hamcrest.Matchers.*;
 
-import static scala.collection.JavaConversions.*;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 import scala.Tuple2;
 
 public class AbstractHadoopBasicSparkTest implements Serializable {

@@ -20,7 +20,6 @@
 package org.elasticsearch.spark.sql
 
 import java.util
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.types.StructField
@@ -29,10 +28,7 @@ import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure
 import org.elasticsearch.hadoop.serialization.handler.write.impl.SerializationEventConverter
 import org.elasticsearch.hadoop.util.DateUtils
 import org.elasticsearch.hadoop.util.StringUtils
-import org.hamcrest.Matchers.equalTo
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThat
-import org.junit.Assert.assertTrue
+import org.junit.Assert.{assertEquals, assertTrue}
 import org.junit.Test
 
 class RowSerializationEventConverterTest {
@@ -52,7 +48,9 @@ class RowSerializationEventConverterTest {
       new util.ArrayList[String])
 
     val rawEvent = eventConverter.getRawEvent(iaeFailure)
-    assertThat(rawEvent, equalTo("(StructType(StructField(field1,StringType,true), " +
+
+    // Scala 2.13 changed what toString() looks like, so can't do an exact match here:
+    assertTrue(rawEvent.contains("(StructField(field1,StringType,true), " +
       "StructField(field2,StringType,true), StructField(field3,StringType,true)),[value1,value2,value3])"))
     val timestamp = eventConverter.getTimestamp(iaeFailure)
     assertTrue(StringUtils.hasText(timestamp))
