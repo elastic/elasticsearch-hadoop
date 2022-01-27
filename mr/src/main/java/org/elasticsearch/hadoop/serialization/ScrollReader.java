@@ -268,6 +268,12 @@ public class ScrollReader implements Closeable {
     private Scroll read(Parser parser, BytesArray input) {
         // get scroll_id
         Token token = ParsingUtils.seek(parser, SCROLL_ID);
+        if (token == null) { // no scroll id is returned for frozen indices
+            if (log.isTraceEnabled()) {
+                log.info("No scroll id found, likely because the index is frozen");
+            }
+            return null;
+        }
         Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
         String scrollId = parser.text();
 
