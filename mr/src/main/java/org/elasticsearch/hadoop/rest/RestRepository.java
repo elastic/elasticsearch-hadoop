@@ -311,14 +311,16 @@ public class RestRepository implements Closeable, StatsAware {
         InputStream scroll = client.execute(POST, query, body).body();
         try {
             Scroll scrollResult = reader.read(scroll);
-            if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
+            if (scrollResult == null) {
+                log.info(String.format("No scroll for query [%s/%s], likely because the index is frozen", query, body));
+            } else if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
                 // On ES 2.X and before, a scroll response does not contain any hits to start with.
                 // Another request will be needed.
                 scrollResult = new Scroll(scrollResult.getScrollId(), scrollResult.getTotalHits(), false);
             }
             return scrollResult;
         } finally {
-            if (scroll instanceof StatsAware) {
+            if (scroll != null && scroll instanceof StatsAware) {
                 stats.aggregate(((StatsAware) scroll).stats());
             }
         }
