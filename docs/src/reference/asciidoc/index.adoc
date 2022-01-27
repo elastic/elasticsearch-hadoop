@@ -10,12 +10,12 @@
 :ey:	Elasticsearch on YARN
 :description: Reference documentation of {eh}
 :ver-d: {version}-SNAPSHOT
-:sp-v:	2.2.0
+:sp-v:	3.2.0
 :st-v:	1.0.1
 :pg-v:	0.15.0
-:hv-v:	1.2.1
+:hv-v:	2.3.8
 :cs-v:	2.6.3
-:hadoop-docs-v: 2.7.6
+:hadoop-docs-v: 3.3.1
 
 include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
