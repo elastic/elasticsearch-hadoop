@@ -3,6 +3,12 @@
 
 coming::[8.0.0-rc2]
 
+[[breaking-8.0.0-rc2]]
+[float]
+=== Breaking changes
+- Deprecate support for Spark 1.x, Scala 2.10 on Spark 2.x, Hadoop 1, Pig, and Storm
+https://github.com/elastic/elasticsearch-hadoop/pull/1845[#1845]
+
 [[enhancement-8.0.0-rc2]]
 [float]
 === Enhancements
