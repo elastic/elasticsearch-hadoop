@@ -18,7 +18,7 @@ Core::
 https://github.com/elastic/elasticsearch-hadoop/pull/1842[#1842]
 
 MapReduce::
-* Fixing docsReceived counter
+* Fixing `docsReceived` counter
 https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
 
 REST::
