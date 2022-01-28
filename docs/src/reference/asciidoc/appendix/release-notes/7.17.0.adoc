@@ -1,8 +1,6 @@
 [[eshadoop-7.17.0]]
 == Elasticsearch for Apache Hadoop version 7.17.0
 
-coming::[7.17.0]
-
 [[new-7.17.0]]
 === Enhancements
 Build::
