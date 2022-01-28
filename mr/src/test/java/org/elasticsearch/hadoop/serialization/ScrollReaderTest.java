@@ -432,6 +432,24 @@ public class ScrollReaderTest {
         assertEquals(10L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(2)[1]));
     }
 
+    @Test
+    public void testScrollWithEmptyrrays() throws IOException {
+        MappingSet mappings = getMappingSet("empty-list");
+        InputStream stream = getClass().getResourceAsStream(scrollData("empty-list"));
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "status_code");
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
+        ScrollReader.Scroll scroll = reader.read(stream);
+        // The first entry is null. The second is an array with the single element '123'. And the third is an empty array
+        assertNull(JsonUtils.query("status_code").apply(scroll.getHits().get(0)[1]));
+        assertEquals(123L, JsonUtils.query("status_code").get(0).apply(scroll.getHits().get(1)[1]));
+        assertEquals(Collections.emptyList(), JsonUtils.query("status_code").apply(scroll.getHits().get(2)[1]));
+    }
+
     @Test(expected = EsHadoopParsingException.class)
     public void testScrollWithBreakOnInvalidMapping() throws IOException {
         MappingSet mappings = getMappingSet("numbers-as-strings");
