@@ -36,5 +36,5 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
 - Correctly reading empty fields in as null rather than throwing exception
 https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
 
-- Setting es.read.fields.include could throw a NullPointerException in older spark version
+- Setting `es.read.fields.include` could throw a `NullPointerException` in older spark version
 https://github.com/elastic/elasticsearch-hadoop/pull/1822[#1822]
