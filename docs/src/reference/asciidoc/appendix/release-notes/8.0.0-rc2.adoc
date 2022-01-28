@@ -1,6 +1,8 @@
 [[eshadoop-8.0.0-rc2]]
 == Elasticsearch for Apache Hadoop version 8.0.0-rc2
 
+coming::[8.0.0-rc2]
+
 [[enhancement-8.0.0-rc2]]
 [float]
 === Enhancements
