@@ -1,0 +1,35 @@
+[[eshadoop-7.17.0]]
+== Elasticsearch for Apache Hadoop version 7.17.0
+
+coming::[7.17.0]
+
+[[new-7.17.0]]
+=== Enhancements
+Build::
+* Bump: log4j 2.15.0 to 2.17.0
+https://github.com/elastic/elasticsearch-hadoop/pull/1828[#1828]
+
+Serialization::
+* Adding support for the `date_nanos` field type
+https://github.com/elastic/elasticsearch-hadoop/pull/1803[#1803]
+
+[[bugs-7.17.0]]
+=== Bug Fixes
+Core::
+* Avoiding failure when using frozen indices
+https://github.com/elastic/elasticsearch-hadoop/pull/1842[#1842]
+
+MapReduce::
+* Fixing docsReceived counter
+https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
+
+REST::
+* Check for invalid characters in X-Opaque-ID headers
+https://github.com/elastic/elasticsearch-hadoop/pull/1873[#1873]
+
+Spark::
+* Resolve `saveToEs` saves case classes fields with `NULL` values
+https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
+
+* Correctly reading empty fields in as null rather than throwing exception
+https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
