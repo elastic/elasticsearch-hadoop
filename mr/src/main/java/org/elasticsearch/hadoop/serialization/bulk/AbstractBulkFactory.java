@@ -150,9 +150,12 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             else {
                 BytesArray ba = pool.get();
                 JacksonJsonGenerator generator = new JacksonJsonGenerator(new FastByteArrayOutputStream(ba));
-                valueWriter.write(value, generator);
+                ValueWriter.Result writeResult = valueWriter.write(value, generator);
                 generator.flush();
                 generator.close();
+                if(writeResult.isSuccesful() == false) {
+                    throw new RuntimeException("Write failed");
+                }
             }
         }
 
