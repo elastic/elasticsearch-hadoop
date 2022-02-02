@@ -29,6 +29,10 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
 [float]
 === Bug fixes
 
+Core::
+- Check the result of bulk writes and explicitly throw an exception if an issue is found
+https://github.com/elastic/elasticsearch-hadoop/pull/1870[#1870]
+
 Spark::
 - Resolve `saveToEs` saves case classes fields with `NULL` values
 https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
