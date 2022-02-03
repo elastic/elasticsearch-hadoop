@@ -93,7 +93,7 @@ public class IOUtilsTest {
         String file = jarWithinJarPath + "!/org/elasticsearch/hadoop/util/Version.class";
         URL url = new URL("jar", "", -1, file, new SpringBootURLStreamHandler(jarWithinJarPath) );
         String canonicalFilePath = IOUtils.toCanonicalFilePath(url);
-        assertEquals(jarWithinJarPath, canonicalFilePath);
+        assertEquals("jar:" + jarWithinJarPath, canonicalFilePath);
     }
 
     /**

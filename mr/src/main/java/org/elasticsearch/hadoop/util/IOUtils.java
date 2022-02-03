@@ -246,16 +246,13 @@ public abstract class IOUtils {
          * And spring boot has its own custom URLStreamHandler which returns a URL with a "jar" protocol from the previous call to
          * getJarFileURL() (the default JDK URLStreamHandler does not do this). So this next check is Spring Boot specific.
          */
-        final boolean isSpringBootJarInsideJar;
-        final String innerJarFilePath;
+        final String springBootInnerJarFilePath;
         if ("jar".equals(fileURL.getProtocol())) {
             JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
-            innerJarFilePath = jarURLConnection.getEntryName();
+            springBootInnerJarFilePath = jarURLConnection.getEntryName();
             fileURL = jarURLConnection.getJarFileURL();
-            isSpringBootJarInsideJar = true;
         } else {
-            isSpringBootJarInsideJar = false;
-            innerJarFilePath = null;
+            springBootInnerJarFilePath = null;
         }
 
         String canonicalString;
@@ -267,15 +264,15 @@ public abstract class IOUtils {
             // a singular unique file path
             File canonicalFile = file.getCanonicalFile();
             canonicalString = canonicalFile.toURI().toString();
+            if (springBootInnerJarFilePath != null) {
+                canonicalString = "jar:" + canonicalString + "!/" + springBootInnerJarFilePath;
+            }
         } else {
             /*
              * In the event that some custom classloader is doing strange things and we don't have a file URL here, better to output
              * whatever URL it gives us rather than fail
              */
             canonicalString = fileURL.toString();
-        }
-        if (isSpringBootJarInsideJar) {
-            canonicalString = canonicalString + "!/" + innerJarFilePath;
         }
         return canonicalString;
     }
