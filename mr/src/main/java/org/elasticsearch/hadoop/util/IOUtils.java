@@ -33,6 +33,8 @@ import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
@@ -237,14 +239,44 @@ public abstract class IOUtils {
             JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
             fileURL = jarURLConnection.getJarFileURL();
         }
+        /*
+         * Ordinarily at this point we would have a URL with a "file" protocal. But Spring boot puts the es-hadoop jar is inside of the
+         * spring boot jar like:
+         * jar:file:/some/path/outer.jar!/BOOT-INF/lib/elasticsearch-hadoop-7.17.0.jar!/org/elasticsearch/hadoop/util/Version.class
+         * And spring boot has its own custom URLStreamHandler which returns a URL with a "jar" protocol from the previous call to
+         * getJarFileURL() (the default JDK URLStreamHandler does not do this). So this next check is Spring Boot specific.
+         */
+        final boolean isSpringBootJarInsideJar;
+        final String innerJarFilePath;
+        if ("jar".equals(fileURL.getProtocol())) {
+            JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
+            innerJarFilePath = jarURLConnection.getEntryName();
+            fileURL = jarURLConnection.getJarFileURL();
+            isSpringBootJarInsideJar = true;
+        } else {
+            isSpringBootJarInsideJar = false;
+            innerJarFilePath = null;
+        }
 
-        URI fileURI = fileURL.toURI();
-        File file = new File(fileURI);
+        String canonicalString;
+        if ("file".equals(fileURL.getProtocol())) {
+            URI fileURI = fileURL.toURI();
+            File file = new File(fileURI);
 
-        // Use filesystem to resolve any sym links or dots in the path to
-        // a singular unique file path
-        File canonicalFile = file.getCanonicalFile();
-
-        return canonicalFile.toURI().toString();
+            // Use filesystem to resolve any sym links or dots in the path to
+            // a singular unique file path
+            File canonicalFile = file.getCanonicalFile();
+            canonicalString = canonicalFile.toURI().toString();
+        } else {
+            /*
+             * In the event that some custom classloader is doing strange things and we don't have a file URL here, better to output
+             * whatever URL it gives us rather than fail
+             */
+            canonicalString = fileURL.toString();
+        }
+        if (isSpringBootJarInsideJar) {
+            canonicalString = canonicalString + "!/" + innerJarFilePath;
+        }
+        return canonicalString;
     }
 }
