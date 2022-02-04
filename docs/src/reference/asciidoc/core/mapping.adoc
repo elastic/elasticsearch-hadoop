@@ -144,3 +144,10 @@ Explicit or manual mapping should be considered when the defaults need to be ove
 Refer to {es} {ref}/indices-create-index.html[create index] and {ref}/indices-put-mapping.html[mapping] documentation on how to define an index and its types - note that these need to be present *before* data is being uploaded to {es} (otherwise automatic mapping will be used by {es}, if enabled).
 
 TIP: In most cases, {ref}/indices-templates.html[templates] are quite handy as they are automatically applied to new indices created that match the pattern; in other words instead of defining the mapping per index, one can just define the template once and then have it applied to all indices that match its pattern.
+
+[float]
+[[limitations]]
+=== Limitations
+
+{es} allows field names to contain dots ('.'). But {esh} does not support them, and fails when reading or writing fields with dots. Refer to
+ {es} {ref}/dot-expand-processor.html[Dot Expander Processor] for tooling to assist replacing dots in field names.
