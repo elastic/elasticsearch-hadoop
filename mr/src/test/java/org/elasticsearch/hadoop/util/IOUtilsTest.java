@@ -23,9 +23,16 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.JarURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.jar.JarFile;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.junit.Test;
@@ -64,4 +71,61 @@ public class IOUtilsTest {
         fail("Shouldn't pass");
     }
 
+    @Test
+    public void testToCanonicalFile() throws Exception {
+        String file = "file:/some/path/org/elasticsearch/hadoop/util/Version.class";
+        URL url = new URL(file);
+        String canonicalFilePath = IOUtils.toCanonicalFilePath(url);
+        assertEquals(file, canonicalFilePath);
+
+        url = new URL("jar:file:/some/path/elasticsearch-hadoop-7.17.0.jar!/org/elasticsearch/hadoop/util/Version.class");
+        canonicalFilePath = IOUtils.toCanonicalFilePath(url);
+        assertEquals("file:/some/path/elasticsearch-hadoop-7.17.0.jar", canonicalFilePath);
+
+        url = new URL("file:/some/path/../path/org/elasticsearch/hadoop/util/Version.class");
+        canonicalFilePath = IOUtils.toCanonicalFilePath(url);
+        assertEquals("file:/some/path/org/elasticsearch/hadoop/util/Version.class", canonicalFilePath);
+    }
+
+    @Test
+    public void testToCanonicalFileSpringBoot() throws Exception {
+        String jarWithinJarPath = "file:/some/path/outer.jar!/BOOT-INF/lib/elasticsearch-hadoop-7.17.0.jar";
+        String file = jarWithinJarPath + "!/org/elasticsearch/hadoop/util/Version.class";
+        URL url = new URL("jar", "", -1, file, new SpringBootURLStreamHandler(jarWithinJarPath) );
+        String canonicalFilePath = IOUtils.toCanonicalFilePath(url);
+        assertEquals("jar:" + jarWithinJarPath, canonicalFilePath);
+    }
+
+    /**
+     * This class simulates what Spring Boot's URLStreamHandler does.
+     */
+    private static class SpringBootURLStreamHandler extends URLStreamHandler {
+        private final String jarWithinJarPath;
+        public SpringBootURLStreamHandler(String jarWithinJarPath) {
+            this.jarWithinJarPath = jarWithinJarPath;
+        }
+
+        @Override
+        protected URLConnection openConnection(URL url) throws IOException {
+            return new JarURLConnection(url) {
+                @Override
+                public JarFile getJarFile() throws IOException {
+                    return null;
+                }
+
+                @Override
+                public void connect() throws IOException {
+                }
+
+                @Override
+                public URL getJarFileURL() {
+                    try {
+                        return new URL("jar:" + jarWithinJarPath);
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        }
+    }
 }
