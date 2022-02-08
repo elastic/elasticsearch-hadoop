@@ -1,0 +1,92 @@
+[[eshadoop-8.0.0]]
+== Elasticsearch for Apache Hadoop version 8.0.0
+
+The following list are changes in 8.0.0 as compared to 7.17.0, and combines
+release notes from the 8.0.0-alpha1, -alpha2, -beta1, -rc1 and -rc2 releases.
+
+[[breaking-8.0.0]]
+[float]
+=== Breaking Changes
+
+- Deprecate support for Spark 1.x, Scala 2.10 on Spark 2.x, Hadoop 1, Pig, and Storm
+https://github.com/elastic/elasticsearch-hadoop/pull/1845[#1845]
+
+Core::
+- Boost default scroll size to 1000
+https://github.com/elastic/elasticsearch-hadoop/pull/1429[#1429]
+
+[[new-8.0.0]]
+[float]
+=== Enhancements
+
+Build::
+- Update Gradle wrapper to 7.0
+https://github.com/elastic/elasticsearch-hadoop/pull/1641[#1641]
+
+- Upgrade build to use JDK 12 and current build tools
+https://github.com/elastic/elasticsearch-hadoop/pull/1351[#1351]
+
+- Upgrade to and fix compatibility with Gradle 5.5
+https://github.com/elastic/elasticsearch-hadoop/pull/1333[#1333]
+
+- Setting Java boot classpath so that Scala 2.10 works on Gradle 7.2
+https://github.com/elastic/elasticsearch-hadoop/pull/1800[#1800]
+
+- Build Hadoop with Java 17
+https://github.com/elastic/elasticsearch-hadoop/pull/1808[#1808]
+
+- Update Gradle wrapper to 7.3
+https://github.com/elastic/elasticsearch-hadoop/pull/1809[#1809]
+
+- Update log4j version
+https://github.com/elastic/elasticsearch-hadoop/pull/1828[#1828]
+
+- Get rid of direct cross-project dependencies to avoid gradle warnings
+https://github.com/elastic/elasticsearch-hadoop/pull/1868[#1868]
+
+Core::
+- Setting X-Opaque-ID header for all reads and writes for mapreduce and spark
+https://github.com/elastic/elasticsearch-hadoop/pull/1770[#1770]
+
+- Avoid failure when using frozen indices
+https://github.com/elastic/elasticsearch-hadoop/pull/1842[#1842]
+
+Serialization::
+- Add support for the `date_nanos` field type
+https://github.com/elastic/elasticsearch-hadoop/pull/1803[#1803]
+
+- Add support for the `date_nanos` field type
+https://github.com/elastic/elasticsearch-hadoop/pull/1803[#1803]
+
+Spark::
+- Add support for Spark 3.1 and 3.2 
+https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
+
+
+[[bug-8.0.0]]
+[float]
+=== Bug fixes
+Core::
+- Close RestRepository to avoid a connection leak
+https://github.com/elastic/elasticsearch-hadoop/pull/1781[#1781]
+
+- Fix support for empty and null arrays
+https://github.com/elastic/elasticsearch-hadoop/pull/1827[#1827]
+
+MapReduce::
+-  Fix `docsReceived` counter
+https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
+
+REST::
+- Check for invalid characters in X-Opaque-ID headers
+https://github.com/elastic/elasticsearch-hadoop/pull/1873[#1873]
+
+Spark::
+- Resolve `saveToEs` saves case classes fields with `NULL` values
+https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
+
+- Correctly reading empty fields in as null rather than throwing exception
+https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
+
+- Setting `es.read.fields.include` could throw a `NullPointerException` in older spark version
+https://github.com/elastic/elasticsearch-hadoop/pull/1822[#1822]
