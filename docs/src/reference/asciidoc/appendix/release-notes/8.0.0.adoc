@@ -75,10 +75,6 @@ MapReduce::
 -  Fix `docsReceived` counter
 https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
 
-REST::
-- Check for invalid characters in X-Opaque-ID headers
-https://github.com/elastic/elasticsearch-hadoop/pull/1873[#1873]
-
 Spark::
 - Resolve `saveToEs` saves case classes fields with `NULL` values
 https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
@@ -86,5 +82,5 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
 - Correctly reading empty fields in as null rather than throwing exception
 https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
 
-- Setting `es.read.fields.include` could throw a `NullPointerException` in older spark version
+- Setting `es.read.fields.include` could throw a `NullPointerException` in older Spark versions
 https://github.com/elastic/elasticsearch-hadoop/pull/1822[#1822]
