@@ -194,13 +194,19 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public BulkResponse tryFlush() {
-        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
+        if (writeInitialized == false) {
+            log.warn("Attempt to flush before any data had been written");
+            return BulkResponse.complete();
+        }
         return bulkProcessor.tryFlush();
     }
 
     public void flush() {
-        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
-        bulkProcessor.flush();
+        if (writeInitialized) {
+            bulkProcessor.flush();
+        } else {
+            log.warn("Attempt to flush before any data had been written");
+        }
     }
 
     @Override
