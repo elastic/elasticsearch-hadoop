@@ -29,6 +29,7 @@ import java.{util => ju}
 import java.util.concurrent.TimeUnit
 import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
 import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
+
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
@@ -92,7 +93,7 @@ import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.rest.RestUtils
+import org.elasticsearch.hadoop.rest.{EsHadoopParsingException, RestUtils}
 import org.elasticsearch.hadoop.serialization.JsonUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.junit.Assert._
@@ -2539,6 +2540,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("string", dataType.typeName)
     val head = df.head()
     assertThat(head.getString(0), containsString("Chipotle"))
+  }
+
+  /**
+   * Dots in field names are supported by Elasticsearch, but not by es-hadoop. We expect them to fail.
+   */
+  @Test(expected = classOf[SparkException])
+  def testDotsInFieldNames(): Unit = {
+    val index = wrapIndex("dots-in-names-index")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    RestUtils.postData(docPath, "{\"b\":0,\"e\":{\"f.g\":\"hello\"}}".getBytes("UTF-8"))
+    val df = sqc.read.format("es").load(index)
+    df.count()
   }
 
   /**
