@@ -194,11 +194,12 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public BulkResponse tryFlush() {
-        if (writeInitialized == false) {
+        if (writeInitialized) {
+            return bulkProcessor.tryFlush();
+        } else {
             log.warn("Attempt to flush before any data had been written");
             return BulkResponse.complete();
         }
-        return bulkProcessor.tryFlush();
     }
 
     public void flush() {
