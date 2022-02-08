@@ -2292,7 +2292,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val mapping = wrapMapping("data", s"""{
                                          |    "dynamic": "strict",
                                          |    "properties" : {
-                                         |      "some column with a, comma and then some" : {
+                                         |      "some column with a comma, and then some" : {
                                          |        "type" : "keyword"
                                          |      }
                                          |    }
@@ -2300,7 +2300,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
         """.stripMargin)
     RestUtils.touch(index)
     RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    RestUtils.postData(docPath, "{\"some column with a, comma and then some\": \"sdfdsf\"}".getBytes("UTF-8"))
+    RestUtils.postData(docPath, "{\"some column with a comma, and then some\": \"sdfdsf\"}".getBytes("UTF-8"))
     RestUtils.refresh(target)
     val df = sqc.read.format("es").load(index)
     df.printSchema()
