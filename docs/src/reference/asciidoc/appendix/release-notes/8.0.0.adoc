@@ -76,7 +76,7 @@ MapReduce::
 https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
 
 Spark::
-- Resolve `saveToEs` saves case classes fields with `NULL` values
+- Better handling of null values in case classes
 https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
 
 - Correctly reading empty fields in as null rather than throwing exception
