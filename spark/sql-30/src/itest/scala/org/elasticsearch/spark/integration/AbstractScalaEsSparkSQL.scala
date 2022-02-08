@@ -2546,7 +2546,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
    * Dots in field names are supported by Elasticsearch, but not by es-hadoop. We expect them to fail.
    */
   @Test(expected = classOf[SparkException])
-  def test00DotsInFieldNames(): Unit = {
+  def testDotsInFieldNames(): Unit = {
     val index = wrapIndex("dots-in-names-index")
     val typed = "data"
     val (target, docPath) = makeTargets(index, typed)
