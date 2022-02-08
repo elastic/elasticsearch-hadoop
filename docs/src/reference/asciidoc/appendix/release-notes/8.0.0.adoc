@@ -8,10 +8,11 @@ release notes from the 8.0.0-alpha1, -alpha2, -beta1, -rc1 and -rc2 releases.
 [float]
 === Breaking Changes
 
+
+Core::
 - Deprecate support for Spark 1.x, Scala 2.10 on Spark 2.x, Hadoop 1, Pig, and Storm
 https://github.com/elastic/elasticsearch-hadoop/pull/1845[#1845]
 
-Core::
 - Boost default scroll size to 1000
 https://github.com/elastic/elasticsearch-hadoop/pull/1429[#1429]
 
