@@ -26,9 +26,6 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1351[#1351]
 - Build Hadoop with Java 17
 https://github.com/elastic/elasticsearch-hadoop/pull/1808[#1808]
 
-- Update log4j version
-https://github.com/elastic/elasticsearch-hadoop/pull/1828[#1828]
-
 Build/Gradle::
 - Upgrade to and fix compatibility with Gradle 5.5
 https://github.com/elastic/elasticsearch-hadoop/pull/1333[#1333]
@@ -49,13 +46,6 @@ Core::
 - Setting X-Opaque-ID header for all reads and writes for mapreduce and spark
 https://github.com/elastic/elasticsearch-hadoop/pull/1770[#1770]
 
-- Avoid failure when using frozen indices
-https://github.com/elastic/elasticsearch-hadoop/pull/1842[#1842]
-
-Serialization::
-- Add support for the `date_nanos` field type
-https://github.com/elastic/elasticsearch-hadoop/pull/1803[#1803]
-
 Spark::
 - Add support for Spark 3.1 and 3.2 
 https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
@@ -70,17 +60,3 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1781[#1781]
 
 - Fix support for empty and null arrays
 https://github.com/elastic/elasticsearch-hadoop/pull/1827[#1827]
-
-MapReduce::
--  Fix `docsReceived` counter
-https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
-
-Spark::
-- Better handling of null values in case classes
-https://github.com/elastic/elasticsearch-hadoop/pull/1478[#1478]
-
-- Correctly reading empty fields in as null rather than throwing exception
-https://github.com/elastic/elasticsearch-hadoop/pull/1816[#1816]
-
-- Setting `es.read.fields.include` could throw a `NullPointerException` in older Spark versions
-https://github.com/elastic/elasticsearch-hadoop/pull/1822[#1822]
