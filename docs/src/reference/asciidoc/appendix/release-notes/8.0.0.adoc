@@ -42,10 +42,6 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1809[#1809]
 - Get rid of direct cross-project dependencies to avoid gradle warnings
 https://github.com/elastic/elasticsearch-hadoop/pull/1868[#1868]
 
-Core::
-- Setting X-Opaque-ID header for all reads and writes for mapreduce and spark
-https://github.com/elastic/elasticsearch-hadoop/pull/1770[#1770]
-
 Spark::
 - Add support for Spark 3.1 and 3.2 
 https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
