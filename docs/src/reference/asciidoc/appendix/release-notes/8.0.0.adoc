@@ -8,7 +8,6 @@ release notes from the 8.0.0-alpha1, -alpha2, -beta1, -rc1 and -rc2 releases.
 [float]
 === Breaking Changes
 
-
 Core::
 - Deprecate support for Spark 1.x, Scala 2.10 on Spark 2.x, Hadoop 1, Pig, and Storm
 https://github.com/elastic/elasticsearch-hadoop/pull/1845[#1845]
@@ -51,6 +50,7 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1807[#1807]
 [[bug-8.0.0]]
 [float]
 === Bug fixes
+
 Core::
 - Fix support for empty and null arrays
 https://github.com/elastic/elasticsearch-hadoop/pull/1827[#1827]
