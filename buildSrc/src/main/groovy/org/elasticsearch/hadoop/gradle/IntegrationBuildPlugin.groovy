@@ -73,6 +73,7 @@ class IntegrationBuildPlugin implements Plugin<Project> {
             // Configure root javadoc process to compile and consume this project's javadocs
             Javadoc rootJavadoc = project.rootProject.getTasks().getByName("javadoc") as Javadoc
             Javadoc subJavadoc = project.getTasks().getByName('javadoc') as Javadoc
+            rootJavadoc.dependsOn(subJavadoc)
             rootJavadoc.source += subJavadoc.source
             rootJavadoc.classpath += project.files(project.sourceSets.main.compileClasspath)
         }
