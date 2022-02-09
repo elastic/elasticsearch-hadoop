@@ -2552,6 +2552,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val (target, docPath) = makeTargets(index, typed)
     RestUtils.postData(docPath, "{\"b\":0,\"e\":{\"f.g\":\"hello\"}}".getBytes("UTF-8"))
     val df = sqc.read.format("es").load(index)
+    RestUtils.refresh(index)
     df.count()
   }
 
