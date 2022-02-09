@@ -20,19 +20,10 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1429[#1429]
 === Enhancements
 
 Build::
-- Upgrade build to use JDK 12 and current build tools
-https://github.com/elastic/elasticsearch-hadoop/pull/1351[#1351]
-
-- Build Hadoop with Java 17
+- Build ES-Hadoop with Java 17
 https://github.com/elastic/elasticsearch-hadoop/pull/1808[#1808]
 
 Build/Gradle::
-- Upgrade to and fix compatibility with Gradle 5.5
-https://github.com/elastic/elasticsearch-hadoop/pull/1333[#1333]
-
-- Update Gradle wrapper to 7.0
-https://github.com/elastic/elasticsearch-hadoop/pull/1641[#1641]
-
 - Setting Java boot classpath so that Scala 2.10 works on Gradle 7.2
 https://github.com/elastic/elasticsearch-hadoop/pull/1800[#1800]
 
