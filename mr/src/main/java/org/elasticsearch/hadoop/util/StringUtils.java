@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.util;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
 import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.io.JsonStringEncoder;
-import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 
 /**
@@ -127,18 +127,42 @@ public abstract class StringUtils {
         if (!StringUtils.hasText(string)) {
             return Collections.emptyList();
         }
-        StringTokenizer st = new StringTokenizer(string, delimiters);
-        List<String> tokens = new ArrayList<String>();
-        while (st.hasMoreTokens()) {
-            String token = st.nextToken();
-            if (trimTokens) {
-                token = token.trim();
+        List<String> tokens = new ArrayList<>();
+        char[] delims = delimiters.toCharArray();
+        StringBuilder currentToken = new StringBuilder();
+        boolean inQuotedToken = false;
+        for (char character : string.toCharArray()) {
+            if (character == '\"') {
+                inQuotedToken = !inQuotedToken;
             }
-            if (!ignoreEmptyTokens || token.length() > 0) {
-                tokens.add(HttpEncodingTools.decode(token));
+            else if (inQuotedToken == false && isCharacterInArray(character, delims)) {
+                addTokenToList(tokens, currentToken, trimTokens, ignoreEmptyTokens);
+                currentToken = new StringBuilder();
+            } else {
+                currentToken.append(character);
             }
         }
+        addTokenToList(tokens, currentToken, trimTokens, ignoreEmptyTokens);
         return tokens;
+    }
+
+    private static void addTokenToList(List<String> tokens, StringBuilder newToken, boolean trimTokens, boolean ignoreEmptyTokens) {
+        String token = newToken.toString();
+        if (trimTokens) {
+            token = token.trim();
+        }
+        if (!ignoreEmptyTokens || token.length() > 0) {
+            tokens.add(token);
+        }
+    }
+
+    private static boolean isCharacterInArray(char character, char[] charArray) {
+        for (char arrayChar : charArray) {
+            if (character == arrayChar) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static String concatenate(Collection<?> list) {
@@ -152,15 +176,10 @@ public abstract class StringUtils {
         if (delimiter == null) {
             delimiter = EMPTY;
         }
-        StringBuilder sb = new StringBuilder();
-
-        for (Object object : list) {
-            sb.append(HttpEncodingTools.encode(object.toString()));
-            sb.append(delimiter);
-        }
-
-        sb.setLength(sb.length() - delimiter.length());
-        return sb.toString();
+        final String finalDelimiter = delimiter;
+        return list.stream().map(item -> item.toString())
+                .map(token -> optionallyWrapToken(token, finalDelimiter))
+                .collect(Collectors.joining(delimiter));
     }
 
     public static String concatenate(Object[] array, String delimiter) {
@@ -170,15 +189,14 @@ public abstract class StringUtils {
         if (delimiter == null) {
             delimiter = EMPTY;
         }
+        final String finalDelimiter = delimiter;
+        return Arrays.stream(array).map(item -> item.toString())
+                .map(token -> optionallyWrapToken(token, finalDelimiter))
+                .collect(Collectors.joining(delimiter));
+    }
 
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < array.length; i++) {
-            if (i > 0) {
-                sb.append(delimiter);
-            }
-            sb.append(HttpEncodingTools.encode(array[i].toString()));
-        }
-        return sb.toString();
+    private static String optionallyWrapToken(String token, String delimiter) {
+        return token.contains(delimiter) ? "\"" + token + "\"" : token;
     }
 
     public static String deleteWhitespace(CharSequence sequence) {
