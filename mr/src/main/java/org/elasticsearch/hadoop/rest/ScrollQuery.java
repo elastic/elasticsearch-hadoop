@@ -92,6 +92,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             
             try {
                 Scroll scroll = repository.scroll(query, body, reader);
+                if (scroll == null) {
+                    finished = true;
+                    return false;
+                }
                 // size is passed as a limit (since we can't pass it directly into the request) - if it's not specified (<1) just scroll the whole index
                 size = (size < 1 ? scroll.getTotalHits() : size);
                 scrollId = scroll.getScrollId();
@@ -100,7 +104,8 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             } catch (IOException ex) {
                 throw new EsHadoopIllegalStateException(String.format("Cannot create scroll for query [%s/%s]", query, body), ex);
             }
-
+            read += batch.size();
+            stats.docsReceived += batch.size();
             // no longer needed
             body = null;
             query = null;
@@ -114,6 +119,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
             try {
                 Scroll scroll = repository.scroll(scrollId, reader);
+                if (scroll == null) {
+                    finished = true;
+                    return false;
+                }
                 scrollId = scroll.getScrollId();
                 batch = scroll.getHits();
                 finished = scroll.isConcluded();

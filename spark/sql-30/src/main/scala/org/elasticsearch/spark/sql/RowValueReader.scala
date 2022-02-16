@@ -57,7 +57,12 @@ private[sql] trait RowValueReader extends SettingsAware {
     if (pos < 0 || pos >= esRow.values.size) {
       // geo types allow fields which are ignored - need to skip these if they are not part of the schema
       if (pos >= 0 || !currentFieldIsGeo) {
-        throw new EsHadoopIllegalStateException(s"Position for '$sparkRowField' not found in row; typically this is caused by a mapping inconsistency")
+        if (key.toString().contains(".")) {
+          throw new EsHadoopIllegalStateException(
+            s"Found field '$sparkRowField'. Fields containing dots ('.') are not supported in es-hadoop")
+        } else {
+          throw new EsHadoopIllegalStateException(s"Position for '$sparkRowField' not found in row; typically this is caused by a mapping inconsistency")
+        }
       }
     } else {
       esRow.values.update(pos, value)

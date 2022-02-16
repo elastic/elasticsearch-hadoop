@@ -80,8 +80,8 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.collection.JavaConverters.asScalaBufferConverter
+import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
+import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf()
@@ -95,7 +95,7 @@ object AbstractScalaEsScalaSpark {
 
   @BeforeClass
   def setup() {
-    conf.setAll(TestSettings.TESTING_PROPS);
+    conf.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
     sc = new SparkContext(conf)
   }
 
@@ -141,7 +141,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
     val path = Paths.get(uri)
     // because Windows
-    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    val lines: Seq[String] = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala.toSeq
     sc.parallelize(lines)
   }
   

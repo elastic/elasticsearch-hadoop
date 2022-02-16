@@ -2,11 +2,6 @@
 [[breaking-changes]]
 = Breaking Changes
 
-Generally, we strive to maintain backwards compatibility between minor
-versions (e.g. 5.x to 5.7) so that upgrades can be done without any code
-or configuration changes, but breaking changes do manifest between major
-versions (e.g. 5.x to 6.y).
-
 For clarity, we always list any breaking changes at the top of the
 <<release-notes,release notes>> for each version.
 

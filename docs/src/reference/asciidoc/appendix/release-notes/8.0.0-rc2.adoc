@@ -1,0 +1,35 @@
+[[eshadoop-8.0.0-rc2]]
+== Elasticsearch for Apache Hadoop version 8.0.0-rc2
+
+[[breaking-8.0.0-rc2]]
+[float]
+=== Breaking changes
+- Deprecate support for Spark 1.x, Scala 2.10 on Spark 2.x, Hadoop 1, Pig, and Storm
+https://github.com/elastic/elasticsearch-hadoop/pull/1845[#1845]
+
+[[enhancement-8.0.0-rc2]]
+[float]
+=== Enhancements
+Build::
+- Get rid of direct cross-project dependencies to avoid gradle warnings
+https://github.com/elastic/elasticsearch-hadoop/pull/1868[#1868]
+
+Core::
+- Avoid failure when using frozen indices
+https://github.com/elastic/elasticsearch-hadoop/pull/1842[#1842]
+
+[[bug-8.0.0-rc2]]
+[float]
+=== Bug fixes
+
+Core::
+- Fix support for empty and null arrays
+https://github.com/elastic/elasticsearch-hadoop/pull/1827[#1827]
+
+MapReduce::
+-  Fix `docsReceived` counter
+https://github.com/elastic/elasticsearch-hadoop/pull/1840[#1840]
+
+REST::
+- Check for invalid characters in X-Opaque-ID headers
+https://github.com/elastic/elasticsearch-hadoop/pull/1873[#1873]

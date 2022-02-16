@@ -27,9 +27,9 @@ import java.nio.file.Paths
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.JavaConverters.mapAsJavaMapConverter
+import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
+import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
+
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
@@ -93,7 +93,7 @@ import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.rest.RestUtils
+import org.elasticsearch.hadoop.rest.{EsHadoopParsingException, RestUtils}
 import org.elasticsearch.hadoop.serialization.JsonUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.junit.Assert._
@@ -116,7 +116,7 @@ object AbstractScalaEsScalaSparkSQL {
 
   @BeforeClass
   def setup() {
-    conf.setAll(TestSettings.TESTING_PROPS);
+    conf.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
 
@@ -231,7 +231,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def test1KryoScalaEsRow() {
     val kryo = SparkUtils.sparkSerializer(sc.getConf)
-    val row = new ScalaEsRow(new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala)
+    val row = new ScalaEsRow((new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala).toSeq)
 
     val storage = Array.ofDim[Byte](512)
     val output = new KryoOutput(storage)
@@ -733,7 +733,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsDataFrame3WriteWithRichMapping() {
     val path = Paths.get(AbstractScalaEsScalaSparkSQL.testData.sampleArtistsDatUri())
     // because Windows... 
-    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala.toSeq
 
     val data = sc.parallelize(lines)
 
@@ -1614,7 +1614,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("long", nested.asInstanceOf[ArrayType].elementType.typeName)
 
     val first = df.first
-    val vals = first.getStruct(0).getSeq[Seq[Long]](0)(0)
+    val vals = first.getStruct(0).getSeq[scala.collection.Seq[Long]](0)(0)
     assertEquals(50, vals(0))
     assertEquals(32, vals(1))
   }
@@ -2366,7 +2366,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     // No "es.read.field.include", so everything is included:
     var df = reader.load("read_field_include_test")
-    var result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
+    var result = df.select("features.hashtags").first().getAs[scala.collection.IndexedSeq[Row]](0)
     assertEquals(2, result(0).size)
     assertEquals("hello", result(0).getAs("text"))
     assertEquals("2", result(0).getAs("count"))
@@ -2388,6 +2388,30 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df = reader.option("es.read.field.include","features.hashtags").load("read_field_include_test")
     result = df.select("features.hashtags").first().getAs[IndexedSeq[Row]](0)
     assertEquals(0, result(0).size)
+  }
+
+  @Test
+  def testScriptedUpsert(): Unit = {
+    val testIndex = "scripted_upsert_test"
+    val updateParams = "count: <4>"
+    val updateScript = "if ( ctx.op == 'create' ) {ctx._source.counter = params.count} else {ctx._source.counter += params.count}"
+    val conf = Map("es.mapping.id" -> "id", "es.mapping.exclude" -> "id", "es.write.operation" -> "upsert", "es.update.script.params" ->
+      updateParams, "es.update.script.upsert" -> "true", "es.update.script.inline" -> updateScript)
+    val data = Seq(Row("1", 3))
+    val rdd: RDD[Row] = sc.parallelize(data)
+    val schema = new StructType().add("id", StringType, nullable = false).add("count", IntegerType, nullable = false)
+    val df = sqc.createDataFrame(rdd, schema)
+    df.write.format("es").options(conf).mode(SaveMode.Append).save(testIndex)
+
+    val reader = sqc.read.format("es")
+    var readerDf = reader.load(testIndex)
+    var result = readerDf.select("counter").first().get(0)
+    assertEquals(4l, result)
+
+    df.write.format("es").options(conf).mode(SaveMode.Append).save(testIndex)
+    readerDf = reader.load(testIndex)
+    result = readerDf.select("counter").first().get(0)
+    assertEquals(8l, result)
   }
 
   @Test
@@ -2413,7 +2437,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val reader = sqc.read.schema(schema).format("org.elasticsearch.spark.sql").option("es.read.field.as.array.include","samples")
     var resultDf = reader.load("nested_fields_upsert_test")
     assertEquals(2, resultDf.count())
-    var samples = resultDf.select("samples").where("id = '2'").first().getAs[IndexedSeq[Row]](0)
+    var samples = resultDf.select("samples").where("id = '2'").first().getAs[scala.collection.IndexedSeq[Row]](0)
     assertEquals(2, samples.size)
     assertEquals("hello", samples(0).get(0))
     assertEquals("world", samples(1).get(0))
@@ -2425,7 +2449,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("nested_fields_upsert_test")
 
     resultDf = reader.load("nested_fields_upsert_test")
-    samples = resultDf.select("samples").where("id = '1'").first().getAs[IndexedSeq[Row]](0)
+    samples = resultDf.select("samples").where("id = '1'").first().getAs[scala.collection.IndexedSeq[Row]](0)
     assertEquals(2, samples.size)
     assertEquals("goodbye", samples(0).get(0))
     assertEquals("world", samples(1).get(0))
@@ -2437,7 +2461,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.write.format("org.elasticsearch.spark.sql").options(es_conf).mode(SaveMode.Append).save("nested_fields_upsert_test")
 
     resultDf = reader.load("nested_fields_upsert_test")
-    samples = resultDf.select("samples").where("id = '2'").first().getAs[IndexedSeq[Row]](0)
+    samples = resultDf.select("samples").where("id = '2'").first().getAs[scala.collection.IndexedSeq[Row]](0)
     assertEquals(2, samples.size)
     assertEquals("goodbye", samples(0).get(0))
     assertEquals("again", samples(1).get(0))
@@ -2519,6 +2543,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   /**
+   * Dots in field names are supported by Elasticsearch, but not by es-hadoop. We expect them to fail.
+   */
+  @Test(expected = classOf[SparkException])
+  def testDotsInFieldNames(): Unit = {
+    val index = wrapIndex("dots-in-names-index")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    RestUtils.postData(docPath, "{\"b\":0,\"e\":{\"f.g\":\"hello\"}}".getBytes("UTF-8"))
+    val df = sqc.read.format("es").load(index)
+    RestUtils.refresh(index)
+    df.count()
+  }
+
+  /**
    * Take advantage of the fixed method order and clear out all created indices.
    * The indices will last in Elasticsearch for all parameters of this test suite.
    * This test suite often puts a lot of stress on the system's available file
@@ -2561,7 +2599,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
     val path = Paths.get(uri)
     // because Windows
-    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala.toSeq
     sc.parallelize(lines)
   }
 }

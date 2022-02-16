@@ -60,7 +60,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static scala.collection.JavaConversions.propertiesAsScalaMap;
+import static org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)

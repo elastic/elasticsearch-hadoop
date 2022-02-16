@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized.Parameters
 import org.junit.runners.{MethodSorters, Parameterized}
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
+import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -62,7 +62,7 @@ object AbstractScalaEsScalaSparkStreaming {
 
   @BeforeClass
   def setup(): Unit =  {
-    conf.setAll(TestSettings.TESTING_PROPS)
+    conf.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
     sc = new SparkContext(conf)
   }
 
