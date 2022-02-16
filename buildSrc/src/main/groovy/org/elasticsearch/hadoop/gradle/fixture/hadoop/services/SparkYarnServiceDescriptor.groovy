@@ -56,7 +56,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(3, 2, 0)
+        return new Version(3, 2, 1)
     }
 
     String hadoopVersionCompatibility() {

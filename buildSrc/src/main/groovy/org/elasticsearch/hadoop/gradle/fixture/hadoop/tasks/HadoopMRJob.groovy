@@ -23,7 +23,9 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDescriptor
 import org.gradle.api.GradleException
-import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
@@ -31,17 +33,17 @@ import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
 
 class HadoopMRJob extends AbstractClusterTask {
 
-    @Internal
+    @Input
     String jobClass
-    @Internal
+    @InputFile
     File jobJar
-    @Internal
+    @Input
     Map<String, Object> jobSettings = [:]
-    @Internal
+    @InputFiles
     List<File> libJars = []
-    @Internal
+    @Input
     List<String> args = []
-    @Internal
+    @Input
     Map<String, String> systemProperties = [:]
 
     void jobSetting(String key, Object value) {
