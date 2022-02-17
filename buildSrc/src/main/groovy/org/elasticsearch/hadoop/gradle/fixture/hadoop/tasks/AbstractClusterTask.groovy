@@ -23,7 +23,6 @@ import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 
 abstract class AbstractClusterTask extends DefaultTestClustersTask {
