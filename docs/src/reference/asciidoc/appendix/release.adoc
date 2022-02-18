@@ -10,6 +10,7 @@ This section summarizes the changes in each release.
 ===== 8.x
 
 * <<eshadoop-8.1.0>>
+* <<eshadoop-8.0.1>>
 * <<eshadoop-8.0.0>>
 * <<eshadoop-8.0.0-rc2>>
 * <<eshadoop-8.0.0-rc1>>
@@ -56,6 +57,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 ////////////////////////
 
 include::release-notes/8.1.0.adoc[]
+include::release-notes/8.0.1.adoc[]
 include::release-notes/8.0.0.adoc[]
 include::release-notes/8.0.0-rc2.adoc[]
 include::release-notes/8.0.0-rc1.adoc[]
