@@ -1,8 +1,6 @@
 [[eshadoop-8.1.0]]
 == Elasticsearch for Apache Hadoop version 8.1.0
 
-coming::[8.1.0]
-
 [[new-8.1.0]]
 [float]
 === Enhancements
