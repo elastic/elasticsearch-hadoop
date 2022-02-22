@@ -49,34 +49,8 @@ class IntegrationBuildPlugin implements Plugin<Project> {
         // Ensure that the common build plugin is already applied
         target.getPluginManager().apply(BuildPlugin.class)
 
-        configureProjectJars(target)
         configureProjectZip(target)
         configureRootProjectDependencies(target)
-    }
-
-    private static def configureProjectJars(Project project) {
-        // We do this after evaluation since the scala projects may change around what the final archive name is.
-        project.afterEvaluate {
-            // Add the sub-project's jar contents to the project's uber-jar
-            Jar rootJar = project.rootProject.getTasks().getByName('jar') as Jar
-            rootJar.dependsOn(project.tasks.jar)
-            rootJar.from(project.zipTree(project.tasks.jar.archivePath)) {
-                exclude "META-INF/*"
-                include "META-INF/services"
-                include "**/*"
-            }
-
-            // Add sources to root project's sources jar
-            Jar rootSourcesJar = project.rootProject.getTasks().getByName("sourcesJar") as Jar
-            rootSourcesJar.from(project.sourceSets.main.allJava.srcDirs)
-
-            // Configure root javadoc process to compile and consume this project's javadocs
-            Javadoc rootJavadoc = project.rootProject.getTasks().getByName("javadoc") as Javadoc
-            Javadoc subJavadoc = project.getTasks().getByName('javadoc') as Javadoc
-            rootJavadoc.dependsOn(subJavadoc)
-            rootJavadoc.source += subJavadoc.source
-            rootJavadoc.classpath += project.files(project.sourceSets.main.compileClasspath)
-        }
     }
 
     /**
