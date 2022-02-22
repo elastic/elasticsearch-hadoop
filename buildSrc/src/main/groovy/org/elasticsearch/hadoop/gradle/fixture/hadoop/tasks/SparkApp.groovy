@@ -136,6 +136,7 @@ class SparkApp extends AbstractClusterTask {
         List<String> commandLine = [command.toString(),
                                     '--class', jobClass,
                                     '--master', argMaster,
+                                    '--executor-memory=600m',
                                     '--deploy-mode', argDeployMode]
 
         if (!libJars.isEmpty()) {

@@ -296,6 +296,7 @@ if (disableTests) {
 
         config.service('hadoop') { ServiceConfiguration s ->
             s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+            s.setJvmArgs("-Xmx200m")
             // Core Site Config
             s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
                 // Enable Security
@@ -364,6 +365,7 @@ if (disableTests) {
         }
         config.service('spark')
         config.service('hive') { ServiceConfiguration s ->
+            s.setJvmArgs("-Xmx200m")
             s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
             s.addSetting('hive.execution.engine', 'mr')
             // Hive attempts to establish a tez session at start up, but there are no Tez libraries distributed with Hive.
@@ -372,18 +374,19 @@ if (disableTests) {
             s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
             s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
             //    s.addSetting('hive.server2.logging.operation.level', "VERBOSE")
-            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-            s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-            s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.map.java.opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.reduce.java.opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
             s.addSetting('es.nodes', esAddress)
         }
         config.service('pig') { ServiceConfiguration s ->
+            s.setJvmArgs("-Xmx200m")
             s.addSetting('java.security.krb5.conf', krb5Conf.toString())
             s.addSetting('hadoop.security.krb5.principal', "$clientPrincipal$realm")
             s.addSetting('hadoop.security.krb5.keytab', clientKeytab.toString())
-            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-            s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
-            s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('yarn.app.mapreduce.am.command-opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.map.java.opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
+            s.addSetting('mapreduce.reduce.java.opts', "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}")
             s.addSetting('es.nodes', esAddress)
         }
         config.addDependency(jar)
@@ -476,9 +479,9 @@ if (disableTests) {
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'load.field.names': 'number,name,url,picture,@timestamp,tag',
-                'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
-                'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
-                'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+                'mapreduce.map.java.opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}",
+                'mapreduce.reduce.java.opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}",
+                'yarn.app.mapreduce.am.command-opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
@@ -502,9 +505,9 @@ if (disableTests) {
                 'es.nodes': esAddress,
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
-                'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
-                'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
-                'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+                'mapreduce.map.java.opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}",
+                'mapreduce.reduce.java.opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}",
+                'yarn.app.mapreduce.am.command-opts': "-Xmx200m -Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
@@ -536,6 +539,8 @@ if (disableTests) {
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
                 'spark.load.field.names': 'number,name,url,picture,@timestamp,tag',
+                'spark.yarn.am.memory': "200m",
+                'spark.driver.memory': "600m",
                 'spark.yarn.am.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
@@ -565,6 +570,8 @@ if (disableTests) {
                 'spark.es.nodes': esAddress,
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
+                'spark.yarn.am.memory': "200m",
+                'spark.driver.memory': "600m",
                 'spark.yarn.am.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
                 'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
