@@ -23,12 +23,16 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.PigServiceDescriptor
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
 class PigScript extends AbstractClusterTask {
 
+    @InputFile
     File script
+    @InputFiles
     List<File> libJars = []
 
     void libJars(File... files) {

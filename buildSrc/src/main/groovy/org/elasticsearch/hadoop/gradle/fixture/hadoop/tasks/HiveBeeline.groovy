@@ -23,6 +23,9 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HiveServiceDescriptor
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
@@ -30,8 +33,11 @@ import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContai
 
 class HiveBeeline extends AbstractClusterTask {
 
+    @InputFile
     File script
+    @InputFiles
     List<File> libJars = []
+    @Input
     String hivePrincipal
 
     void libJars(File... files) {

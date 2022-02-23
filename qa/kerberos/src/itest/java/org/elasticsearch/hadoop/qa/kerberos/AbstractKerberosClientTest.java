@@ -82,7 +82,7 @@ public class AbstractKerberosClientTest {
 
     @Test
     public void testSpnegoAuthToES() throws Exception {
-        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+        RestUtils.postData("_security/role_mapping/kerberos_client_mapping",
                 "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
 
         LoginContext loginCtx = LoginUtil.login("client", "password");
@@ -109,7 +109,7 @@ public class AbstractKerberosClientTest {
             });
         } finally {
             loginCtx.logout();
-            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+            RestUtils.delete("_security/role_mapping/kerberos_client_mapping");
         }
     }
 
@@ -120,7 +120,7 @@ public class AbstractKerberosClientTest {
         String hiveKeytab = System.getProperty("tests.hive.keytab");
         Assert.hasText(hiveKeytab, "Needs tests.hive.keytab system property");
 
-        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+        RestUtils.postData("_security/role_mapping/kerberos_client_mapping",
                 ("{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\""+hivePrincipal+"\"}}}").getBytes());
 
         LoginContext loginCtx = LoginUtil.keytabLogin(hivePrincipal, hiveKeytab);
@@ -147,13 +147,13 @@ public class AbstractKerberosClientTest {
             });
         } finally {
             loginCtx.logout();
-            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+            RestUtils.delete("_security/role_mapping/kerberos_client_mapping");
         }
     }
 
     @Test
     public void testMutualSpnegoAuthToES() throws Exception {
-        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+        RestUtils.postData("_security/role_mapping/kerberos_client_mapping",
                 "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
 
         LoginContext loginCtx = LoginUtil.login("client", "password");
@@ -181,7 +181,7 @@ public class AbstractKerberosClientTest {
             });
         } finally {
             loginCtx.logout();
-            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+            RestUtils.delete("_security/role_mapping/kerberos_client_mapping");
         }
     }
 
@@ -196,7 +196,7 @@ public class AbstractKerberosClientTest {
 
         // Create a user that the real user will proxy as
         LOG.info("Creating proxied user");
-        RestUtils.postData("_xpack/security/user/" + proxyUserName, (
+        RestUtils.postData("_security/user/" + proxyUserName, (
                 "{\n" +
                 "  \"enabled\" : true,\n" +
                 "  \"password\" : \"password\",\n" +
@@ -206,7 +206,7 @@ public class AbstractKerberosClientTest {
 
         // This just mirrors the superuser role as they can impersonate all users
         LOG.info("Creating proxy role");
-        RestUtils.postData("_xpack/security/role/proxier", (
+        RestUtils.postData("_security/role/proxier", (
                 "{\n" +
                 "  \"cluster\": [\n" +
                 "    \"all\"\n" +
@@ -240,7 +240,7 @@ public class AbstractKerberosClientTest {
                 "}").getBytes());
 
         LOG.info("Creating mapping for hive principal to proxier role");
-        RestUtils.postData("_xpack/security/role_mapping/kerberos_proxy_client_mapping",
+        RestUtils.postData("_security/role_mapping/kerberos_proxy_client_mapping",
                 ("{\"roles\":[\"proxier\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\""+realUserName+"\"}}}").getBytes());
 
         org.apache.hadoop.conf.Configuration configuration = new org.apache.hadoop.conf.Configuration();
@@ -313,7 +313,7 @@ public class AbstractKerberosClientTest {
                 return null;
             }
         });
-        RestUtils.delete("_xpack/security/role_mapping/kerberos_proxy_client_mapping");
+        RestUtils.delete("_security/role_mapping/kerberos_proxy_client_mapping");
     }
 
     @Test
@@ -365,7 +365,7 @@ public class AbstractKerberosClientTest {
         Assume.assumeTrue(testSettings.getNetworkHttpAuthPass() != null);
 
         // Setup role mapping
-        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+        RestUtils.postData("_security/role_mapping/kerberos_client_mapping",
                 "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
 
         // Configure client settings
@@ -409,7 +409,7 @@ public class AbstractKerberosClientTest {
             });
         } finally {
             loginCtx.logout();
-            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+            RestUtils.delete("_security/role_mapping/kerberos_client_mapping");
         }
     }
 }
