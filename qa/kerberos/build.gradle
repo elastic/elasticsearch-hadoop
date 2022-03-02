@@ -281,7 +281,7 @@ if (disableTests) {
             }
         }
     }
-    setupUsers.dependsOn(kdcFixture)
+    setupUsers.dependsOn(kdcFixture, jar)
     integrationTest.dependsOn(setupUsers)
     
     // =============================================================================
