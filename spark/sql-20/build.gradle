@@ -66,35 +66,36 @@ sparkVariants {
             add(variant.configuration('implementation'), "org.apache.spark:spark-streaming_${variant.scalaMajorVersion}:$variant.sparkVersion") {
                 exclude group: 'org.apache.hadoop'
             }
-            add(variant.configuration('implementation'), "org.slf4j:slf4j-api:1.7.6") {
+            add(variant.configuration('implementation'), "org.slf4j:slf4j-api:1.7.36") {
                 because 'spark exposes slf4j components in traits that we need to extend'
             }
-            add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
+            add(variant.configuration('implementation'), "commons-logging:commons-logging:1.2")
             add(variant.configuration('implementation'), "javax.xml.bind:jaxb-api:2.3.1")
-            add(variant.configuration('implementation'), "com.google.protobuf:protobuf-java:2.5.0")
+            add(variant.configuration('implementation'), "com.google.protobuf:protobuf-java:3.19.4")
             add(variant.configuration('implementation'), "org.apache.spark:spark-catalyst_${variant.scalaMajorVersion}:$variant.sparkVersion")
             add(variant.configuration('implementation'), "org.apache.spark:spark-yarn_${variant.scalaMajorVersion}:$variant.sparkVersion") {
                 exclude group: 'org.apache.hadoop'
             }
 
             // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
-            add(variant.configuration('compileOnly'), "org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7:1.0.0")
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
-            add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:3.2.11")
+            add(variant.configuration('compileOnly'), "org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7:1.1.1")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.13.1")
             add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:$variant.sparkVersion")
 
             if ('2.10' == scalaMajorVersion) {
                 add(variant.configuration('implementation'), "org.apache.spark:spark-unsafe_${variant.scalaMajorVersion}:$variant.sparkVersion")
-                add(variant.configuration('implementation'), "org.apache.avro:avro:1.7.7")
-                add(variant.configuration('implementation'), "log4j:log4j:1.2.17")
-                add(variant.configuration('implementation'), "com.google.code.findbugs:jsr305:2.0.1")
-                add(variant.configuration('implementation'), "org.json4s:json4s-ast_2.10:3.2.10")
-                add(variant.configuration('implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+                add(variant.configuration('implementation'), "org.apache.avro:avro:1.11.0")
+                add(variant.configuration('implementation'), "com.google.code.findbugs:jsr305:3.0.2")
+                add(variant.configuration('implementation'), "org.json4s:json4s-ast_2.10:3.6.11")
+                add(variant.configuration('implementation'), "com.esotericsoftware.kryo:kryo:2.24.0")
                 add(variant.configuration('compileOnly'), "org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
                 add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
                 add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.woodstox:stax2-api:3.1.4")
-                add(variant.configuration('compileOnly'), "org.apache.htrace:htrace-core4:4.1.0-incubating")
+                add(variant.configuration('compileOnly'), "org.codehaus.woodstox:stax2-api:4.2.1")
+                add(variant.configuration('compileOnly'), "org.apache.htrace:htrace-core4:4.2.0-incubating")
+                add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:3.6.12")
+            } else {
+                add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:4.0.4")
             }
 
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
