@@ -521,7 +521,7 @@ if (disableTests) {
     // =============================================================================
     // Spark Jobs
     // =============================================================================
-    
+
     // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
     SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
         clusterConfiguration = config
@@ -682,7 +682,9 @@ if (disableTests) {
     
     Map<String, Task> readJobs = [
             'mr': mrReadData,
-            'spark': sparkReadData,
+            'sparkRDD': sparkReadData,
+            'sparkDF': sparkReadData,
+            'sparkDS': sparkReadData,
             'hive': hiveReadData,
             'pig': pigReadData
     ]
