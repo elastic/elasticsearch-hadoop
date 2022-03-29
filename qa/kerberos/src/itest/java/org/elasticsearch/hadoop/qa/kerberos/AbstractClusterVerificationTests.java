@@ -40,7 +40,9 @@ public class AbstractClusterVerificationTests {
     public static Collection<Object[]> params() {
         List<Object[]> params = new ArrayList<>();
         params.add(new Object[]{"mr",        "part-m-", 345, true});
-        params.add(new Object[]{"spark",     "part-",   345, true});
+        params.add(new Object[]{"sparkRDD",  "part-",   345, true});
+        params.add(new Object[]{"sparkDF",   "part-",   345, true});
+        params.add(new Object[]{"sparkDS",   "part-",   345, true});
         params.add(new Object[]{"hive",      "000000_0",     345, false});
         params.add(new Object[]{"pig",       "part-m-", 345, true});
         return params;
