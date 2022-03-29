@@ -151,6 +151,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   @transient private[sql] lazy val cfg = {
     val conf = new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava)
+    InitializationUtils.setUserProviderIfNotSet(conf, classOf[HadoopUserProvider], LogFactory.getLog(classOf[ElasticsearchRelation]))
     InitializationUtils.discoverClusterInfo(conf, LogFactory.getLog(classOf[ElasticsearchRelation]))
     conf
   }
@@ -533,10 +534,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
+      InitializationUtils.setUserProviderIfNotSet(cfgCopy, classOf[HadoopUserProvider], null)
       InitializationUtils.discoverClusterInfo(cfgCopy, Utils.LOGGER)
       InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
       InitializationUtils.setFieldExtractorIfNotSet(cfgCopy, classOf[ConstantFieldExtractor], null) //throw away extractor
-      InitializationUtils.setUserProviderIfNotSet(cfgCopy, classOf[HadoopUserProvider], null)
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")
