@@ -20,11 +20,12 @@
 package org.elasticsearch.hadoop.qa.kerberos.spark
 
 import java.security.PrivilegedExceptionAction
-
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin
 import org.elasticsearch.spark._
+import org.elasticsearch.spark.sql._
 
 class LoadToES(args: Array[String]) {
 
@@ -37,25 +38,16 @@ class LoadToES(args: Array[String]) {
     }
     val resource = sparkConf.get("spark.es.resource")
     val fieldNames = sparkConf.get(LoadToES.CONF_FIELD_NAMES).split(",")
+    val schema = StructType(fieldNames.map(StructField(_, StringType)))
 
-    val df = spark.sqlContext.read.textFile(args(0))
+    val df = spark.sqlContext.read
+      .schema(schema)
+      .option("sep", "\t")
+      .csv(args(0))
 
-    val parsedData = df.rdd
-      .map(line => {
-        var record: Map[String, Object] = Map()
-        val fields = line.split('\t')
-        var fieldNum = 0
-        for (field <- fields) {
-          if (fieldNum < fieldNames.length) {
-            val fieldName = fieldNames(fieldNum)
-            record = record + (fieldName -> field)
-          }
-          fieldNum = fieldNum + 1
-        }
-        record
-      })
-
-    parsedData.saveToEs(resource)
+    df.rdd.map(row => row.getValuesMap(row.schema.fieldNames)).saveToEs(s"${resource}_rdd")
+    df.saveToEs(s"${resource}_df")
+    df.write.format("es").save(s"${resource}_ds")
   }
 }
 

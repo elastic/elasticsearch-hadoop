@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.InitializationUtils
@@ -74,6 +75,7 @@ object EsSparkSQL {
       esCfg.merge(cfg.asJava)
 
       // Need to discover es version before checking index existence
+      InitializationUtils.setUserProviderIfNotSet(esCfg, classOf[HadoopUserProvider], LOG)
       InitializationUtils.discoverClusterInfo(esCfg, LOG)
       InitializationUtils.checkIdForOperation(esCfg)
       InitializationUtils.checkIndexExistence(esCfg)

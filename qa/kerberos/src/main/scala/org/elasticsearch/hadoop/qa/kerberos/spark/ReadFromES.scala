@@ -25,6 +25,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin
 import org.elasticsearch.spark._
+import org.elasticsearch.spark.sql._
 
 class ReadFromES(args: Array[String]) {
 
@@ -34,14 +35,22 @@ class ReadFromES(args: Array[String]) {
   def run(): Unit = {
     val resource = sparkConf.get("spark.es.resource")
 
-    spark.sparkContext.esJsonRDD(resource).saveAsTextFile(args(0))
-//    spark.sqlContext
-//      .read
-//      .format("es")
-//      .option("es.output.json", "true")
-//      .load(resource)
-//      .write
-//      .text(args(0))
+    // Expected directory names in :qa:kerberos:build.gradle readJobs
+    val rddOutputDir = s"${args(0)}RDD"
+    val dfOutputDir = s"${args(0)}DF"
+    val dsOutputDir = s"${args(0)}DS"
+
+    spark.sparkContext.esJsonRDD(s"${resource}_rdd").saveAsTextFile(rddOutputDir)
+
+    spark.sqlContext.esDF(s"${resource}_df")
+      .rdd
+      .map(row => row.toString())
+      .saveAsTextFile(dfOutputDir)
+
+    spark.sqlContext.read.format("es").load(s"${resource}_ds")
+      .rdd
+      .map(row => row.toString())
+      .saveAsTextFile(dsOutputDir)
   }
 }
 
