@@ -1,8 +1,6 @@
 [[eshadoop-7.17.2]]
 == Elasticsearch for Apache Hadoop version 7.17.2
 
-coming::[7.17.2]
-
 [[bugs-7.17.2]]
 === Bug Fixes
 
