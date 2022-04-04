@@ -44,7 +44,6 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
@@ -737,7 +736,6 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         String awsRegion = settings.getAWSRegion();
         log.info(String.format("AWS IAM Signature V4 Enabled, region: %s, provider: DefaultAWSCredentialsProviderChain", awsRegion));
         AWSSigner signer = new AWSSigner(
-                DefaultAWSCredentialsProviderChain.getInstance(),
                 awsRegion,
                 "es",
                 clock

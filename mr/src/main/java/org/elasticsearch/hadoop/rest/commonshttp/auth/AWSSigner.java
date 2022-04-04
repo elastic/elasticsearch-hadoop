@@ -4,6 +4,7 @@ import org.apache.commons.codec.binary.Hex;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSSessionCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.util.SdkHttpUtils;
 import org.elasticsearch.hadoop.thirdparty.google.common.base.Charsets;
 import org.elasticsearch.hadoop.thirdparty.google.common.base.Joiner;
@@ -83,14 +84,18 @@ public class AWSSigner {
                 .appendValue(DAY_OF_MONTH, 2).toFormatter();
     }
 
-    public AWSSigner(AWSCredentialsProvider credentialsProvider,
-                     String region,
+    public AWSSigner(String region,
                      String service,
-                     Supplier<LocalDateTime> clock) {
+                     Supplier<LocalDateTime> clock,
+                     AWSCredentialsProvider credentialsProvider) {
         this.credentialsProvider = credentialsProvider;
         this.region = region;
         this.service = service;
         this.clock = clock;
+    }
+
+    public AWSSigner(String region, String service, Supplier<LocalDateTime> clock) {
+        this(region, service, clock, DefaultAWSCredentialsProviderChain.getInstance());
     }
 
     public Map<String, String> getSignedHeaders(String uri,
