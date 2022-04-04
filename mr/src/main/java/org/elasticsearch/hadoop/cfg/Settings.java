@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Optional;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -391,13 +392,11 @@ public abstract class Settings {
     }
 
     public boolean isAWSSignV4Enabled() {
-        String signV4Enabled = getProperty(ES_AWS_IAM_SIGN_V4_ENABLED);
-        return signV4Enabled != null && signV4Enabled.equalsIgnoreCase("true");
+        return Booleans.parseBoolean(getProperty(ES_AWS_IAM_SIGN_V4_ENABLED, "false"));
     }
 
     public String getAWSRegion() {
-        String region = getProperty(ES_AWS_REGION);
-        return Optional.ofNullable(region).orElse(System.getenv("AWS_REGION"));
+        return Optional.ofNullable(getProperty(ES_AWS_REGION)).orElse(System.getenv("AWS_REGION"));
     }
 
     public String getUpdateScriptParamsJson() {
