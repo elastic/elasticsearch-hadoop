@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Optional;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -396,7 +395,7 @@ public abstract class Settings {
     }
 
     public String getAWSRegion() {
-        return Optional.ofNullable(getProperty(ES_AWS_REGION)).orElse(System.getenv("AWS_REGION"));
+        return getProperty(ES_AWS_REGION, System.getenv("AWS_REGION"));
     }
 
     public String getUpdateScriptParamsJson() {
