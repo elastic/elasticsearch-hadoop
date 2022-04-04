@@ -1,10 +1,10 @@
 package org.elasticsearch.hadoop.rest.commonshttp.auth;
 
 import org.apache.commons.codec.binary.Hex;
-import org.elasticsearch.hadoop.thirdparty.amazonaws.auth.AWSCredentials;
-import org.elasticsearch.hadoop.thirdparty.amazonaws.auth.AWSCredentialsProvider;
-import org.elasticsearch.hadoop.thirdparty.amazonaws.auth.AWSSessionCredentials;
-import org.elasticsearch.hadoop.thirdparty.amazonaws.util.SdkHttpUtils;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSSessionCredentials;
+import com.amazonaws.util.SdkHttpUtils;
 import org.elasticsearch.hadoop.thirdparty.google.common.base.Charsets;
 import org.elasticsearch.hadoop.thirdparty.google.common.base.Joiner;
 import org.elasticsearch.hadoop.thirdparty.google.common.base.Optional;

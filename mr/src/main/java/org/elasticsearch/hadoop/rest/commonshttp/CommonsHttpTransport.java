@@ -44,7 +44,7 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
-import org.elasticsearch.hadoop.thirdparty.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;

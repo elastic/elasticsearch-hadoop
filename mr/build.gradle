@@ -66,6 +66,7 @@ dependencies {
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("commons-codec:commons-codec:1.4")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
+    implementation("com.amazonaws:aws-java-sdk-core:${project.ext.awsSdkCodeVersion}")
 
     testImplementation(project(":test:shared"))
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
