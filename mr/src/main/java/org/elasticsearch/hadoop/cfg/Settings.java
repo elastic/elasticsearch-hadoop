@@ -390,6 +390,16 @@ public abstract class Settings {
         return getProperty(ES_UPDATE_SCRIPT_PARAMS);
     }
 
+    public boolean isAWSSignV4Enabled() {
+        String signV4Enabled = getProperty(ES_AWS_IAM_SIGN_V4_ENABLED);
+        return signV4Enabled != null && signV4Enabled.equalsIgnoreCase("true");
+    }
+
+    public String getAWSRegion() {
+        String region = getProperty(ES_AWS_REGION);
+        return Optional.ofNullable(region).orElse(System.getenv("AWS_REGION"));
+    }
+
     public String getUpdateScriptParamsJson() {
         return getProperty(ES_UPDATE_SCRIPT_PARAMS_JSON);
     }

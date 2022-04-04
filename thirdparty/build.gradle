@@ -23,10 +23,15 @@ dependencies {
     shaded("commons-httpclient:commons-httpclient:3.0.1")
     shaded("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     shaded("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    shaded("com.google.guava:guava:${project.ext.googleGuavaVersion}")
+    shaded("com.amazonaws:aws-java-sdk-core:${project.ext.awsSdkCodeVersion}")
 }
 
 shadowJar {
     configurations = [project.configurations.shaded]
     relocate 'org.apache.commons.httpclient', 'org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient'
     relocate 'org.codehaus.jackson', 'org.elasticsearch.hadoop.thirdparty.codehaus.jackson'
+    relocate 'com.google.common', 'org.elasticsearch.hadoop.thirdparty.google.common'
+    relocate 'com.amazonaws.auth', 'org.elasticsearch.hadoop.thirdparty.amazonaws.auth'
+    relocate 'com.amazonaws.util', 'org.elasticsearch.hadoop.thirdparty.amazonaws.util'
 }

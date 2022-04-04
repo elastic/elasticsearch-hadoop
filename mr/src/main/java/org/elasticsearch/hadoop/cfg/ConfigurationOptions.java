@@ -259,6 +259,10 @@ public interface ConfigurationOptions {
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
 
+    /** AWS IAM **/
+    String ES_AWS_IAM_SIGN_V4_ENABLED = "es.aws.iam.signv4.enabled";
+    String ES_AWS_REGION = "es.aws.region";
+
     /** Output options **/
     String ES_OUTPUT_JSON = "es.output.json";
     String ES_OUTPUT_JSON_DEFAULT = "no";
