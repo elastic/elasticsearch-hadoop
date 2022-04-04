@@ -45,10 +45,30 @@ import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.thirdparty.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.Header;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HostConfiguration;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpClient;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpConnection;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpConnectionManager;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpState;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.HttpStatus;
-import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.*;
-import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.*;
-import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.*;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.SimpleHttpConnectionManager;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URI;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.URIException;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthChallengeParser;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthPolicy;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScheme;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthScope;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.auth.AuthState;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.GetMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.HeadMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.PostMethod;
+import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.methods.PutMethod;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpClientParams;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient.params.HttpMethodParams;
@@ -708,11 +728,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             headerValues.add(responseHeader.getValue());
         }
 
-        int statusCode = http.getStatusCode();
-        log.info(String.format("Response Status Code: %d", statusCode));
-
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
-        return new SimpleResponse(statusCode, new ResponseInputStream(http), httpInfo, headers);
+        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo, headers);
     }
 
     private void awsSignV4Request(Request request, HttpMethod http, byte[] bodyBytes) throws UnsupportedEncodingException {
