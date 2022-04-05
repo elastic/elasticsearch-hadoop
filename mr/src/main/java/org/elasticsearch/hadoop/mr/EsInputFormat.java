@@ -38,14 +38,14 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.PITQuery;
 import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionReader;
-import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.SearchRequestBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.PITReader;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -111,11 +111,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         private int read = 0;
         private EsInputSplit esSplit;
-        private ScrollReader scrollReader;
+        private PITReader pitReader;
 
         private RestRepository client;
         private SearchRequestBuilder queryBuilder;
-        private ScrollQuery scrollQuery;
+        private PITQuery pitQuery;
 
         // reuse objects
         private K currentKey;
@@ -162,7 +162,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             PartitionDefinition part = esSplit.getPartition();
             PartitionReader partitionReader = RestService.createReader(settings, part, log);
 
-            this.scrollReader = partitionReader.scrollReader;
+            this.pitReader = partitionReader.pitReader;
             this.client = partitionReader.client;
             this.queryBuilder = partitionReader.queryBuilder;
 
@@ -215,8 +215,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                     beat.stop();
                 }
 
-                if (scrollQuery != null) {
-                    scrollQuery.close();
+                if (pitQuery != null) {
+                    pitQuery.close();
                 }
 
                 if (client != null) {
@@ -229,9 +229,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                     stats.aggregate(client.stats());
                     client = null;
                 }
-                if (scrollQuery != null) {
-                    stats.aggregate(scrollQuery.stats());
-                    scrollQuery = null;
+                if (pitQuery != null) {
+                    stats.aggregate(pitQuery.stats());
+                    pitQuery = null;
                 }
                 ReportingUtils.report(progressable, stats);
             }
@@ -239,26 +239,26 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         @Override
         public boolean next(K key, V value) throws IOException {
-            if (scrollQuery == null) {
+            if (pitQuery == null) {
                 if (beat != null) {
                     beat.start();
                 }
 
-                scrollQuery = queryBuilder.build(client, scrollReader);
-                size = scrollQuery.getSize();
+                pitQuery = queryBuilder.build(client, pitReader);
+                size = pitQuery.getSize();
 
                 if (log.isTraceEnabled()) {
-                    log.trace(String.format("Received scroll [%s],  size [%d] for query [%s]", scrollQuery, size, queryBuilder));
+                    log.trace(String.format("Received scroll [%s],  size [%d] for query [%s]", pitQuery, size, queryBuilder));
                 }
             }
 
-            boolean hasNext = scrollQuery.hasNext();
+            boolean hasNext = pitQuery.hasNext();
 
             if (!hasNext) {
                 return false;
             }
 
-            Object[] next = scrollQuery.next();
+            Object[] next = pitQuery.next();
 
             // NB: the left assignment is not needed since method override
             // the writable content however for consistency, they are below

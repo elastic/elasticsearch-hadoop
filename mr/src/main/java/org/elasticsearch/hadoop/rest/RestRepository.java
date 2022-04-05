@@ -24,12 +24,12 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.bulk.BulkProcessor;
 import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
+import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
-import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
+import org.elasticsearch.hadoop.serialization.PITReader;
+import org.elasticsearch.hadoop.serialization.PITReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.BulkEntryWriter;
@@ -43,10 +43,12 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.handler.read.impl.AbortOnlyHandlerLoader;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -139,7 +141,7 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    ScrollQuery scanAll(String query, BytesArray body, ScrollReader reader) {
+    PITQuery scanAll(String query, BytesArray body, PITReader reader) {
         return scanLimit(query, body, -1, reader);
     }
 
@@ -150,8 +152,12 @@ public class RestRepository implements Closeable, StatsAware {
      * @param reader scroll reader
      * @return a scroll query
      */
-    ScrollQuery scanLimit(String query, BytesArray body, long limit, ScrollReader reader) {
-        return new ScrollQuery(this, query, body, limit, reader);
+//    ScrollQuery scanLimit(String query, BytesArray body, long limit, ScrollReader reader) {
+//        return new ScrollQuery(this, query, body, limit, reader);
+//    }
+
+    PITQuery scanLimit(String query, BytesArray body, long limit, PITReader reader) {
+        return new PITQuery(this, query, body, limit, reader);
     }
 
     public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
@@ -313,36 +319,60 @@ public class RestRepository implements Closeable, StatsAware {
         return geoInfo;
     }
 
-    // used to initialize a scroll (based on a query)
-    Scroll scroll(String query, BytesArray body, ScrollReader reader) throws IOException {
-        InputStream scroll = client.execute(POST, query, body).body();
+    PITReader.PIT pitQuery(String query, BytesArray body, PITReader reader) throws IOException {
+        InputStream response = client.execute(POST, query, body).body();
         try {
-            Scroll scrollResult = reader.read(scroll);
-            if (scrollResult == null) {
-                log.info(String.format("No scroll for query [%s/%s], likely because the index is frozen", query, body));
+            PITReader.PIT pit = reader.read(response);
+            if (pit == null) {
+                log.info(String.format("No response for query [%s/%s], likely because the index is frozen", query, body));
             } else if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
-                // On ES 2.X and before, a scroll response does not contain any hits to start with.
+                // On ES 2.X and before, a response response does not contain any hits to start with.
                 // Another request will be needed.
-                scrollResult = new Scroll(scrollResult.getScrollId(), scrollResult.getTotalHits(), false);
+                pit = new PITReader.PIT(pit.getTotalHits(), false);
             }
-            return scrollResult;
+            return pit;
         } finally {
-            if (scroll != null && scroll instanceof StatsAware) {
-                stats.aggregate(((StatsAware) scroll).stats());
+            if (response instanceof StatsAware) {
+                stats.aggregate(((StatsAware) response).stats());
             }
         }
     }
+
+//    // used to initialize a scroll (based on a query)
+//    Scroll scroll(String query, BytesArray body, ScrollReader reader) throws IOException {
+//        InputStream scroll = client.execute(POST, query, body).body();
+//        try {
+//            Scroll scrollResult = reader.read(scroll);
+//            if (scrollResult == null) {
+//                log.info(String.format("No scroll for query [%s/%s], likely because the index is frozen", query, body));
+//            } else if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
+//                // On ES 2.X and before, a scroll response does not contain any hits to start with.
+//                // Another request will be needed.
+//                scrollResult = new Scroll(scrollResult.getScrollId(), scrollResult.getTotalHits(), false);
+//            }
+//            return scrollResult;
+//        } finally {
+//            if (scroll != null && scroll instanceof StatsAware) {
+//                stats.aggregate(((StatsAware) scroll).stats());
+//            }
+//        }
+//    }
     
-    // consume the scroll
-    Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
-        InputStream scroll = client.scroll(scrollId);
-        try {
-            return reader.read(scroll);
-        } finally {
-            if (scroll instanceof StatsAware) {
-                stats.aggregate(((StatsAware) scroll).stats());
-            }
-        }
+//    // consume the scroll
+//    Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
+//        InputStream scroll = client.scroll(scrollId);
+//        try {
+//            return reader.read(scroll);
+//        } finally {
+//            if (scroll instanceof StatsAware) {
+//                stats.aggregate(((StatsAware) scroll).stats());
+//            }
+//        }
+//    }
+
+    public String createPointInTime() {
+        // TODO: Use a different setting for the keep alive
+        return client.createPointInTime(resources.getResourceRead().index(), settings.getScrollKeepAlive() + "ms");
     }
 
     public boolean resourceExists(boolean read) {
@@ -399,11 +429,8 @@ public class RestRepository implements Closeable, StatsAware {
             // 250 results
 
             int batchSize = 500;
-            StringBuilder sb = new StringBuilder(resources.getResourceWrite().index());
-            if (resources.getResourceWrite().isTyped()) {
-                sb.append('/').append(resources.getResourceWrite().type());
-            }
-            sb.append("/_search?scroll=10m&_source=false&size=");
+            StringBuilder sb = new StringBuilder();
+            sb.append("/_search?_source=false&size=");
             sb.append(batchSize);
             if (client.clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
                 sb.append("&sort=_doc");
@@ -412,8 +439,8 @@ public class RestRepository implements Closeable, StatsAware {
                 sb.append("&search_type=scan");
             }
             String scanQuery = sb.toString();
-            ScrollReader scrollReader = new ScrollReader(
-                    ScrollReaderConfigBuilder.builder(new JdkValueReader(), settings)
+            PITReader pitReader = new PITReader(
+                    PITReaderConfigBuilder.builder(new JdkValueReader(), settings)
                             .setReadMetadata(true)
                             .setMetadataName("_metadata")
                             .setReturnRawJson(false)
@@ -425,7 +452,9 @@ public class RestRepository implements Closeable, StatsAware {
             );
 
             // start iterating
-            ScrollQuery sq = scanAll(scanQuery, null, scrollReader);
+            String pit = client.createPointInTime(resources.getResourceWrite().index(), settings.getScrollKeepAlive() + "ms");
+            BytesArray body = getPitRequestBody(pit, resources.getResourceWrite().index());
+            PITQuery sq = scanAll(scanQuery, body, pitReader);
             try {
                 BytesArray entry = new BytesArray(0);
 
@@ -465,9 +494,30 @@ public class RestRepository implements Closeable, StatsAware {
                 }
             } finally {
                 stats.aggregate(sq.stats());
+                client.deletePointInTime(pit);
                 sq.close();
             }
         }
+    }
+
+    public BytesArray getPitRequestBody(String pit, String index) {
+        String keepAliveTime = settings.getScrollKeepAlive() + "ms";
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        try(JacksonJsonGenerator generator = new JacksonJsonGenerator(out)) {
+            generator.writeBeginObject();
+            generator.writeFieldName("query");
+            generator.writeBeginObject();
+            MatchAllQueryBuilder.MATCH_ALL.toJson(generator);
+            generator.writeEndObject();
+            generator.writeFieldName("pit");
+            generator.writeBeginObject();
+            generator.writeFieldName("id");
+            generator.writeString(pit);
+            generator.writeFieldName("keep_alive");
+            generator.writeString(keepAliveTime);
+            generator.writeEndObject();
+        }
+        return out.bytes();
     }
 
     public boolean isEmpty(boolean read) {

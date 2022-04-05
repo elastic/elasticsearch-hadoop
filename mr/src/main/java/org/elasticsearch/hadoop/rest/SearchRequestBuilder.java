@@ -22,7 +22,7 @@ import org.elasticsearch.hadoop.rest.query.BoolQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.FilteredQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryBuilder;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.PITReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * A search request builder which allows building {@link ScrollQuery}
+ * A search request builder which allows building {@link PITQuery}
  */
 public class SearchRequestBuilder {
     private static class Slice {
@@ -56,7 +56,8 @@ public class SearchRequestBuilder {
 
     private final EsMajorVersion version;
     private final boolean includeVersion;
-    private TimeValue scroll = TimeValue.timeValueMinutes(10);
+    private TimeValue keepAliveTime = TimeValue.timeValueMinutes(10);
+    private String pit;
     private long size = 50;
     private long limit = -1;
     private String indices;
@@ -125,7 +126,14 @@ public class SearchRequestBuilder {
 
     public SearchRequestBuilder scroll(long keepAliveMillis) {
         Assert.isTrue(keepAliveMillis > 0, "Invalid scroll");
-        this.scroll = TimeValue.timeValueMillis(keepAliveMillis);
+        this.keepAliveTime = TimeValue.timeValueMillis(keepAliveMillis);
+        return this;
+    }
+
+    public SearchRequestBuilder pit(String pit, long keepAliveMillis) {
+        Assert.isTrue(keepAliveMillis > 0, "Invalid keep alive time");
+        this.pit = pit;
+        this.keepAliveTime = TimeValue.timeValueMillis(keepAliveMillis);
         return this;
     }
 
@@ -193,10 +201,6 @@ public class SearchRequestBuilder {
         Map<String, String> uriParams = new LinkedHashMap<String, String>();
         StringBuilder sb = new StringBuilder();
         sb.append(indices);
-        if (StringUtils.hasLength(types)) {
-            sb.append("/");
-            sb.append(types);
-        }
         sb.append("/_search?");
 
         // override infrastructure params
@@ -208,36 +212,38 @@ public class SearchRequestBuilder {
         else {
             uriParams.put("search_type", "scan");
         }
-        uriParams.put("scroll", String.valueOf(scroll.toString()));
+        if (pit == null) {
+            uriParams.put("scroll", String.valueOf(keepAliveTime.toString()));
+        }
         uriParams.put("size", String.valueOf(size));
         if (includeVersion) {
             uriParams.put("version", "true");
         }
 
         // set shard preference
-        StringBuilder pref = new StringBuilder();
-        if (StringUtils.hasText(shard)) {
-            pref.append("_shards:");
-            pref.append(shard);
-        }
-        if (local || StringUtils.hasText(preference)) {
-            if (pref.length() > 0) {
-                if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-                    pref.append("|");
+            StringBuilder pref = new StringBuilder();
+            if (StringUtils.hasText(shard)) {
+                pref.append("_shards:");
+                pref.append(shard);
+            }
+            if (local || StringUtils.hasText(preference)) {
+                if (pref.length() > 0) {
+                    if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+                        pref.append("|");
+                    } else {
+                        pref.append(";");
+                    }
+                }
+                if (StringUtils.hasText(preference)) {
+                    pref.append(preference);
                 } else {
-                    pref.append(";");
+                    pref.append("_local");
                 }
             }
-            if (StringUtils.hasText(preference)) {
-                pref.append(preference);
-            } else {
-                pref.append("_local");
-            }
-        }
 
-        if (pref.length() > 0) {
-            uriParams.put("preference", HttpEncodingTools.encode(pref.toString()));
-        }
+            if (pref.length() > 0) {
+                uriParams.put("preference", HttpEncodingTools.encode(pref.toString()));
+            }
 
         // Request routing
         if (routing != null) {
@@ -299,6 +305,15 @@ public class SearchRequestBuilder {
             generator.writeBeginObject();
             root.toJson(generator);
             generator.writeEndObject();
+            if (pit != null) {
+                generator.writeFieldName("pit");
+                generator.writeBeginObject();
+                generator.writeFieldName("id");
+                generator.writeString(pit);
+                generator.writeFieldName("keep_alive");
+                generator.writeString(String.valueOf(keepAliveTime.toString()));
+                generator.writeEndObject();
+            }
             // override fields
             if (StringUtils.hasText(fields)) {
                 generator.writeFieldName("_source");
@@ -319,7 +334,7 @@ public class SearchRequestBuilder {
         return out.bytes();
     }
 
-    public ScrollQuery build(RestRepository client, ScrollReader reader) {
+    public PITQuery build(RestRepository client, PITReader reader) {
         String scrollUri = assemble();
         BytesArray requestBody = assembleBody();
         return client.scanLimit(scrollUri, requestBody, limit, reader);

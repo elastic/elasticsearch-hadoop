@@ -59,6 +59,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -385,6 +386,10 @@ public class RestClient implements Closeable, StatsAware {
         return fieldInfo;
     }
 
+    public String createPointInTime(String resource, String keepAliveTimeValue) {
+        return parseContent(execute(POST, resource + "/_pit", "keep_alive=" + keepAliveTimeValue), "id");
+    }
+
     @Override
     public void close() {
         if (network != null) {
@@ -524,6 +529,13 @@ public class RestClient implements Closeable, StatsAware {
         Request req = new SimpleRequest(DELETE, null, "_search/scroll", body);
         Response res = executeNotFoundAllowed(req);
         return (res.status() == HttpStatus.OK ? true : false);
+    }
+
+    public boolean deletePointInTime(String pitId) {
+        BytesArray body = new BytesArray(("{\"id\":\"" + pitId + "\"}").getBytes(StandardCharsets.UTF_8));
+        Request req = new SimpleRequest(DELETE, null, "_pit", body);
+        Response res = executeNotFoundAllowed(req);
+        return res.status() == HttpStatus.OK;
     }
 
     public boolean documentExists(String index, String type, String id) {

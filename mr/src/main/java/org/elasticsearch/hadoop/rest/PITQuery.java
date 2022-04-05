@@ -18,6 +18,12 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
+import org.elasticsearch.hadoop.serialization.PITReader;
+import org.elasticsearch.hadoop.util.BytesArray;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -25,21 +31,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.rest.stats.Stats;
-import org.elasticsearch.hadoop.rest.stats.StatsAware;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.StringUtils;
-
 /**
- * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
+ * Result streaming data from a ElasticSearch query using the a PIT query. Performs batching underneath to retrieve data in chunks.
  */
-public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
+public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
 
     private RestRepository repository;
-    private String scrollId;
     private List<Object[]> batch = Collections.emptyList();
     private boolean finished = false;
 
@@ -48,7 +45,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     // how many docs to read - in most cases, all the docs that match
     private long size;
 
-    private final ScrollReader reader;
+    private final PITReader reader;
 
     private final Stats stats = new Stats();
 
@@ -57,7 +54,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     private String query;
     private BytesArray body;
 
-    ScrollQuery(RestRepository client, String query, BytesArray body, long size, ScrollReader reader) {
+    PITQuery(RestRepository client, String query, BytesArray body, long size, PITReader reader) {
         this.repository = client;
         this.size = size;
         this.reader = reader;
@@ -72,11 +69,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             finished = true;
             batch = Collections.emptyList();
             reader.close();
-            // typically the scroll is closed after it is consumed so this will trigger a 404
             // however we're closing it either way
-            if (StringUtils.hasText(scrollId)) {
-                repository.getRestClient().deleteScroll(scrollId);
-            }
+//            if (StringUtils.hasText(pit)) {  //TODO
+//                repository.getRestClient().deletePointInTime(pit);
+//            }
             repository.close();
         }
     }
@@ -86,29 +82,26 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
         if (finished) {
             return false;
         }
-
+// TODO: Use slices
         if (!initialized) {
             initialized = true;
-            
+
             try {
-                Scroll scroll = repository.scroll(query, body, reader);
-                if (scroll == null) {
+                PITReader.PIT pit = repository.pitQuery(query, body, reader);
+                if (pit == null) {
                     finished = true;
                     return false;
                 }
-                // size is passed as a limit (since we can't pass it directly into the request) - if it's not specified (<1) just scroll the whole index
-                size = (size < 1 ? scroll.getTotalHits() : size);
-                scrollId = scroll.getScrollId();
-                batch = scroll.getHits();
-                finished = scroll.isConcluded();
+                // size is passed as a limit (since we can't pass it directly into the request) - if it's not specified (<1) just query the
+                // whole index
+                size = (size < 1 ? pit.getTotalHits() : size);
+                batch = pit.getHits();
+                finished = pit.isConcluded();
             } catch (IOException ex) {
-                throw new EsHadoopIllegalStateException(String.format("Cannot create scroll for query [%s/%s]", query, body), ex);
+                throw new EsHadoopIllegalStateException(String.format("Cannot query [%s/%s]", query, body), ex);
             }
             read += batch.size();
             stats.docsReceived += batch.size();
-            // no longer needed
-            body = null;
-            query = null;
         }
 
         while (!finished && (batch.isEmpty() || batchIndex >= batch.size())) {
@@ -118,16 +111,15 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             }
 
             try {
-                Scroll scroll = repository.scroll(scrollId, reader);
-                if (scroll == null) {
+                PITReader.PIT pit = repository.pitQuery(query, body, reader);
+                if (pit == null) {
                     finished = true;
                     return false;
                 }
-                scrollId = scroll.getScrollId();
-                batch = scroll.getHits();
-                finished = scroll.isConcluded();
+                batch = pit.getHits();
+                finished = pit.isConcluded();
             } catch (IOException ex) {
-                throw new EsHadoopIllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
+                throw new EsHadoopIllegalStateException("Error querying Elasticsearch", ex);
             }
             read += batch.size();
             stats.docsReceived += batch.size();
@@ -170,10 +162,4 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
         return repository;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("ScrollQuery [scrollId=").append(scrollId).append("]");
-        return builder.toString();
-    }
 }

@@ -36,6 +36,7 @@ import static org.elasticsearch.hadoop.util.StringUtils.EMPTY_ARRAY;
  * Represents a logical split of an elasticsearch query.
  */
 public class PartitionDefinition implements Serializable, Comparable<PartitionDefinition> {
+    private final String pit;
     private final String index;
     private final int shardId;
     private final Slice slice;
@@ -50,20 +51,20 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
             this.serializedMapping = resolvedMapping == null ? null : IOUtils.serializeToBase64(resolvedMapping);
         }
 
-        public PartitionDefinition build(String index, int shardId) {
-            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, null, EMPTY_ARRAY);
+        public PartitionDefinition build(String pit, String index, int shardId) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, pit, index, shardId, null, EMPTY_ARRAY);
         }
 
-        public PartitionDefinition build(String index, int shardId, String[] locations) {
-            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, null, locations);
+        public PartitionDefinition build(String pit, String index, int shardId, String[] locations) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, pit, index, shardId, null, locations);
         }
 
-        public PartitionDefinition build(String index, int shardId, Slice slice) {
-            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, slice, EMPTY_ARRAY);
+        public PartitionDefinition build(String pit, String index, int shardId, Slice slice) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, pit, index, shardId, slice, EMPTY_ARRAY);
         }
 
-        public PartitionDefinition build(String index, int shardId, Slice slice, String[] locations) {
-            return new PartitionDefinition(serializedSettings, serializedMapping, index, shardId, slice, locations);
+        public PartitionDefinition build(String pit, String index, int shardId, Slice slice, String[] locations) {
+            return new PartitionDefinition(serializedSettings, serializedMapping, pit, index, shardId, slice, locations);
         }
     }
 
@@ -73,14 +74,16 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
     /**
      *
-     * @param settings The settings for the partition reader
-     * @param mapping The mapping of the index
+     * @param serializedSettings The settings for the partition reader
+     * @param serializedMapping The mapping of the index
      * @param index The index name the partition will be executed on
      * @param shardId The shard id the partition will be executed on
      * @param slice The slice the partition will be executed on or null
      * @param locations The locations where to find nodes (hostname:port or ip:port) that can execute the partition locally
      */
-    private PartitionDefinition(String serializedSettings, String serializedMapping, String index, int shardId, Slice slice, String[] locations) {
+    private PartitionDefinition(String serializedSettings, String serializedMapping, String pit, String index, int shardId, Slice slice,
+                                String[] locations) {
+        this.pit = pit;
         this.index = index;
         this.shardId = shardId;
         this.serializedSettings = serializedSettings;
@@ -90,6 +93,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
     }
 
     public PartitionDefinition(DataInput in) throws IOException {
+        this.pit = in.readUTF();
         this.index = in.readUTF();
         this.shardId = in.readInt();
         if (in.readBoolean()) {
@@ -123,6 +127,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
     }
 
     public void write(DataOutput out) throws IOException {
+        out.writeUTF(pit);
         out.writeUTF(index);
         out.writeInt(shardId);
         out.writeBoolean(slice != null);
@@ -150,6 +155,10 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
         for (String location : locations) {
             out.writeUTF(location);
         }
+    }
+
+    public String getPIT() {
+        return pit;
     }
 
     public String getIndex() {

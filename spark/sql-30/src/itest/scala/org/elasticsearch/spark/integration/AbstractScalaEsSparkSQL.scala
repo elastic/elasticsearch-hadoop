@@ -871,7 +871,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
-  def testScrollLimitWithEmptyPartition(): Unit = {
+  def test00AAScrollLimitWithEmptyPartition(): Unit = {
     val index = wrapIndex("scroll-limit")
     val (target, docPath) = makeTargets(index, "data")
 
@@ -887,6 +887,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     single.saveToEs(target)
 
     // Make sure that the scroll limit works with both a shard that has data and a shard that has nothing
+    sqc.read.format("es").option("es.scroll.limit", "10").load(target).show();
     val count = sqc.read.format("es").option("es.scroll.limit", "10").load(target).count()
     assertEquals(1L, count)
   }

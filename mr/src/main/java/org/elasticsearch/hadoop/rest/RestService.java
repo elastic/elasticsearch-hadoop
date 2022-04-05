@@ -29,8 +29,8 @@ import org.elasticsearch.hadoop.rest.query.QueryBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.query.RawQueryBuilder;
 import org.elasticsearch.hadoop.rest.request.GetAliasesRequestBuilder;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
+import org.elasticsearch.hadoop.serialization.PITReader;
+import org.elasticsearch.hadoop.serialization.PITReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.IndicesAliases;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
@@ -66,16 +66,16 @@ import java.util.Set;
 
 public abstract class RestService implements Serializable {
     public static class PartitionReader implements Closeable {
-        public final ScrollReader scrollReader;
+        public final PITReader pitReader;
         public final RestRepository client;
         public final SearchRequestBuilder queryBuilder;
 
-        private ScrollQuery scrollQuery;
+        private PITQuery pitQuery;
 
         private boolean closed = false;
 
-        PartitionReader(ScrollReader scrollReader, RestRepository client, SearchRequestBuilder queryBuilder) {
-            this.scrollReader = scrollReader;
+        PartitionReader(PITReader pitReader, RestRepository client, SearchRequestBuilder queryBuilder) {
+            this.pitReader = pitReader;
             this.client = client;
             this.queryBuilder = queryBuilder;
         }
@@ -84,20 +84,28 @@ public abstract class RestService implements Serializable {
         public void close() {
             if (!closed) {
                 closed = true;
-                if (scrollQuery != null) {
-                    scrollQuery.close();
+                if (pitQuery != null) {
+                    pitQuery.close();
                 }
                 client.close();
             }
         }
 
-        public ScrollQuery scrollQuery() {
-            if (scrollQuery == null) {
-                scrollQuery = queryBuilder.build(client, scrollReader);
+        public PITQuery pitQuery() {
+            if (pitQuery == null) {
+                pitQuery = queryBuilder.build(client, pitReader);
             }
 
-            return scrollQuery;
+            return pitQuery;
         }
+
+//        public ScrollQuery scrollQuery() {
+//            if (scrollQuery == null) {
+//                scrollQuery = queryBuilder.build(client, scrollReader);
+//            }
+//
+//            return scrollQuery;
+//        }
     }
 
     public static class PartitionWriter implements Closeable {
@@ -128,7 +136,7 @@ public abstract class RestService implements Serializable {
         private final List<PartitionDefinition> definitions;
         private final Iterator<PartitionDefinition> definitionIterator;
         private PartitionReader currentReader;
-        private ScrollQuery currentScroll;
+        private PITQuery currentScroll;
         private boolean finished = false;
 
         private final Settings settings;
@@ -148,7 +156,7 @@ public abstract class RestService implements Serializable {
                 return;
             }
 
-            ScrollQuery sq = getCurrent();
+            PITQuery sq = getCurrent();
             if (sq != null) {
                 sq.close();
             }
@@ -161,11 +169,11 @@ public abstract class RestService implements Serializable {
 
         @Override
         public boolean hasNext() {
-            ScrollQuery sq = getCurrent();
+            PITQuery sq = getCurrent();
             return (sq != null ? sq.hasNext() : false);
         }
 
-        private ScrollQuery getCurrent() {
+        private PITQuery getCurrent() {
             if (finished) {
                 return null;
             }
@@ -182,7 +190,7 @@ public abstract class RestService implements Serializable {
                 }
 
                 if (currentScroll == null) {
-                    currentScroll = currentReader.scrollQuery();
+                    currentScroll = currentReader.pitQuery();
                 }
 
                 hasValue = currentScroll.hasNext();
@@ -201,7 +209,7 @@ public abstract class RestService implements Serializable {
 
         @Override
         public Object[] next() {
-            ScrollQuery sq = getCurrent();
+            PITQuery sq = getCurrent();
             return sq.next();
         }
 
@@ -224,8 +232,8 @@ public abstract class RestService implements Serializable {
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
         InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
 
-        RestRepository client = new RestRepository(settings);
-        try {
+        try(RestRepository client = new RestRepository(settings)) {
+            String pit = client.createPointInTime();
             boolean indexExists = client.resourceExists(true);
 
             List<List<Map<String, Object>>> shards = null;
@@ -269,19 +277,17 @@ public abstract class RestService implements Serializable {
             if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) && settings.getMaxDocsPerPartition() != null) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
-                partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
+                partitions = findShardPartitions(pit, settings, mapping, nodesMap, shards, log);
             }
             Collections.shuffle(partitions);
             return partitions;
-        } finally {
-            client.close();
         }
     }
 
     /**
      * Create one {@link PartitionDefinition} per shard for each requested index.
      */
-    static List<PartitionDefinition> findShardPartitions(Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
+    static List<PartitionDefinition> findShardPartitions(String pit, Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
                                                          List<List<Map<String, Object>>> shards, Log log) {
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
@@ -309,7 +315,7 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                PartitionDefinition partition = partitionBuilder.build(index, shardId, locationList.toArray(new String[0]));
+                PartitionDefinition partition = partitionBuilder.build(pit, index, shardId, locationList.toArray(new String[0]));
                 partitions.add(partition);
             }
         }
@@ -353,17 +359,23 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
+                String pit;
+                if (partitions.isEmpty()) {
+                    pit = null; //TODO: ?
+                } else {
+                    pit = partitions.get(0).getPIT();
+                }
                 // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
                 long numDocs;
                 if (readResource.isTyped()) {
-                    numDocs = client.count(index, readResource.type(), Integer.toString(shardId), query);
+                    numDocs = client.count(index, readResource.type(), Integer.toString(shardId), query); //TODO: pit
                 } else {
-                    numDocs = client.countIndexShard(index, Integer.toString(shardId), query);
+                    numDocs = client.countIndexShard(index, Integer.toString(shardId), query); //TODO: pit
                 }
                 int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
-                    partitions.add(partitionBuilder.build(index, shardId, slice, locations));
+                    partitions.add(partitionBuilder.build(pit, index, shardId, slice, locations));
                 }
             }
         }
@@ -428,7 +440,7 @@ public abstract class RestService implements Serializable {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));
         }
 
-        ScrollReader scrollReader = new ScrollReader(ScrollReaderConfigBuilder.builder(reader, fieldMapping, settings));
+        PITReader pitReader = new PITReader(PITReaderConfigBuilder.builder(reader, fieldMapping, settings));
         if (settings.getNodesClientOnly()) {
             String clientNode = repository.getRestClient().getCurrentNode();
             if (log.isDebugEnabled()) {
@@ -447,7 +459,8 @@ public abstract class RestService implements Serializable {
                         // Overwrite the index name from the resource to be that of the concrete index in the partition definition
                         .indices(partition.getIndex())
                         .query(QueryUtils.parseQuery(settings))
-                        .scroll(settings.getScrollKeepAlive())
+                        .pit(partition.getPIT(), settings.getScrollKeepAlive())
+//                        .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())
                         .limit(settings.getScrollLimit())
                         .fields(SettingsUtils.determineSourceFields(settings))
@@ -471,7 +484,7 @@ public abstract class RestService implements Serializable {
                 requestBuilder = applyAliasMetadata(clusterInfo.getMajorVersion(), aliases, requestBuilder, partition.getIndex(), indices);
             }
         }
-        return new PartitionReader(scrollReader, repository, requestBuilder);
+        return new PartitionReader(pitReader, repository, requestBuilder);
     }
 
     /**

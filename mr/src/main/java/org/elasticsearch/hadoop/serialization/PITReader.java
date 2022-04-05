@@ -57,7 +57,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
  * Expected to read a _search response.
  */
-public class ScrollReader implements Closeable {
+public class PITReader implements Closeable {
 
     private static class JsonFragment {
         static final JsonFragment EMPTY = new JsonFragment(-1, -1) {
@@ -137,20 +137,18 @@ public class ScrollReader implements Closeable {
         }
     }
 
-    public static class Scroll {
-        static Scroll empty(String scrollId) {
-            return new Scroll(scrollId, 0L, true);
+    public static class PIT {
+        static PIT empty() {
+            return new PIT(0L, true);
         }
 
-        private final String scrollId;
         private final long total;
         private final List<Object[]> hits;
         private final boolean concluded;
         private final int numberOfHits;
         private final int numberOfSkippedHits;
 
-        public Scroll(String scrollId, long total, boolean concluded) {
-            this.scrollId = scrollId;
+        public PIT(long total, boolean concluded) {
             this.total = total;
             this.hits = Collections.emptyList();
             this.concluded = concluded;
@@ -158,17 +156,12 @@ public class ScrollReader implements Closeable {
             this.numberOfSkippedHits = 0;
         }
 
-        public Scroll(String scrollId, long total, List<Object[]> hits, int responseHits, int skippedHits) {
-            this.scrollId = scrollId;
+        public PIT(long total, List<Object[]> hits, int responseHits, int skippedHits) {
             this.hits = hits;
             this.total = total;
             this.concluded = false;
             this.numberOfHits = responseHits;
             this.numberOfSkippedHits = skippedHits;
-        }
-
-        public String getScrollId() {
-            return scrollId;
         }
 
         public long getTotalHits() {
@@ -192,7 +185,7 @@ public class ScrollReader implements Closeable {
         }
     }
 
-    private static final Log log = LogFactory.getLog(ScrollReader.class);
+    private static final Log log = LogFactory.getLog(PITReader.class);
 
     private final ValueReader reader;
     private final ValueParsingCallback parsingCallback;
@@ -211,7 +204,6 @@ public class ScrollReader implements Closeable {
     private final List<NumberedInclude> includeArrayFields;
     private List<IDeserializationErrorHandler> deserializationErrorHandlers;
 
-    private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
     private static final String ID_FIELD = "_id";
     private static final String[] ID = new String[] { ID_FIELD };
@@ -219,33 +211,33 @@ public class ScrollReader implements Closeable {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ScrollReaderConfigBuilder scrollConfig) {
-        this.reader = scrollConfig.getReader();
+    public PITReader(PITReaderConfigBuilder pitConfig) {
+        this.reader = pitConfig.getReader();
         this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
 
-        this.readMetadata = scrollConfig.getReadMetadata();
-        this.metadataField = scrollConfig.getMetadataName();
-        this.returnRawJson = scrollConfig.getReturnRawJson();
-        this.ignoreUnmappedFields = scrollConfig.getIgnoreUnmappedFields();
-        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeFields());
-        this.excludeFields = scrollConfig.getExcludeFields();
-        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeArrayFields());
+        this.readMetadata = pitConfig.getReadMetadata();
+        this.metadataField = pitConfig.getMetadataName();
+        this.returnRawJson = pitConfig.getReturnRawJson();
+        this.ignoreUnmappedFields = pitConfig.getIgnoreUnmappedFields();
+        this.includeFields = FieldFilter.toNumberedFilter(pitConfig.getIncludeFields());
+        this.excludeFields = pitConfig.getExcludeFields();
+        this.includeArrayFields = FieldFilter.toNumberedFilter(pitConfig.getIncludeArrayFields());
 
-        Mapping mapping = scrollConfig.getResolvedMapping();
+        Mapping mapping = pitConfig.getResolvedMapping();
         if (mapping != null) {
             // optimize filtering
             if (ignoreUnmappedFields) {
-                mapping = mapping.filter(scrollConfig.getIncludeFields(), scrollConfig.getExcludeFields());
+                mapping = mapping.filter(pitConfig.getIncludeFields(), pitConfig.getExcludeFields());
             }
             this.esMapping = mapping.flatten();
         } else {
             this.esMapping = Collections.emptyMap();
         }
 
-        this.deserializationErrorHandlers = scrollConfig.getErrorHandlerLoader().loadHandlers();
+        this.deserializationErrorHandlers = pitConfig.getErrorHandlerLoader().loadHandlers();
     }
 
-    public Scroll read(InputStream content) throws IOException {
+    public PIT read(InputStream content) throws IOException {
         Assert.notNull(content);
 
         //copy content
@@ -253,7 +245,7 @@ public class ScrollReader implements Closeable {
         content = new FastByteArrayInputStream(copy);
 
         if (log.isTraceEnabled()) {
-            log.trace("About to parse scroll content " + copy);
+            log.trace("About to parse pit content " + copy);
         }
 
         Parser parser = new JacksonJsonParser(content);
@@ -265,22 +257,21 @@ public class ScrollReader implements Closeable {
         }
     }
 
-    private Scroll read(Parser parser, BytesArray input) {
-        // get scroll_id
-        Token token = ParsingUtils.seek(parser, SCROLL_ID);
-        if (token == null) { // no scroll id is returned for frozen indices
+    private PIT read(Parser parser, BytesArray input) {
+        // get pit_id
+        Token token = ParsingUtils.seek(parser, new String[] {"pit_id"});
+        if (token == null) { // no pit id is returned for frozen indices
             if (log.isTraceEnabled()) {
-                log.info("No scroll id found, likely because the index is frozen");
+                log.info("No pit_id found, likely because the index is frozen");
             }
             return null;
         }
         Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
-        String scrollId = parser.text();
 
         long totalHits = hitsTotal(parser);
         // check hits/total
         if (totalHits == 0) {
-            return Scroll.empty(scrollId);
+            return PIT.empty();
         }
 
         // move to hits/hits
@@ -401,10 +392,10 @@ public class ScrollReader implements Closeable {
         }
 
         if (responseHits > 0) {
-            return new Scroll(scrollId, totalHits, results, responseHits, skippedHits);
+            return new PIT(totalHits, results, responseHits, skippedHits);
         } else {
-            // Scroll had no hits in the response, it must have concluded.
-            return new Scroll(scrollId, totalHits, true);
+            // PIT had no hits in the response, it must have concluded.
+            return new PIT(totalHits, true);
         }
     }
 
@@ -414,7 +405,7 @@ public class ScrollReader implements Closeable {
         int hitStartPos = parser.tokenCharOffset();
         // Wrap the parser in a block aware parser so we can skip a hit if its parsing fails.
         BlockAwareJsonParser blockAwareJsonParser = new BlockAwareJsonParser(parser);
-        // This is the parser that we will be using to parse a hit. Starts with the block parser and the main scroll,
+        // This is the parser that we will be using to parse a hit. Starts with the block parser and the main PIT,
         // but may change during the course of the function if hits are retried with different parsers.
         Parser workingParser = blockAwareJsonParser;
 
@@ -479,7 +470,7 @@ public class ScrollReader implements Closeable {
                                 // Reset the working parser with the retry buffer.
                                 byte[] retryDataBuffer = errorCollector.getAndClearRetryValue();
                                 if (retryDataBuffer == null || hitSection.bytes() == retryDataBuffer) {
-                                    // Same buffer as the scroll content.
+                                    // Same buffer as the PIT content.
                                     workingParser = new JacksonJsonParser(event.getHitContents());
                                 } else {
                                     // Brand new byte array to use.
@@ -497,11 +488,11 @@ public class ScrollReader implements Closeable {
                                 }
                             } else {
                                 if (log.isDebugEnabled()) {
-                                    log.debug("Skipping a scroll search hit that resulted in error while reading: [" +
+                                    log.debug("Skipping a PIT search hit that resulted in error while reading: [" +
                                             StringUtils.asUTFString(hitSection.bytes(), hitSection.offset(),
                                                     hitSection.length()) + "]");
                                 } else {
-                                    log.info("Skipping a scroll search hit that resulted in error while reading. (DEBUG for more info).");
+                                    log.info("Skipping a PIT search hit that resulted in error while reading. (DEBUG for more info).");
                                 }
                                 skip = true;
                             }
@@ -525,7 +516,7 @@ public class ScrollReader implements Closeable {
         } while (retryRead);
 
         if (readResult == null && skip == false) {
-            throw new EsHadoopParsingException("Could not read hit from scroll response.");
+            throw new EsHadoopParsingException("Could not read hit from PIT response.");
         }
 
         return readResult;
@@ -780,7 +771,7 @@ public class ScrollReader implements Closeable {
                 case FIELD_NAME:
                     int charStart = parser.tokenCharOffset();
                     // can't use skipChildren as we are within the object
-                ParsingUtils.skipCurrentBlock(parser);
+                    ParsingUtils.skipCurrentBlock(parser);
                     // make sure to include the ending char
                     int charStop = parser.tokenCharOffset();
                     // move pass end of object
@@ -1094,40 +1085,40 @@ public class ScrollReader implements Closeable {
         }
 
         switch (currentToken) {
-        case VALUE_NULL:
-            esType = FieldType.NULL;
-            break;
-        case VALUE_BOOLEAN:
-            esType = FieldType.BOOLEAN;
-            break;
-        case VALUE_STRING:
-            esType = FieldType.STRING;
-            break;
-        case VALUE_NUMBER:
-            NumberType numberType = parser.numberType();
-            switch (numberType) {
-            case INT:
-                esType = FieldType.INTEGER;
+            case VALUE_NULL:
+                esType = FieldType.NULL;
                 break;
-            case LONG:
-                esType = FieldType.LONG;
+            case VALUE_BOOLEAN:
+                esType = FieldType.BOOLEAN;
                 break;
-            case FLOAT:
-                esType = FieldType.FLOAT;
+            case VALUE_STRING:
+                esType = FieldType.STRING;
                 break;
-            case DOUBLE:
-                esType = FieldType.DOUBLE;
+            case VALUE_NUMBER:
+                NumberType numberType = parser.numberType();
+                switch (numberType) {
+                    case INT:
+                        esType = FieldType.INTEGER;
+                        break;
+                    case LONG:
+                        esType = FieldType.LONG;
+                        break;
+                    case FLOAT:
+                        esType = FieldType.FLOAT;
+                        break;
+                    case DOUBLE:
+                        esType = FieldType.DOUBLE;
+                        break;
+                    case BIG_DECIMAL:
+                        throw new UnsupportedOperationException();
+                    case BIG_INTEGER:
+                        throw new UnsupportedOperationException();
+                    default:
+                        break;
+                }
                 break;
-            case BIG_DECIMAL:
-                throw new UnsupportedOperationException();
-            case BIG_INTEGER:
-                throw new UnsupportedOperationException();
             default:
                 break;
-            }
-            break;
-        default:
-            break;
         }
         return esType;
     }

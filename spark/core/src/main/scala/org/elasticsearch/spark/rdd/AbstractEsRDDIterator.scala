@@ -52,7 +52,7 @@ private[spark] abstract class AbstractEsRDDIterator[T](
          context.stageId().toString, context.taskAttemptId.toString))
      }
      val readr = RestService.createReader(settings, partition, log)
-     readr.scrollQuery()
+     readr.pitQuery()
   }
 
   // Register an on-task-completion callback to close the input stream.

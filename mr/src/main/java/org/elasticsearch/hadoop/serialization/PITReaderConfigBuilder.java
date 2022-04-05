@@ -30,14 +30,14 @@ import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationError
 import org.elasticsearch.hadoop.serialization.handler.read.impl.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public class ScrollReaderConfigBuilder {
+public class PITReaderConfigBuilder {
 
-    public static ScrollReaderConfigBuilder builder(ValueReader reader, Mapping resolvedMapping, Settings settings) {
+    public static PITReaderConfigBuilder builder(ValueReader reader, Mapping resolvedMapping, Settings settings) {
         return builder(reader, settings).setResolvedMapping(resolvedMapping);
     }
 
-    public static ScrollReaderConfigBuilder builder(ValueReader reader, Settings settings) {
-        return new ScrollReaderConfigBuilder(settings, reader);
+    public static PITReaderConfigBuilder builder(ValueReader reader, Settings settings) {
+        return new PITReaderConfigBuilder(settings, reader);
     }
 
     // Integration specific object factory
@@ -61,7 +61,7 @@ public class ScrollReaderConfigBuilder {
 
     private HandlerLoader<IDeserializationErrorHandler> errorHandlerLoader;
 
-    public ScrollReaderConfigBuilder(Settings settings, ValueReader reader) {
+    public PITReaderConfigBuilder(Settings settings, ValueReader reader) {
         this.reader = reader;
 
         // Source defaults from Settings
@@ -89,7 +89,7 @@ public class ScrollReaderConfigBuilder {
         return returnRawJson;
     }
 
-    public ScrollReaderConfigBuilder setReturnRawJson(boolean returnRawJson) {
+    public PITReaderConfigBuilder setReturnRawJson(boolean returnRawJson) {
         this.returnRawJson = returnRawJson;
         return this;
     }
@@ -98,7 +98,7 @@ public class ScrollReaderConfigBuilder {
         return resolvedMapping;
     }
 
-    public ScrollReaderConfigBuilder setResolvedMapping(Mapping resolvedMapping) {
+    public PITReaderConfigBuilder setResolvedMapping(Mapping resolvedMapping) {
         this.resolvedMapping = resolvedMapping;
         return this;
     }
@@ -107,7 +107,7 @@ public class ScrollReaderConfigBuilder {
         return ignoreUnmappedFields;
     }
 
-    public ScrollReaderConfigBuilder setIgnoreUnmappedFields(boolean ignoreUnmappedFields) {
+    public PITReaderConfigBuilder setIgnoreUnmappedFields(boolean ignoreUnmappedFields) {
         this.ignoreUnmappedFields = ignoreUnmappedFields;
         return this;
     }
@@ -116,7 +116,7 @@ public class ScrollReaderConfigBuilder {
         return readMetadata;
     }
 
-    public ScrollReaderConfigBuilder setReadMetadata(boolean readMetadata) {
+    public PITReaderConfigBuilder setReadMetadata(boolean readMetadata) {
         this.readMetadata = readMetadata;
         return this;
     }
@@ -125,7 +125,7 @@ public class ScrollReaderConfigBuilder {
         return metadataName;
     }
 
-    public ScrollReaderConfigBuilder setMetadataName(String metadataName) {
+    public PITReaderConfigBuilder setMetadataName(String metadataName) {
         this.metadataName = metadataName;
         return this;
     }
@@ -134,7 +134,7 @@ public class ScrollReaderConfigBuilder {
         return includeFields;
     }
 
-    public ScrollReaderConfigBuilder setIncludeFields(List<String> includeFields) {
+    public PITReaderConfigBuilder setIncludeFields(List<String> includeFields) {
         this.includeFields = includeFields;
         return this;
     }
@@ -143,7 +143,7 @@ public class ScrollReaderConfigBuilder {
         return excludeFields;
     }
 
-    public ScrollReaderConfigBuilder setExcludeFields(List<String> excludeFields) {
+    public PITReaderConfigBuilder setExcludeFields(List<String> excludeFields) {
         this.excludeFields = excludeFields;
         return this;
     }
@@ -152,7 +152,7 @@ public class ScrollReaderConfigBuilder {
         return includeArrayFields;
     }
 
-    public ScrollReaderConfigBuilder setIncludeArrayFields(List<String> includeArrayFields) {
+    public PITReaderConfigBuilder setIncludeArrayFields(List<String> includeArrayFields) {
         this.includeArrayFields = includeArrayFields;
         return this;
     }
@@ -161,12 +161,12 @@ public class ScrollReaderConfigBuilder {
         return errorHandlerLoader;
     }
 
-    public ScrollReaderConfigBuilder setErrorHandlerLoader(HandlerLoader<IDeserializationErrorHandler> errorHandlerLoader) {
+    public PITReaderConfigBuilder setErrorHandlerLoader(HandlerLoader<IDeserializationErrorHandler> errorHandlerLoader) {
         this.errorHandlerLoader = errorHandlerLoader;
         return this;
     }
 
-    public ScrollReaderConfigBuilder setErrorHandlers(List<IDeserializationErrorHandler> errorHandlers) {
+    public PITReaderConfigBuilder setErrorHandlers(List<IDeserializationErrorHandler> errorHandlers) {
         this.errorHandlerLoader = new PreloadedHandlerLoader<IDeserializationErrorHandler>(errorHandlers);
         return this;
     }

@@ -27,11 +27,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.PITQuery;
 import org.elasticsearch.hadoop.rest.SearchRequestBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.serialization.PITReader;
+import org.elasticsearch.hadoop.serialization.PITReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
@@ -97,7 +100,7 @@ public class AbstractRestQueryTest {
                         .filters(QueryUtils.parseFilters(settings));
         MappingSet mappingSet = client.getMappings();
 
-        ScrollReaderConfigBuilder scrollCfg = ScrollReaderConfigBuilder.builder(new JdkValueReader(), settings)
+        PITReaderConfigBuilder scrollCfg = PITReaderConfigBuilder.builder(new JdkValueReader(), settings)
                 .setResolvedMapping(mappingSet.getResolvedView())
                 .setReadMetadata(true)
                 .setMetadataName("_metadata")
@@ -106,10 +109,10 @@ public class AbstractRestQueryTest {
                 .setIncludeFields(Collections.<String>emptyList())
                 .setExcludeFields(Collections.<String>emptyList())
                 .setIncludeArrayFields(Collections.<String>emptyList());
-        ScrollReader reader = new ScrollReader(scrollCfg);
+        PITReader reader = new PITReader(scrollCfg);
 
         int count = 0;
-        for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
+        for (PITQuery query = qb.build(client, reader); query.hasNext();) {
             Object[] next = query.next();
             assertNotNull(next);
             count++;

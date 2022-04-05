@@ -42,13 +42,14 @@ public class ValueReaderTest {
 
     @Test
     public void testSimplePathReader() throws Exception {
-        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false));
+        PITReader reader =
+                new PITReader(PITReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false));
         reader.read(in);
     }
 
     @Test
     public void testSimplePathReaderJson() throws Exception {
-        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false).setReturnRawJson(true));
+        PITReader reader = new PITReader(PITReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false).setReturnRawJson(true));
         reader.read(in);
     }
 }
