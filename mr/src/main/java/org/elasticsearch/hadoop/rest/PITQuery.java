@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 /**
  * Result streaming data from a ElasticSearch query using the a PIT query. Performs batching underneath to retrieve data in chunks.
@@ -52,14 +53,15 @@ public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
     private boolean closed = false;
     private boolean initialized = false;
     private String query;
-    private BytesArray body;
+    private Function<String, BytesArray> bodyGenerator;
+    private String lastReadId = null;
 
-    PITQuery(RestRepository client, String query, BytesArray body, long size, PITReader reader) {
+    PITQuery(RestRepository client, String query, Function<String, BytesArray> bodyGenerator, long size, PITReader reader) {
         this.repository = client;
         this.size = size;
         this.reader = reader;
         this.query = query;
-        this.body = body;
+        this.bodyGenerator = bodyGenerator;
     }
 
     @Override
@@ -87,7 +89,7 @@ public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
             initialized = true;
 
             try {
-                PITReader.PIT pit = repository.pitQuery(query, body, reader);
+                PITReader.PIT pit = repository.pitQuery(query, bodyGenerator.apply(null), reader);
                 if (pit == null) {
                     finished = true;
                     return false;
@@ -97,8 +99,12 @@ public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
                 size = (size < 1 ? pit.getTotalHits() : size);
                 batch = pit.getHits();
                 finished = pit.isConcluded();
+                List<Object> previousLastSortValues = pit.getPreviousLastSortValues();
+                if (previousLastSortValues != null && pit.getPreviousLastSortValues().isEmpty() == false) {
+                    lastReadId = previousLastSortValues.get(0).toString();
+                }
             } catch (IOException ex) {
-                throw new EsHadoopIllegalStateException(String.format("Cannot query [%s/%s]", query, body), ex);
+                throw new EsHadoopIllegalStateException(String.format("Cannot query [%s/%s]", query, bodyGenerator.apply(null)), ex);
             }
             read += batch.size();
             stats.docsReceived += batch.size();
@@ -111,10 +117,15 @@ public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
             }
 
             try {
-                PITReader.PIT pit = repository.pitQuery(query, body, reader);
+                PITReader.PIT pit = repository.pitQuery(query, bodyGenerator.apply(lastReadId), reader);
+
                 if (pit == null) {
                     finished = true;
                     return false;
+                }
+                List<Object> previousLastSortValues = pit.getPreviousLastSortValues();
+                if (previousLastSortValues != null && pit.getPreviousLastSortValues().isEmpty() == false) {
+                    lastReadId = previousLastSortValues.get(0).toString();
                 }
                 batch = pit.getHits();
                 finished = pit.isConcluded();

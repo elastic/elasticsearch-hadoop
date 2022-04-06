@@ -62,6 +62,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
@@ -141,8 +142,8 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    PITQuery scanAll(String query, BytesArray body, PITReader reader) {
-        return scanLimit(query, body, -1, reader);
+    PITQuery scanAll(String query, Function<String, BytesArray> bodyGenerator, PITReader reader) {
+        return scanLimit(query, bodyGenerator, -1, reader);
     }
 
     /**
@@ -156,8 +157,8 @@ public class RestRepository implements Closeable, StatsAware {
 //        return new ScrollQuery(this, query, body, limit, reader);
 //    }
 
-    PITQuery scanLimit(String query, BytesArray body, long limit, PITReader reader) {
-        return new PITQuery(this, query, body, limit, reader);
+    PITQuery scanLimit(String query, Function<String, BytesArray> bodyGenerator, long limit, PITReader reader) {
+        return new PITQuery(this, query, bodyGenerator, limit, reader);
     }
 
     public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
@@ -338,38 +339,6 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-//    // used to initialize a scroll (based on a query)
-//    Scroll scroll(String query, BytesArray body, ScrollReader reader) throws IOException {
-//        InputStream scroll = client.execute(POST, query, body).body();
-//        try {
-//            Scroll scrollResult = reader.read(scroll);
-//            if (scrollResult == null) {
-//                log.info(String.format("No scroll for query [%s/%s], likely because the index is frozen", query, body));
-//            } else if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
-//                // On ES 2.X and before, a scroll response does not contain any hits to start with.
-//                // Another request will be needed.
-//                scrollResult = new Scroll(scrollResult.getScrollId(), scrollResult.getTotalHits(), false);
-//            }
-//            return scrollResult;
-//        } finally {
-//            if (scroll != null && scroll instanceof StatsAware) {
-//                stats.aggregate(((StatsAware) scroll).stats());
-//            }
-//        }
-//    }
-    
-//    // consume the scroll
-//    Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
-//        InputStream scroll = client.scroll(scrollId);
-//        try {
-//            return reader.read(scroll);
-//        } finally {
-//            if (scroll instanceof StatsAware) {
-//                stats.aggregate(((StatsAware) scroll).stats());
-//            }
-//        }
-//    }
-
     public String createPointInTime() {
         // TODO: Use a different setting for the keep alive
         return client.createPointInTime(resources.getResourceRead().index(), settings.getScrollKeepAlive() + "ms");
@@ -453,8 +422,7 @@ public class RestRepository implements Closeable, StatsAware {
 
             // start iterating
             String pit = client.createPointInTime(resources.getResourceWrite().index(), settings.getScrollKeepAlive() + "ms");
-            BytesArray body = getPitRequestBody(pit, resources.getResourceWrite().index());
-            PITQuery sq = scanAll(scanQuery, body, pitReader);
+            PITQuery sq = scanAll(scanQuery, (sortValue) -> getPitRequestBody(pit, sortValue), pitReader);
             try {
                 BytesArray entry = new BytesArray(0);
 
@@ -500,7 +468,7 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    public BytesArray getPitRequestBody(String pit, String index) {
+    public BytesArray getPitRequestBody(String pit, String lastId) {
         String keepAliveTime = settings.getScrollKeepAlive() + "ms";
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
         try(JacksonJsonGenerator generator = new JacksonJsonGenerator(out)) {
@@ -516,6 +484,12 @@ public class RestRepository implements Closeable, StatsAware {
             generator.writeFieldName("keep_alive");
             generator.writeString(keepAliveTime);
             generator.writeEndObject();
+            if (lastId != null) {
+                generator.writeFieldName("search_after");
+                generator.writeBeginArray();
+                generator.writeString(lastId);
+                generator.writeEndArray();
+            }
         }
         return out.bytes();
     }

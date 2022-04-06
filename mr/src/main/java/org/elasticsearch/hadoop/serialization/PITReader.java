@@ -138,6 +138,7 @@ public class PITReader implements Closeable {
     }
 
     public static class PIT {
+
         static PIT empty() {
             return new PIT(0L, true);
         }
@@ -147,6 +148,7 @@ public class PITReader implements Closeable {
         private final boolean concluded;
         private final int numberOfHits;
         private final int numberOfSkippedHits;
+        private final List<Object> previousLastSortValues;
 
         public PIT(long total, boolean concluded) {
             this.total = total;
@@ -154,14 +156,16 @@ public class PITReader implements Closeable {
             this.concluded = concluded;
             this.numberOfHits = 0;
             this.numberOfSkippedHits = 0;
+            this.previousLastSortValues = null;
         }
 
-        public PIT(long total, List<Object[]> hits, int responseHits, int skippedHits) {
+        public PIT(long total, List<Object[]> hits, List<Object> previousLastSortValues, int responseHits, int skippedHits) {
             this.hits = hits;
             this.total = total;
             this.concluded = false;
             this.numberOfHits = responseHits;
             this.numberOfSkippedHits = skippedHits;
+            this.previousLastSortValues = previousLastSortValues;
         }
 
         public long getTotalHits() {
@@ -174,6 +178,10 @@ public class PITReader implements Closeable {
 
         public boolean isConcluded() {
             return concluded;
+        }
+
+        public List<Object> getPreviousLastSortValues() {
+            return this.previousLastSortValues;
         }
 
         public int getNumberOfHits() {
@@ -248,12 +256,10 @@ public class PITReader implements Closeable {
             log.trace("About to parse pit content " + copy);
         }
 
-        Parser parser = new JacksonJsonParser(content);
 
-        try {
+
+        try(Parser parser = new JacksonJsonParser(content)) {
             return read(parser, copy);
-        } finally {
-            parser.close();
         }
     }
 
@@ -284,9 +290,12 @@ public class PITReader implements Closeable {
         int responseHits = 0;
         int skippedHits = 0;
         int readHits = 0;
+        List<Object> lastSortValues = null;
         for (token = parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
             responseHits++;
-            Object[] hit = readHit(parser, input);
+            HitMapAndSortValues hitMapAndSortValues = readHit(parser, input);
+            Object[] hit = hitMapAndSortValues.hits;
+            lastSortValues = hitMapAndSortValues.sortValue;
             if (hit != null) {
                 readHits++;
                 results.add(hit);
@@ -392,14 +401,14 @@ public class PITReader implements Closeable {
         }
 
         if (responseHits > 0) {
-            return new PIT(totalHits, results, responseHits, skippedHits);
+            return new PIT(totalHits, results, lastSortValues, responseHits, skippedHits);
         } else {
             // PIT had no hits in the response, it must have concluded.
             return new PIT(totalHits, true);
         }
     }
 
-    private Object[] readHit(Parser parser, BytesArray input) {
+    private HitMapAndSortValues readHit(Parser parser, BytesArray input) {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
         int hitStartPos = parser.tokenCharOffset();
@@ -410,6 +419,7 @@ public class PITReader implements Closeable {
         Parser workingParser = blockAwareJsonParser;
 
         Object[] readResult = null;
+        List<Object> sortValues = null;
         boolean retryRead = false;
         boolean skip = false;
         int attempts = 0;
@@ -419,8 +429,11 @@ public class PITReader implements Closeable {
                 retryRead = false;
                 if (returnRawJson) {
                     readResult = readHitAsJson(workingParser);
+                    //TODO: sortvalues
                 } else {
-                    readResult = readHitAsMap(workingParser);
+                    HitMapAndSortValues hitMapAndSortValues = readHitAsMap(workingParser);
+                    readResult = hitMapAndSortValues.hits;
+                    sortValues = hitMapAndSortValues.sortValue;
                 }
             } catch (Exception deserializationException) {
                 // Skip this hit if we need to
@@ -519,10 +532,20 @@ public class PITReader implements Closeable {
             throw new EsHadoopParsingException("Could not read hit from PIT response.");
         }
 
-        return readResult;
+        return new HitMapAndSortValues(readResult, sortValues);
     }
 
-    private Object[] readHitAsMap(Parser parser) {
+    private static final class HitMapAndSortValues {
+        private final Object[] hits;
+        private final List<Object> sortValue;
+
+        public HitMapAndSortValues(Object[] hits, List<Object> sortValues) {
+            this.hits = hits;
+            this.sortValue = sortValues;
+        }
+    }
+
+    private HitMapAndSortValues readHitAsMap(Parser parser) {
         Object[] result = new Object[2];
         Object metadata = null;
         Object id = null;
@@ -601,7 +624,6 @@ public class PITReader implements Closeable {
             if (parsingCallback != null) {
                 parsingCallback.endSource();
             }
-
             if (readMetadata) {
                 reader.addToMap(data, reader.wrapString(metadataField), metadata);
             }
@@ -626,25 +648,26 @@ public class PITReader implements Closeable {
             inMetadataSection = true;
         }
 
+        List<Object> sortValues = new ArrayList<>();
         // in case of additional fields (matched_query), add them to the metadata
         while (parser.currentToken() == Token.FIELD_NAME) {
             String name = parser.currentName();
             String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
-            if (readMetadata) {
-                // skip sort (useless and is an array which triggers the row mapping which does not apply)
-                if (!"sort".equals(name)) {
-                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null, parser));
+            Token token = parser.nextToken();
+            if ("sort".equals(name)) {
+                if (token == Token.START_ARRAY) {
+                    for (Token arrayValueToken = parser.nextToken(); arrayValueToken != Token.END_ARRAY; arrayValueToken = parser.nextToken()) {
+                        Object sortValue = parser.currentValue();
+                        sortValues.add(sortValue);
+                    }
                 }
-                else {
-                    parser.nextToken();
-                    parser.skipChildren();
-                    parser.nextToken();
-                }
+                parser.nextToken();
+            }
+            else if (readMetadata) {
+                reader.addToMap(data, reader.wrapString(name), read(absoluteName, token, null, parser));
             }
             else {
-                parser.nextToken();
                 parser.skipChildren();
-                parser.nextToken();
             }
         }
 
@@ -663,7 +686,7 @@ public class PITReader implements Closeable {
             log.trace(String.format("Read hit result [%s]", result));
         }
 
-        return result;
+        return new HitMapAndSortValues(result, sortValues);
     }
 
     private boolean shouldSkip(String absoluteName) {

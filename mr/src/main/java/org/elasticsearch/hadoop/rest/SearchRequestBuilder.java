@@ -276,7 +276,7 @@ public class SearchRequestBuilder {
         return sb.toString();
     }
 
-    private BytesArray assembleBody() {
+    private BytesArray assembleBody(String lastId) {
         QueryBuilder root = query;
         if (root == null) {
             root = MatchAllQueryBuilder.MATCH_ALL;
@@ -327,6 +327,12 @@ public class SearchRequestBuilder {
                 generator.writeFieldName("_source");
                 generator.writeBoolean(false);
             }
+            if (lastId != null) {
+                generator.writeFieldName("search_after");
+                generator.writeBeginArray();
+                generator.writeString(lastId);
+                generator.writeEndArray();
+            }
             generator.writeEndObject();
         } finally {
             generator.close();
@@ -336,12 +342,11 @@ public class SearchRequestBuilder {
 
     public PITQuery build(RestRepository client, PITReader reader) {
         String scrollUri = assemble();
-        BytesArray requestBody = assembleBody();
-        return client.scanLimit(scrollUri, requestBody, limit, reader);
+        return client.scanLimit(scrollUri, this::assembleBody, limit, reader);
     }
 
     @Override
     public String toString() {
-        return "QueryBuilder [" + assemble() + "][" + assembleBody() + "]";
+        return "QueryBuilder [" + assemble() + "][" + assembleBody(null) + "]";
     }
 }
