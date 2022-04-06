@@ -23,8 +23,9 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 
 import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
@@ -131,8 +132,8 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         }
         else if (value instanceof Timestamp) {
             Timestamp timestamp = (Timestamp) value;
-            LocalDateTime localDateTime = timestamp.toLocalDateTime();
-            OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, OffsetDateTime.now().getOffset());
+            Instant instant = Instant.ofEpochSecond(timestamp.getTime() / 1000, timestamp.getNanos());
+            OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
             generator.writeString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(offsetDateTime));
         }
         else if (value instanceof Date) {
