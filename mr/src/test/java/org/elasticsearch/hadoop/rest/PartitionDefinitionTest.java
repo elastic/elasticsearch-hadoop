@@ -55,7 +55,7 @@ public class PartitionDefinitionTest {
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
-        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("foo", 12,
+        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("0", "foo", 12,
                 new String[] {"localhost:9200", "otherhost:9200"});
         BytesArray bytes = writeWritablePartition(expected);
         PartitionDefinition def = readWritablePartition(bytes);
@@ -68,7 +68,7 @@ public class PartitionDefinitionTest {
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
-        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("bar", 37,
+        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("0", "bar", 37,
                 new String[] {"localhost:9200", "otherhost:9200"});
         BytesArray bytes = writeSerializablePartition(expected);
         PartitionDefinition def = readSerializablePartition(bytes);
@@ -81,7 +81,7 @@ public class PartitionDefinitionTest {
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
-        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("foo", 12, new PartitionDefinition.Slice(10, 27),
+        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("0", "foo", 12, new PartitionDefinition.Slice(10, 27),
                 new String[] {"localhost:9200", "otherhost:9200"});
         BytesArray bytes = writeWritablePartition(expected);
         PartitionDefinition def = readWritablePartition(bytes);
@@ -95,7 +95,7 @@ public class PartitionDefinitionTest {
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
 
-        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("bar", 37,
+        PartitionDefinition expected = PartitionDefinition.builder(settings, mapping).build("0", "bar", 37,
                 new PartitionDefinition.Slice(13, 35),  new String[] {"localhost:9200", "otherhost:9200"});
         BytesArray bytes = writeSerializablePartition(expected);
         PartitionDefinition def = readSerializablePartition(bytes);
@@ -110,9 +110,9 @@ public class PartitionDefinitionTest {
         settings.setProperty("setting2", "value2");
         PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(settings, mapping);
 
-        PartitionDefinition first = partitionBuilder.build("foo", 11,
+        PartitionDefinition first = partitionBuilder.build("0", "foo", 11,
                 new String[] {"localhost:9200", "otherhost:9200"});
-        PartitionDefinition second = partitionBuilder.build("foo", 12,
+        PartitionDefinition second = partitionBuilder.build("0", "foo", 12,
                 new String[] {"localhost:9200", "otherhost:9200"});
         assertNotEquals(first, second);
         assertSame(first.getSerializedSettings(), second.getSerializedSettings());

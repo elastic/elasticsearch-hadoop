@@ -264,16 +264,6 @@ public class PITReader implements Closeable {
     }
 
     private PIT read(Parser parser, BytesArray input) {
-        // get pit_id
-        Token token = ParsingUtils.seek(parser, new String[] {"pit_id"});
-        if (token == null) { // no pit id is returned for frozen indices
-            if (log.isTraceEnabled()) {
-                log.info("No pit_id found, likely because the index is frozen");
-            }
-            return null;
-        }
-        Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
-
         long totalHits = hitsTotal(parser);
         // check hits/total
         if (totalHits == 0) {
@@ -281,7 +271,7 @@ public class PITReader implements Closeable {
         }
 
         // move to hits/hits
-        token = ParsingUtils.seek(parser, HITS);
+        Token token = ParsingUtils.seek(parser, HITS);
 
         // move through the list and for each hit, extract the _id and _source
         Assert.isTrue(token == Token.START_ARRAY, "invalid response");

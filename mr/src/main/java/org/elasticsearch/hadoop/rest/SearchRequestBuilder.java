@@ -201,6 +201,10 @@ public class SearchRequestBuilder {
         Map<String, String> uriParams = new LinkedHashMap<String, String>();
         StringBuilder sb = new StringBuilder();
         sb.append(indices);
+        if (StringUtils.hasLength(types)) {
+            sb.append("/");
+            sb.append(types);
+        }
         sb.append("/_search?");
 
         // override infrastructure params
