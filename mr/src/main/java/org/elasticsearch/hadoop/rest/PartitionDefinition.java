@@ -73,15 +73,14 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
     /**
      *
-     * @param serializedSettings The settings for the partition reader
-     * @param serializedMapping The mapping of the index
+     * @param settings The settings for the partition reader
+     * @param mapping The mapping of the index
      * @param index The index name the partition will be executed on
      * @param shardId The shard id the partition will be executed on
      * @param slice The slice the partition will be executed on or null
      * @param locations The locations where to find nodes (hostname:port or ip:port) that can execute the partition locally
      */
-    private PartitionDefinition(String serializedSettings, String serializedMapping, String index, int shardId, Slice slice,
-                                String[] locations) {
+    private PartitionDefinition(String serializedSettings, String serializedMapping, String index, int shardId, Slice slice, String[] locations) {
         this.index = index;
         this.shardId = shardId;
         this.serializedSettings = serializedSettings;
