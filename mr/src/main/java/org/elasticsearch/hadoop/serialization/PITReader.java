@@ -408,8 +408,7 @@ public class PITReader implements Closeable {
         // but may change during the course of the function if hits are retried with different parsers.
         Parser workingParser = blockAwareJsonParser;
 
-        Object[] readResult = null;
-        List<Object> sortValues = null;
+        HitMapAndSortValues hitMapAndSortValues = null;
         boolean retryRead = false;
         boolean skip = false;
         int attempts = 0;
@@ -418,12 +417,9 @@ public class PITReader implements Closeable {
                 // Clear the retry flag
                 retryRead = false;
                 if (returnRawJson) {
-                    readResult = readHitAsJson(workingParser);
-                    //TODO: sortvalues
+                    hitMapAndSortValues = readHitAsJson(workingParser);
                 } else {
-                    HitMapAndSortValues hitMapAndSortValues = readHitAsMap(workingParser);
-                    readResult = hitMapAndSortValues.hits;
-                    sortValues = hitMapAndSortValues.sortValue;
+                    hitMapAndSortValues = readHitAsMap(workingParser);
                 }
             } catch (Exception deserializationException) {
                 // Skip this hit if we need to
@@ -518,11 +514,11 @@ public class PITReader implements Closeable {
             }
         } while (retryRead);
 
-        if (readResult == null && skip == false) {
+        if (hitMapAndSortValues != null && hitMapAndSortValues.hits == null && skip == false) {
             throw new EsHadoopParsingException("Could not read hit from PIT response.");
         }
 
-        return new HitMapAndSortValues(readResult, sortValues);
+        return hitMapAndSortValues;
     }
 
     private static final class HitMapAndSortValues {
@@ -696,7 +692,7 @@ public class PITReader implements Closeable {
         }
     }
 
-    private Object[] readHitAsJson(Parser parser) {
+    private HitMapAndSortValues readHitAsJson(Parser parser) {
         // return results as raw json
 
         Object[] result = new Object[2];
@@ -705,6 +701,7 @@ public class PITReader implements Closeable {
         Token t = parser.currentToken();
 
         JsonResult snippet = new JsonResult();
+        List<Object> sortValues = new ArrayList<>();
 
         // read everything until SOURCE or FIELDS is encountered
         if (readMetadata) {
@@ -808,12 +805,23 @@ public class PITReader implements Closeable {
 
         // in case of additional fields (matched_query), add them to the metadata
         while ((t = parser.currentToken()) == Token.FIELD_NAME) {
-            t = parser.nextToken();
-            ParsingUtils.skipCurrentBlock(parser);
-            t = parser.nextToken();
+            if ("sort".equals(parser.currentValue())) {
+                Token token = parser.nextToken();
+                if (token == Token.START_ARRAY) {
+                    for (Token arrayValueToken = parser.nextToken(); arrayValueToken != Token.END_ARRAY; arrayValueToken = parser.nextToken()) {
+                        Object sortValue = parser.currentValue();
+                        sortValues.add(sortValue);
+                    }
+                }
+                parser.nextToken();
+            } else {
+                t = parser.nextToken();
+                ParsingUtils.skipCurrentBlock(parser);
+                t = parser.nextToken();
 
-            if (readMetadata) {
-                metadataSuffixStopCharPos = parser.tokenCharOffset();
+                if (readMetadata) {
+                    metadataSuffixStopCharPos = parser.tokenCharOffset();
+                }
             }
         }
 
@@ -829,7 +837,7 @@ public class PITReader implements Closeable {
             log.trace(String.format("Read hit result [%s]", result));
         }
 
-        return result;
+        return new HitMapAndSortValues(result, sortValues);
 
     }
 
