@@ -22,8 +22,7 @@ import org.apache.commons.logging.Log
 import org.apache.spark.TaskContext
 import org.apache.spark.TaskKilledException
 import org.elasticsearch.hadoop.cfg.Settings
-import org.elasticsearch.hadoop.rest.RestService
-import org.elasticsearch.hadoop.rest.PartitionDefinition
+import org.elasticsearch.hadoop.rest.{PartitionDefinition, RestRepository, RestService}
 
 import java.util.Locale
 
@@ -41,6 +40,14 @@ private[spark] abstract class AbstractEsRDDIterator[T](
 
   private var initialized = false;
 
+  lazy val repository = {
+    new RestRepository(partition.settings())
+  }
+
+  lazy val pit = {
+    repository.createPointInTime()
+  }
+
   lazy val reader = {
      initialized = true
      val settings = partition.settings()
@@ -51,7 +58,7 @@ private[spark] abstract class AbstractEsRDDIterator[T](
        settings.setOpaqueId(String.format(Locale.ROOT, "%s, stage %s, task attempt %s", settings.getOpaqueId(),
          context.stageId().toString, context.taskAttemptId.toString))
      }
-     val readr = RestService.createReader(settings, partition, log)
+     val readr = RestService.createReader(repository, settings, pit, partition, log)
      readr.pitQuery()
   }
 
@@ -83,6 +90,8 @@ private[spark] abstract class AbstractEsRDDIterator[T](
 
   protected def close() = {
     if (initialized) {
+      try repository.getRestClient.deletePointInTime(pit)
+      repository.close()
       reader.close()
     }
   }

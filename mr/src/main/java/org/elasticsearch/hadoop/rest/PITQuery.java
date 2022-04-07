@@ -71,11 +71,6 @@ public class PITQuery implements Iterator<Object>, Closeable, StatsAware {
             finished = true;
             batch = Collections.emptyList();
             reader.close();
-            // however we're closing it either way
-//            if (StringUtils.hasText(pit)) {  //TODO
-//                repository.getRestClient().deletePointInTime(pit);
-//            }
-            repository.close();
         }
     }
 

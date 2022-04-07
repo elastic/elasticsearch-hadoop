@@ -18,7 +18,11 @@
       "_source" : {
         "field1": "value1",
         "field2": "value2"
-      }
+      },
+      "sort": [
+        1,
+        1
+      ]
     }, {
       "_index" : "index",
       "_type" : "type2",
@@ -26,7 +30,11 @@
       "_score" : 0.0,
       "_source" : {
         "field3": "value3"
-      }
+      },
+      "sort": [
+        2,
+        2
+      ]
     }, {
       "_index" : "index2",
       "_type" : "type3",
@@ -34,7 +42,11 @@
       "_score" : 0.0,
       "_source" : {
         "field4": "value4"
-      }
+      },
+      "sort": [
+        3,
+        3
+      ]
     }
     ]
   }

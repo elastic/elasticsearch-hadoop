@@ -112,6 +112,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private int read = 0;
         private EsInputSplit esSplit;
         private PITReader pitReader;
+        private String pit;
 
         private RestRepository client;
         private SearchRequestBuilder queryBuilder;
@@ -160,10 +161,12 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
             PartitionDefinition part = esSplit.getPartition();
-            PartitionReader partitionReader = RestService.createReader(settings, part, log);
+
+            client = new RestRepository(settings);
+            pit = client.createPointInTime();
+            PartitionReader partitionReader = RestService.createReader(client, settings, pit, part, log);
 
             this.pitReader = partitionReader.pitReader;
-            this.client = partitionReader.client;
             this.queryBuilder = partitionReader.queryBuilder;
 
             this.progressable = progressable;
@@ -220,6 +223,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                 }
 
                 if (client != null) {
+                    client.getRestClient().deletePointInTime(pit);
                     client.close();
                 }
 

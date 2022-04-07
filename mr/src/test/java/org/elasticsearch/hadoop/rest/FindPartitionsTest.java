@@ -55,13 +55,13 @@ public class FindPartitionsTest {
         List<PartitionDefinition> expected =
                 new ArrayList<PartitionDefinition>();
         for (int i = 0; i < 15; i++) {
-            expected.add(partitionBuilder.build(null, "index1", i));
+            expected.add(partitionBuilder.build("index1", i));
         }
         for (int i = 0; i < 18; i++) {
-            expected.add(partitionBuilder.build(null, "index2", i));
+            expected.add(partitionBuilder.build("index2", i));
         }
         for (int i = 0; i < 1; i++) {
-            expected.add(partitionBuilder.build(null, "index3", i));
+            expected.add(partitionBuilder.build("index3", i));
         }
         Collections.sort(expected);
         EXPECTED_SHARDS_PARTITIONS = expected.toArray(new PartitionDefinition[0]);
@@ -73,9 +73,9 @@ public class FindPartitionsTest {
         settings.setMaxDocsPerPartition(10000);
         settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setProperty(ES_RESOURCE_READ, "_all");
-        assertEquals(RestService.findShardPartitions(null, settings, null,
+        assertEquals(RestService.findShardPartitions(settings, null,
                 Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
-        assertEquals(RestService.findSlicePartitions(null, settings, null,
+        assertEquals(RestService.findSlicePartitions(Mockito.mock(RestClient.class), settings, null,
                 Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
     }
 
@@ -83,7 +83,7 @@ public class FindPartitionsTest {
     public void testShardPartitions() throws IOException {
         List<List<Map<String, Object>>> shards =
                 MAPPER.readValue(getClass().getResourceAsStream("search-shards-response.json"), ArrayList.class);
-        List<PartitionDefinition> partitions = RestService.findShardPartitions(null,null, null, Collections.<String, NodeInfo>emptyMap(),
+        List<PartitionDefinition> partitions = RestService.findShardPartitions(null,null, Collections.<String, NodeInfo>emptyMap(),
                 shards, LOGGER);
         Collections.sort(partitions);
         assertEquals(partitions.size(), 34);

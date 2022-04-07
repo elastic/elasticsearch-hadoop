@@ -87,7 +87,6 @@ public abstract class RestService implements Serializable {
                 if (pitQuery != null) {
                     pitQuery.close();
                 }
-                client.close();
             }
         }
 
@@ -138,6 +137,8 @@ public abstract class RestService implements Serializable {
         private PartitionReader currentReader;
         private PITQuery currentScroll;
         private boolean finished = false;
+        private final RestRepository repository;
+        private final String pit;
 
         private final Settings settings;
         private final Log log;
@@ -148,6 +149,8 @@ public abstract class RestService implements Serializable {
 
             this.settings = settings;
             this.log = log;
+            repository = new RestRepository(settings);
+            pit = repository.createPointInTime();
         }
 
         @Override
@@ -163,7 +166,10 @@ public abstract class RestService implements Serializable {
             if (currentReader != null) {
                 currentReader.close();
             }
-
+            if (repository != null) {
+                repository.getRestClient().deletePointInTime(pit);
+                repository.close();;
+            }
             finished = true;
         }
 
@@ -182,7 +188,7 @@ public abstract class RestService implements Serializable {
             for (boolean hasValue = false; !hasValue; ) {
                 if (currentReader == null) {
                     if (definitionIterator.hasNext()) {
-                        currentReader = RestService.createReader(settings, definitionIterator.next(), log);
+                        currentReader = RestService.createReader(repository, settings, pit, definitionIterator.next(), log);
                     } else {
                         finished = true;
                         return null;
@@ -233,7 +239,6 @@ public abstract class RestService implements Serializable {
         InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
 
         try(RestRepository client = new RestRepository(settings)) {
-            String pit = client.createPointInTime();
             boolean indexExists = client.resourceExists(true);
 
             List<List<Map<String, Object>>> shards = null;
@@ -277,7 +282,7 @@ public abstract class RestService implements Serializable {
             if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) && settings.getMaxDocsPerPartition() != null) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
-                partitions = findShardPartitions(pit, settings, mapping, nodesMap, shards, log);
+                partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
             }
             Collections.shuffle(partitions);
             return partitions;
@@ -287,7 +292,7 @@ public abstract class RestService implements Serializable {
     /**
      * Create one {@link PartitionDefinition} per shard for each requested index.
      */
-    static List<PartitionDefinition> findShardPartitions(String pit, Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
+    static List<PartitionDefinition> findShardPartitions(Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
                                                          List<List<Map<String, Object>>> shards, Log log) {
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
@@ -315,7 +320,7 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                PartitionDefinition partition = partitionBuilder.build(pit, index, shardId, locationList.toArray(new String[0]));
+                PartitionDefinition partition = partitionBuilder.build(index, shardId, locationList.toArray(new String[0]));
                 partitions.add(partition);
             }
         }
@@ -359,12 +364,6 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                String pit;
-                if (partitions.isEmpty()) {
-                    pit = null; //TODO: ?
-                } else {
-                    pit = partitions.get(0).getPIT();
-                }
                 // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
                 long numDocs;
                 if (readResource.isTyped()) {
@@ -375,7 +374,7 @@ public abstract class RestService implements Serializable {
                 int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
-                    partitions.add(partitionBuilder.build(pit, index, shardId, slice, locations));
+                    partitions.add(partitionBuilder.build(index, shardId, slice, locations));
                 }
             }
         }
@@ -418,7 +417,8 @@ public abstract class RestService implements Serializable {
      * @param log The logger
      * @return The {@link PartitionReader} that is able to read the documents associated with the {@code partition}
      */
-    public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
+    public static PartitionReader createReader(RestRepository repository, Settings settings, String pit, PartitionDefinition partition,
+                                               Log log) {
         if (!SettingsUtils.hasPinnedNode(settings) && partition.getLocations().length > 0) {
             String pinAddress = checkLocality(partition.getLocations(), log);
             if (pinAddress != null) {
@@ -430,8 +430,6 @@ public abstract class RestService implements Serializable {
         }
         ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
-        // initialize REST client
-        RestRepository repository = new RestRepository(settings);
         Mapping fieldMapping = null;
         if (StringUtils.hasText(partition.getSerializedMapping())) {
             fieldMapping = IOUtils.deserializeFromBase64(partition.getSerializedMapping());
@@ -459,7 +457,7 @@ public abstract class RestService implements Serializable {
                         // Overwrite the index name from the resource to be that of the concrete index in the partition definition
                         .indices(partition.getIndex())
                         .query(QueryUtils.parseQuery(settings))
-                        .pit(partition.getPIT(), settings.getScrollKeepAlive())
+                        .pit(pit, settings.getScrollKeepAlive())
 //                        .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())
                         .limit(settings.getScrollLimit())
