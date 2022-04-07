@@ -132,7 +132,8 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         }
         else if (value instanceof Timestamp) {
             Timestamp timestamp = (Timestamp) value;
-            Instant instant = Instant.ofEpochSecond(timestamp.getTime() / 1000, timestamp.getNanos());
+            long epochSeconds = timestamp.getTime() / 1000; // Getting rid of millisconds because they're captured in timestamp.getNanos()
+            Instant instant = Instant.ofEpochSecond(epochSeconds, timestamp.getNanos());
             OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
             generator.writeString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(offsetDateTime));
         }
