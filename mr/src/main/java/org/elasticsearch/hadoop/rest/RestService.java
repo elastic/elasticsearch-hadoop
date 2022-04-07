@@ -98,13 +98,6 @@ public abstract class RestService implements Serializable {
             return pitQuery;
         }
 
-//        public ScrollQuery scrollQuery() {
-//            if (scrollQuery == null) {
-//                scrollQuery = queryBuilder.build(client, scrollReader);
-//            }
-//
-//            return scrollQuery;
-//        }
     }
 
     public static class PartitionWriter implements Closeable {
@@ -458,7 +451,6 @@ public abstract class RestService implements Serializable {
                         .indices(partition.getIndex())
                         .query(QueryUtils.parseQuery(settings))
                         .pit(pit, settings.getScrollKeepAlive())
-//                        .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())
                         .limit(settings.getScrollLimit())
                         .fields(SettingsUtils.determineSourceFields(settings))

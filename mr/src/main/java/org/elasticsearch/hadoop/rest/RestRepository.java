@@ -146,17 +146,6 @@ public class RestRepository implements Closeable, StatsAware {
         return scanLimit(query, bodyGenerator, -1, reader);
     }
 
-    /**
-     * Returns a pageable (scan based) result to the given query.
-     *
-     * @param query scan query
-     * @param reader scroll reader
-     * @return a scroll query
-     */
-//    ScrollQuery scanLimit(String query, BytesArray body, long limit, ScrollReader reader) {
-//        return new ScrollQuery(this, query, body, limit, reader);
-//    }
-
     PITQuery scanLimit(String query, Function<String, BytesArray> bodyGenerator, long limit, PITReader reader) {
         return new PITQuery(this, query, bodyGenerator, limit, reader);
     }
