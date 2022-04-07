@@ -658,6 +658,7 @@ public class PITReader implements Closeable {
             }
             else {
                 parser.skipChildren();
+                parser.nextToken();
             }
         }
 
