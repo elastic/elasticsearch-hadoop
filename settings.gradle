@@ -19,14 +19,6 @@ include 'spark-core'
 project(":spark-core").projectDir = new File(settingsDir, "spark/core")
 project(":spark-core").name = "elasticsearch-spark"
 
-include 'sql-13'
-project(":sql-13").projectDir = new File(settingsDir, "spark/sql-13")
-project(":sql-13").name = "elasticsearch-spark-13"
-
-include 'sql-20'
-project(":sql-20").projectDir = new File(settingsDir, "spark/sql-20")
-project(":sql-20").name = "elasticsearch-spark-20"
-
 include 'sql-30'
 project(":sql-30").projectDir = new File(settingsDir, "spark/sql-30")
 project(":sql-30").name = "elasticsearch-spark-30"

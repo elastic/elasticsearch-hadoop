@@ -270,7 +270,7 @@ if (disableTests) {
         doLast {
             project.javaexec {
                 executable = project.runtimeJavaHome.toString() + "/bin/java"
-                main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
+                mainClass = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
                 classpath = sourceSets.main.runtimeClasspath
                 systemProperty('es.nodes', esAddress)
                 systemProperty('es.net.http.auth.user', 'test_admin')

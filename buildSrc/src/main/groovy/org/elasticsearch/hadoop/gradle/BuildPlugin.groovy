@@ -376,11 +376,6 @@ class BuildPlugin implements Plugin<Project> {
             compile.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
         }
 
-        // Enable HTML test reports
-        project.tasks.withType(Test) { Test testTask ->
-            testTask.getReports().getByName('html').setEnabled(true)
-        }
-
         // Configure project jar task with manifest and include license and notice data.
         project.tasks.withType(Jar) { Jar jar ->
             Manifest manifest = jar.getManifest()
@@ -846,7 +841,7 @@ class BuildPlugin implements Plugin<Project> {
             maxGranularity 2
         }
 
-        integrationTest.reports.html.enabled = false
+        integrationTest.reports.html.required = false
     }
 
     private static void configurePrecommit(Project project) {

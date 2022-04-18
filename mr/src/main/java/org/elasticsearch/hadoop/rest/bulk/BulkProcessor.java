@@ -530,23 +530,27 @@ public class BulkProcessor implements Closeable, StatsAware {
                 appendError(message, errors.getError());
                 message.append("\n");
                 message.append("\t")
-                	.append(errors.getDocument().toString())
-                	.append("\n");
+                        .append(errors.getDocument().toString())
+                        .append("\n");
                 i++;
             }
             message.append("Bailing out...");
-            throw new EsHadoopException(message.toString());
+            if (message.toString().contains("document_missing_exception")) {
+
+            } else {
+                throw new EsHadoopException(message.toString());
+            }
         }
     }
-    
+
     private void appendError(StringBuilder message, Throwable exception) {
-    	if(exception != null) {
-    		message.append(exception);
-    		if(exception.getCause() != null) {
-    			message.append(';');
-    			appendError(message, exception.getCause());
-    		}
-    	}
+        if(exception != null) {
+            message.append(exception);
+            if(exception.getCause() != null) {
+                message.append(';');
+                appendError(message, exception.getCause());
+            }
+        }
     }
 
 
