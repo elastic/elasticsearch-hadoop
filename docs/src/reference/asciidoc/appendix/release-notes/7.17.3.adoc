@@ -1,0 +1,9 @@
+[[eshadoop-7.17.3]]
+== Elasticsearch for Apache Hadoop version 7.17.3
+
+[[bugs-7.17.3]]
+=== Bug Fixes
+Core::
+* Fixing DST bug in data_nanos support (#1943)
+https://github.com/elastic/elasticsearch-hadoop/pull/1943[#1943]
+https://github.com/elastic/elasticsearch-hadoop/pull/1948[#1948]
