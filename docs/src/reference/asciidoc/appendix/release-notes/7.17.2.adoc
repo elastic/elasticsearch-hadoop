@@ -1,0 +1,9 @@
+[[eshadoop-7.17.2]]
+== Elasticsearch for Apache Hadoop version 7.17.2
+
+[[bugs-7.17.2]]
+=== Bug Fixes
+
+Spark::
+* Fixes broken Kerberos authentication when using Spark SQL: 
+https://github.com/elastic/elasticsearch-hadoop/pull/1935[#1935]
