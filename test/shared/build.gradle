@@ -58,6 +58,12 @@ configurations {
     }
 }
 
+tasks.named("test").configure {
+    if (JavaVersion.current() >= JavaVersion.VERSION_16) {
+        jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+    }
+}
+
 dependencies {
     api(project(':elasticsearch-hadoop-mr'))
     api(project.ext.hadoopClient) {
