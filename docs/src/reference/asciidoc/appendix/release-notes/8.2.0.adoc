@@ -1,0 +1,23 @@
+[[eshadoop-8.2.0]]
+== Elasticsearch for Apache Hadoop version 8.2.0
+
+[[new-8.2.0]]
+=== New Features
+Spark::
+* Bumping spark build version to 3.2.1
+http://github.com/elastic/elasticsearch-hadoop/pull/1923[#1923]
+
+[[enhancements-8.2.0]]
+=== Enhancements
+Core::
+* Updating IOUtils.toCanonicalFilePath to work in a spring boot application
+http://github.com/elastic/elasticsearch-hadoop/pull/1899[#1899]
+
+[[bugs-8.2.0]]
+=== Bug Fixes
+Serialization::
+* Fixing DST bug in data_nanos support
+http://github.com/elastic/elasticsearch-hadoop/pull/1943[#1943]
+Storm::
+* Do not fail if flush is called before any writes
+http://github.com/elastic/elasticsearch-hadoop/pull/1901[#1901]
