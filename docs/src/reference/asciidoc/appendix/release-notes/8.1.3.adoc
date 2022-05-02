@@ -1,0 +1,8 @@
+[[eshadoop-8.1.3]]
+== Elasticsearch for Apache Hadoop version 8.1.3
+
+[[bugs-8.1.3]]
+=== Bug Fixes
+Spark::
+* Set UserProvider before discovery in Spark SQL integrations
+https://github.com/elastic/elasticsearch-hadoop/pull/1934[#1934]
