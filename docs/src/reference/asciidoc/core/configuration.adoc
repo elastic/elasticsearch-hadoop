@@ -159,6 +159,7 @@ The write operation {eh} should perform - can be any of:
 `create`;; adds new data - if the data already exists (based on its id), an exception is thrown.
 `update`;; updates existing data (based on its id). If no data is found, an exception is thrown.
 `upsert`;; known as _merge_ or insert if the data does not exist, updates if the data exists (based on its id).
+`delete`;; deletes existing data (based on its id). If no data is found, an exception is thrown.
 
 added[2.1]
 `es.output.json` (default false)::
