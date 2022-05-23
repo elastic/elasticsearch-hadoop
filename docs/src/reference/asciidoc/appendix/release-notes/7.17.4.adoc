@@ -1,0 +1,8 @@
+[[eshadoop-7.17.4]]
+== Elasticsearch for Apache Hadoop version 7.17.4
+
+[[enhancements-7.17.4]]
+=== Enhancements
+Build::
+* Backport java 17 build support to 7.17
+https://github.com/elastic/elasticsearch-hadoop/pull/1950[#1950]
