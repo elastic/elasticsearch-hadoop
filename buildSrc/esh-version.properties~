@@ -1,0 +1,4 @@
+eshadoop        = 8.3.0
+elasticsearch   = 8.3.0
+lucene          = 9.0.0
+build-tools     = 8.3.0
