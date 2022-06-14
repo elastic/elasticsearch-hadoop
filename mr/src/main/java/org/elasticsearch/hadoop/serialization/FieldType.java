@@ -56,6 +56,8 @@ public enum FieldType {
 
     // not supported yet
     IP,
+    INTEGER_RANGE,
+    DATE_RANGE,
 
     // ignored
     COMPLETION;
@@ -91,6 +93,8 @@ public enum FieldType {
         CAST_HIERARCHY.put(NESTED,           new LinkedHashSet<FieldType>());
         CAST_HIERARCHY.put(JOIN,             new LinkedHashSet<FieldType>());
         CAST_HIERARCHY.put(IP,               new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(INTEGER_RANGE,    new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(DATE_RANGE,       new LinkedHashSet<FieldType>());
         CAST_HIERARCHY.put(COMPLETION,       new LinkedHashSet<FieldType>());
     }
 
@@ -114,7 +118,7 @@ public enum FieldType {
      * Compound fields are fields that contain subfields underneath them.
      */
     public static boolean isCompound(FieldType fieldType) {
-        return (OBJECT == fieldType || NESTED == fieldType || JOIN == fieldType);
+        return (OBJECT == fieldType || NESTED == fieldType || JOIN == fieldType || INTEGER_RANGE == fieldType || DATE_RANGE == fieldType);
     }
 
     public static boolean isGeo(FieldType fieldType) {

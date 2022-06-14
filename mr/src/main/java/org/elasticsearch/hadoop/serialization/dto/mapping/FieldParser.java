@@ -144,6 +144,14 @@ public final class FieldParser {
                 return new Field(key, fieldType, new Field[]{new Field("name", FieldType.KEYWORD), new Field("parent", FieldType.KEYWORD)});
             }
 
+            if (FieldType.INTEGER_RANGE == fieldType) {
+                return new Field(key, fieldType, new Field[]{new Field("gte", FieldType.INTEGER), new Field("lte", FieldType.INTEGER)});
+            }
+
+            if (FieldType.DATE_RANGE == fieldType) {
+                return new Field(key, fieldType, new Field[]{new Field("gte", FieldType.DATE), new Field("lte", FieldType.DATE)});
+            }
+
             // compound type - iterate through types
             List<Field> fields = new ArrayList<Field>(content.size());
             for (Map.Entry<String, Object> e : content.entrySet()) {

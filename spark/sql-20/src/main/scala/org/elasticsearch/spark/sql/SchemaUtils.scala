@@ -52,6 +52,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE_NANOS
+import org.elasticsearch.hadoop.serialization.FieldType.DATE_RANGE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
@@ -59,6 +60,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.INTEGER_RANGE
 import org.elasticsearch.hadoop.serialization.FieldType.JOIN
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
@@ -108,7 +110,7 @@ private[sql] object SchemaUtils {
         var mapping = mappingSet.getResolvedView
         mapping = MappingUtils.filterMapping(mapping, cfg)
         val geoInfo = repo.sampleGeoFields(mapping)
-        
+
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
@@ -139,12 +141,12 @@ private[sql] object SchemaUtils {
     DataTypes.createStructType(fields)
   }
 
-  private def convertToStruct(field: Field, geoInfo: JMap[String, GeoField], parentName: String, 
+  private def convertToStruct(field: Field, geoInfo: JMap[String, GeoField], parentName: String,
                               arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String], cfg:Settings): StructType = {
     DataTypes.createStructType(for (fl <- field.properties()) yield convertField(fl, geoInfo, parentName, arrayIncludes, arrayExcludes, cfg))
   }
 
-  private def convertField(field: Field, geoInfo: JMap[String, GeoField], parentName: String, 
+  private def convertField(field: Field, geoInfo: JMap[String, GeoField], parentName: String,
                            arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String], cfg:Settings): StructField = {
     val absoluteName = if (parentName != null) parentName + "." + field.name() else field.name()
     val matched = FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false)
@@ -166,13 +168,24 @@ private[sql] object SchemaUtils {
       case STRING       => StringType
       case TEXT         => StringType
       case KEYWORD      => StringType
-      case WILDCARD      => StringType
+      case WILDCARD     => StringType
       case DATE         => if (cfg.getMappingDateRich) TimestampType else StringType
-      case DATE_NANOS => if (cfg.getMappingDateRich) TimestampType else StringType
+      case DATE_NANOS   => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT       => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED       => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
       case JOIN         => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
-      
+      case INTEGER_RANGE => {
+        val gte = DataTypes.createStructField("gte", IntegerType, true)
+        val lte = DataTypes.createStructField("lte", IntegerType, true)
+        DataTypes.createStructType(Array(gte,lte))
+      }
+
+      case DATE_RANGE => {
+        val gte = DataTypes.createStructField("gte", if (cfg.getMappingDateRich) TimestampType else StringType, true)
+        val lte = DataTypes.createStructField("lte", if (cfg.getMappingDateRich) TimestampType else StringType, true)
+        DataTypes.createStructType(Array(gte,lte))
+      }
+
       // GEO
       case GEO_POINT => {
         val geoPoint = geoInfo.get(absoluteName) match {
@@ -182,10 +195,10 @@ private[sql] object SchemaUtils {
           case GeoPointType.LAT_LON_OBJECT => {
             val lat = DataTypes.createStructField("lat", DoubleType, true)
             val lon = DataTypes.createStructField("lon", DoubleType, true)
-            DataTypes.createStructType(Array(lat,lon)) 
+            DataTypes.createStructType(Array(lat,lon))
           }
         }
-        
+
         if (Utils.LOGGER.isDebugEnabled()) {
           Utils.LOGGER.debug(s"Detected field [${absoluteName}] as a GeoPoint with format ${geoPoint.simpleString}")
         }
@@ -198,7 +211,7 @@ private[sql] object SchemaUtils {
         geoInfo.get(absoluteName) match {
           case GeoShapeType.POINT               => fields.add(DataTypes.createStructField(COORD, DataTypes.createArrayType(DoubleType), true))
           case GeoShapeType.LINE_STRING         => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 2), true))
-          case GeoShapeType.POLYGON             => { 
+          case GeoShapeType.POLYGON             => {
             fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 3), true))
             fields.add(DataTypes.createStructField("orientation", StringType, true))
           }
@@ -213,14 +226,14 @@ private[sql] object SchemaUtils {
           }
         }
         val geoShape = DataTypes.createStructType(fields)
-        
+
         if (Utils.LOGGER.isDebugEnabled()) {
           Utils.LOGGER.debug(s"Detected field [${absoluteName}] as a GeoShape with format ${geoShape.simpleString}")
         }
         geoShape
       }
       // fall back to String
-      case _         => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
+      case _         => throw new EsHadoopIllegalArgumentException("Unknown field type " + field);
     }
 
     if (createArray) {
@@ -231,7 +244,7 @@ private[sql] object SchemaUtils {
     }
     DataTypes.createStructField(field.name(), dataType, true)
   }
-  
+
   private def createNestedArray(elementType: DataType, depth: Int): DataType = {
       var array = elementType
       for (_ <- 0 until depth) {
