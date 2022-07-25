@@ -89,6 +89,7 @@ class HiveEmbeddedServer2 implements HiveInstance {
                 hiveServer = new HiveServer2();
                 port = MetaStoreUtils.findFreePort();
                 config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
+                config.setIntVar(ConfVars.HIVE_SERVER2_WEBUI_PORT, 0); // Disable web UI
                 hiveServer.init(config);
                 hiveServer.start();
                 waitForStartup();

@@ -131,6 +131,7 @@ itestJar {
 
 tasks.named("test").configure {
     jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED" // Needed for secure mock
 }
 
 eclipse.classpath.file {
