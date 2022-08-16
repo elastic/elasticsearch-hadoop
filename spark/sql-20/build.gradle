@@ -200,6 +200,7 @@ if (JavaVersion.current() >= JavaVersion.VERSION_16) {
         if (task.getName().startsWith("test"))
         task.configure {
             jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
+            jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED" // Needed for secure mock
         }}
 }
 
