@@ -1,0 +1,8 @@
+[[eshadoop-8.4.0]]
+== Elasticsearch for Apache Hadoop version 8.4.0
+
+[[enhancements-8.4.0]]
+=== Enhancements
+Section::
+* Upgrade to Gradle 7.5
+https://github.com/elastic/elasticsearch-hadoop/pull/1980[#1980]
