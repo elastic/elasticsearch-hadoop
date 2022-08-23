@@ -1,0 +1,10 @@
+[[eshadoop-7.17.6]]
+== Elasticsearch for Apache Hadoop version 7.17.6
+
+[[enhancements-7.17.6]]
+=== Enhancements
+Build::
+* Backport Gradle 7.5.1 build support to 7.17
+https://github.com/elastic/elasticsearch-hadoop/pull/1986[#1986]
+* Fixing Java 17 support after Gradle 7.5.1 upgrade
+https://github.com/elastic/elasticsearch-hadoop/pull/1987[#1987]
