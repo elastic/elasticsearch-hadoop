@@ -55,8 +55,8 @@ public class SparkSettings extends Settings {
         this.setOpaqueId(opaqueId);
         this.setUserAgent(String.format(
                         Locale.ROOT,
-                        "Elasticsearch-Hadoop/%s spark %s",
-                        Version.version(),
+                        "elasticsearch-hadoop/%s spark/%s",
+                        Version.versionNumber(),
                         SparkContext.getOrCreate(cfg).version()
                 )
         );

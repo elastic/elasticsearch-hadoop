@@ -42,7 +42,7 @@ public class HadoopSettings extends Settings {
         String taskAttemptId = cfg.get(JobContext.TASK_ATTEMPT_ID, "");
         String opaqueId = String.format(Locale.ROOT, "[mapreduce] [%s] [%s] [%s]", user, jobName, taskAttemptId);
         setOpaqueId(opaqueId);
-        setUserAgent(String.format(Locale.ROOT, "Elasticsearch-Hadoop/%s mapreduce %s", Version.version(), VersionInfo.getVersion()));
+        setUserAgent(String.format(Locale.ROOT, "elasticsearch-hadoop/%s hadoop/%s", Version.versionNumber(), VersionInfo.getVersion()));
     }
 
     @Override
