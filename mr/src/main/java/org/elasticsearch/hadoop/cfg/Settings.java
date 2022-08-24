@@ -801,5 +801,10 @@ public abstract class Settings {
     public String getOpaqueId() {
         return getProperty(ES_NET_HTTP_HEADER_OPAQUE_ID);
     }
+
+    public Settings setUserAgent(String userAgent) {
+        setProperty(ES_NET_HTTP_HEADER_USER_AGENT, cleanOpaqueId(userAgent));
+        return this;
+    }
 }
 

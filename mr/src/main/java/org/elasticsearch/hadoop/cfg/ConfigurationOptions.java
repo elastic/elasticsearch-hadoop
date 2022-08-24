@@ -287,7 +287,7 @@ public interface ConfigurationOptions {
 
     String ES_NET_HTTP_HEADER_PREFIX = "es.net.http.header.";
     String ES_NET_HTTP_HEADER_OPAQUE_ID = ES_NET_HTTP_HEADER_PREFIX + "X-Opaque-ID";
-
+    String ES_NET_HTTP_HEADER_USER_AGENT = ES_NET_HTTP_HEADER_PREFIX + "User-Agent";
     String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
     String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";
 

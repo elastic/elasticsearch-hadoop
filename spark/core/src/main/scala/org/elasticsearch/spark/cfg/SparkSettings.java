@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.IOUtils;
 
+import org.elasticsearch.hadoop.util.Version;
 import scala.Option;
 import scala.Tuple2;
 
@@ -51,6 +52,13 @@ public class SparkSettings extends Settings {
         String appId = cfg.get("spark.app.id", "");
         String opaqueId = String.format(Locale.ROOT, "[spark] [%s] [%s] [%s]", user, appName, appId);
         this.setOpaqueId(opaqueId);
+        this.setUserAgent(String.format(
+                        Locale.ROOT,
+                        "elasticsearch-hadoop/%s spark/%s",
+                        Version.versionNumber(),
+                        org.apache.spark.package$.MODULE$.SPARK_VERSION()
+                )
+        );
     }
 
     @Override
