@@ -25,7 +25,6 @@ import java.util.Properties;
 
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -57,7 +56,7 @@ public class SparkSettings extends Settings {
                         Locale.ROOT,
                         "elasticsearch-hadoop/%s spark/%s",
                         Version.versionNumber(),
-                        SparkContext.getOrCreate(cfg).version()
+                        org.apache.spark.package$.MODULE$.SPARK_VERSION()
                 )
         );
     }
