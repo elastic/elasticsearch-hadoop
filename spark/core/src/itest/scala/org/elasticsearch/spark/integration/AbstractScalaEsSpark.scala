@@ -866,9 +866,46 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
 
   @Test
-  def testMultiIndexNonExisting() {
-    val rdd = EsSpark.esJsonRDD(sc, "bumpA,Stump", Map(ES_INDEX_READ_MISSING_AS_EMPTY -> "yes"))
-    assertEquals(0, rdd.count)
+  def testaaaaaMultiIndexNonExisting() {
+
+    val multipleMissingIndicesWithSetting = EsSpark.esJsonRDD(sc, "bumpA,Stump", Map(ES_INDEX_READ_MISSING_AS_EMPTY -> "yes"))
+    assertEquals(0, multipleMissingIndicesWithSetting.count)
+    val multipleMissingIndicesWithoutSetting = EsSpark.esJsonRDD(sc, "bumpA,Stump")
+    try {
+      val count = multipleMissingIndicesWithoutSetting.count
+      fail("Should have thrown an exception instead of returning " + count)
+    } catch {
+      case e: EsHadoopIllegalArgumentException => //Expected
+    }
+
+    val index1 = prefix + "spark-test-read-missing-as-empty-1"
+    val typename = "data"
+    val target1 = resource(index1, typename, version)
+    val docPath1 = docEndpoint(index1, typename, version)
+
+    RestUtils.touch(target1)
+    RestUtils.postData(docPath1, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(docPath1, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.refresh(index1)
+
+    val index2 = prefix + "spark-test-read-missing-as-empty-2"
+    val target2 = resource(index2, typename, version)
+    val docPath2 = docEndpoint(index2, typename, version)
+
+    RestUtils.touch(target2)
+    RestUtils.postData(docPath2, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(docPath2, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.refresh(index2)
+
+    val mixedWithSetting = EsSpark.esJsonRDD(sc, "bumpA,Stump," + index1 + "," + index2, Map(ES_INDEX_READ_MISSING_AS_EMPTY -> "yes"))
+    assertEquals(4, mixedWithSetting.count)
+    val mixedWithoutSetting = EsSpark.esJsonRDD(sc, "bumpA,Stump," + index1)
+    try {
+      val count = mixedWithoutSetting.count
+      fail("Should have thrown an exception instead of returning " + count)
+    } catch {
+      case e: EsHadoopIllegalArgumentException => //Expected
+    }
   }
 
   def wrapIndex(index: String) = {
