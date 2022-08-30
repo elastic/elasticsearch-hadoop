@@ -1,0 +1,6 @@
+[[eshadoop-8.4.1]]
+== Elasticsearch for Apache Hadoop version 8.4.1
+
+ES-Hadoop 8.4.1 is a version compatibility release, tested specifically against Elasticsearch 8.4.1.
+
+
