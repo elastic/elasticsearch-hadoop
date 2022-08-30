@@ -9,6 +9,7 @@ This section summarizes the changes in each release.
 [[release-notes-8]]
 ===== 8.x
 
+* <<eshadoop-8.4.1>>
 * <<eshadoop-8.4.0>>
 * <<eshadoop-8.3.3>>
 * <<eshadoop-8.3.2>>
