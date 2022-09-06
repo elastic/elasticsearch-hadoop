@@ -314,7 +314,7 @@ public class RestClient implements Closeable, StatsAware {
         if (indexResource.isTyped()) {
             return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true);
         } else {
-            return getMappings(indexResource.index() + "/_mapping", false);
+            return getMappings(indexResource.index() + "/_mapping" + (indexReadMissingAsEmpty ? "?ignore_unavailable=true" : ""), false);
         }
     }
 

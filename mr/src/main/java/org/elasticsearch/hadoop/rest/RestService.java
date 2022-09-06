@@ -226,23 +226,20 @@ public abstract class RestService implements Serializable {
 
         RestRepository client = new RestRepository(settings);
         try {
-            boolean indexExists = client.resourceExists(true);
+            boolean allIndicesExist = client.resourceExists(true);
 
-            List<List<Map<String, Object>>> shards = null;
-
-            if (!indexExists) {
-                if (settings.getIndexReadMissingAsEmpty()) {
-                    log.info(String.format("Index [%s] missing - treating it as empty", settings.getResourceRead()));
-                    shards = Collections.emptyList();
-                } else {
-                    throw new EsHadoopIllegalArgumentException(
-                            String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY));
-                }
-            } else {
-                shards = client.getReadTargetShards();
-                if (log.isTraceEnabled()) {
-                    log.trace("Creating splits for shards " + shards);
-                }
+            if (!allIndicesExist && !settings.getIndexReadMissingAsEmpty()) {
+                throw new EsHadoopIllegalArgumentException(
+                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY));
+            }
+            /*
+             * allIndicesExist will be false if even a single index does not exist (if multiple are in the resources string). If it is
+             * false, we have knowing if any index exists so we have to make the following requests regardless. They will return empty if
+             * none of the indices exist, so there's no harm other than the wasted time.
+             */
+            final List<List<Map<String, Object>>> shards = client.getReadTargetShards();
+            if (log.isTraceEnabled()) {
+                log.trace("Creating splits for shards " + shards);
             }
 
             log.info(String.format("Reading from [%s]", settings.getResourceRead()));
