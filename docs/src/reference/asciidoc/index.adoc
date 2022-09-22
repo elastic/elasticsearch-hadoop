@@ -32,7 +32,7 @@ https://github.com/elastic/elasticsearch-hadoop/issues[Elasticsearch-Hadoop repo
 
 repository-hdfs::
 Use HDFS as a back-end repository for doing snapshot/restore from/to {es}. For more information, refer to its
-https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html[home page]. For feature requests or
+{plugins}/repository-hdfs.html[home page]. For feature requests or
 bugs, please open an issue in the https://github.com/elastic/elasticsearch/issues[Elasticsearch repository] with the
 ":Plugin Repository HDFS" tag.
 
