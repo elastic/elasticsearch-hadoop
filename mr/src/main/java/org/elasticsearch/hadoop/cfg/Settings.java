@@ -485,6 +485,10 @@ public abstract class Settings {
         return getProperty(ES_NET_SSL_KEYSTORE_PASS);
     }
 
+    public String getNetworkSSLTrustStoreBase64() {
+        return getProperty(ES_NET_SSL_TRUST_STORE_BASE64);
+    }
+
     public String getNetworkSSLTrustStoreLocation() {
         return getProperty(ES_NET_SSL_TRUST_STORE_LOCATION);
     }

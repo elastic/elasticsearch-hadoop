@@ -565,6 +565,8 @@ added[2.1]
 
 `es.net.ssl.truststore.location`:: trust store location (typically a URL, without a prefix it is interpreted as a classpath entry)
 
+`es.net.ssl.truststore.base64`:: trust store encoded in base64, will be used if `es.net.ssl.truststore.location` is not passed
+
 `es.net.ssl.truststore.pass`:: <<keystore,Securable>>. trust store password
 
 `es.net.ssl.cert.allow.self.signed` (default false):: Whether or not to allow self signed certificates
@@ -724,7 +726,7 @@ Typically (and again, do note that your environment might differ significantly),
 The authentication support in {eh} is of two types:
 
 Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.auth.pass` properties.
-PKI/X.509:: Use X.509 certificates to authenticate {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
+PKI/X.509:: Use X.509 certificates to authenticate {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required. Instead of `es.net.ssl.truststore.location` one could use `es.net.ssl.truststore.base64`.
 
 [float]
 [[keystore]]

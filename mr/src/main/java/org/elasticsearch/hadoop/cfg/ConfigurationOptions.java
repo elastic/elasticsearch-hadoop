@@ -279,6 +279,7 @@ public interface ConfigurationOptions {
     String ES_NET_SSL_KEYSTORE_TYPE_DEFAULT = "JKS"; // PKCS12 could also be used
     String ES_NET_SSL_KEYSTORE_PASS = "es.net.ssl.keystore.pass";
 
+    String ES_NET_SSL_TRUST_STORE_BASE64 = "es.net.ssl.truststore.base64";
     String ES_NET_SSL_TRUST_STORE_LOCATION = "es.net.ssl.truststore.location";
     String ES_NET_SSL_TRUST_STORE_PASS = "es.net.ssl.truststore.pass";
 

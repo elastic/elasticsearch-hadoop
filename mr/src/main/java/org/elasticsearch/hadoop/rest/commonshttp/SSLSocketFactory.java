@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -30,6 +31,7 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManager;
@@ -103,6 +105,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
     private final String keyStorePass;
     private final String keyStoreType;
 
+    private final String trustStoreBase64;
     private final String trustStoreLocation;
     private final String trustStorePass;
     private final TrustStrategy trust;
@@ -114,6 +117,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         keyStorePass = secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS);
         keyStoreType = settings.getNetworkSSLKeyStoreType();
 
+        trustStoreBase64 = settings.getNetworkSSLTrustStoreBase64();
         trustStoreLocation = settings.getNetworkSSLTrustStoreLocation();
         trustStorePass = secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS);
 
@@ -205,6 +209,17 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         return keyStore;
     }
 
+    private KeyStore loadKeyStoreFromBase64(String trustStoreBase64, char[] pass) throws GeneralSecurityException, IOException {
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+        try(InputStream in = new ByteArrayInputStream(Base64.getDecoder().decode(trustStoreBase64))) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loading keystore from string [" + trustStoreBase64 + "]");
+            }
+            keyStore.load(in, pass);
+        }
+        return keyStore;
+    }
+
     private KeyManager[] loadKeyManagers() throws GeneralSecurityException, IOException {
         if (!StringUtils.hasText(keyStoreLocation)) {
             LOG.debug("No keystore location specified! SSL is continuing with no keystore.");
@@ -224,8 +239,11 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         if (StringUtils.hasText(trustStoreLocation)) {
             char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
             keyStore = loadKeyStore(trustStoreLocation, pass);
+        } else if (StringUtils.hasText(trustStoreBase64)) {
+            char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
+            keyStore = loadKeyStoreFromBase64(trustStoreBase64, pass);
         } else {
-            LOG.debug("No truststore location specified! SSL is continuing with no truststore.");
+            LOG.debug("No truststore nor its specified! SSL is continuing with no truststore.");
         }
 
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
