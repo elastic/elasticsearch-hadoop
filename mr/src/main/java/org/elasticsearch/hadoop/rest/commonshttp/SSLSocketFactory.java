@@ -243,7 +243,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
             char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
             keyStore = loadKeyStoreFromBase64(trustStoreBase64, pass);
         } else {
-            LOG.debug("No truststore nor its specified! SSL is continuing with no truststore.");
+            LOG.debug("No truststore was specified! SSL is continuing with no truststore.");
         }
 
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
