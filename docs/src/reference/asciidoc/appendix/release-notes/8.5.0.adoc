@@ -1,0 +1,15 @@
+[[eshadoop-8.5.0]]
+== Elasticsearch for Apache Hadoop version 8.5.0
+
+[[enhancements-8.5.0]]
+=== Enhancements
+Section::
+* Adding a user-agent header
+https://github.com/elastic/elasticsearch-hadoop/pull/1993[#1993]
+
+[[bugs-8.5.0]]
+=== Bug Fixes
+Section::
+* Ignoring missing indices if es.index.read.missing.as.empty is true
+https://github.com/elastic/elasticsearch-hadoop/pull/1997[#1997]
+http://github.com/elastic/elasticsearch-hadoop/issues/1055[#1055]
