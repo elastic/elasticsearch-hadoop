@@ -103,7 +103,7 @@ http://logstash.net/[Logstash] users will find this _pattern_ quite http://logst
 [float]
 ==== Network
 `es.nodes` (default localhost)::
-List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can also have its HTTP/REST port specified individually (e.g. `mynode:9600`).
+List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can also have its HTTP/REST port specified individually (e.g. `http://mynode:9600`).
 
 `es.port` (default 9200)::
 Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
