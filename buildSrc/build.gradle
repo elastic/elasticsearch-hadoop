@@ -61,6 +61,7 @@ repositories {
         flatDir { dirs new File(project.rootDir, "../localRepo") }
     } else {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+        maven { url "https://artifacts-snapshot.elastic.co/elasticsearch/${esVersion}/maven" }
     }
 }
 
