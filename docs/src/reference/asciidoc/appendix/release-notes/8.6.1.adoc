@@ -1,0 +1,8 @@
+[[eshadoop-8.6.1]]
+== Elasticsearch for Apache Hadoop version 8.6.1
+
+[[enhancements-8.6.1]]
+=== Enhancements
+Section::
+* Update Spark to 3.2.3
+https://github.com/elastic/elasticsearch-hadoop/pull/2056[#2056]
