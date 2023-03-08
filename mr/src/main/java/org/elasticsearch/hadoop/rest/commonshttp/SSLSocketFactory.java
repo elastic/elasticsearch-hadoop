@@ -89,7 +89,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
 
     private static class SelfSignedStrategy implements TrustStrategy {
         public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-            return chain.length == 1;
+            return chain.length >= 1;
         }
     }
 
