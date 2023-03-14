@@ -507,7 +507,7 @@ class BuildPlugin implements Plugin<Project>  {
         pack.dependsOn(project.tasks.jar)
         pack.dependsOn(project.tasks.javadocJar)
         pack.dependsOn(project.tasks.sourcesJar)
-        pack.outputs.files(project.tasks.jar.archivePath, project.tasks.javadocJar.archivePath, project.tasks.sourcesJar.archivePath)
+        pack.outputs.files(project.tasks.jar.getArchiveFile(), project.tasks.javadocJar.getArchiveFile(), project.tasks.sourcesJar.getArchiveFile().get().getAsFile())
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPluginExtension.class)
             sparkVariants.featureVariants { SparkVariant variant ->
@@ -515,9 +515,9 @@ class BuildPlugin implements Plugin<Project>  {
                 pack.dependsOn(project.tasks.getByName(variant.taskName('javadocJar')))
                 pack.dependsOn(project.tasks.getByName(variant.taskName('sourcesJar')))
                 pack.outputs.files(
-                        project.tasks.getByName(variant.taskName('jar')).archivePath,
-                        project.tasks.getByName(variant.taskName('javadocJar')).archivePath,
-                        project.tasks.getByName(variant.taskName('sourcesJar')).archivePath
+                        project.tasks.getByName(variant.taskName('jar')).getArchiveFile().get().getAsFile(),
+                        project.tasks.getByName(variant.taskName('javadocJar')).getArchiveFile().get().getAsFile(),
+                        project.tasks.getByName(variant.taskName('sourcesJar')).getArchiveFile().get().getAsFile()
                 )
             }
         }
