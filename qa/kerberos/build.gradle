@@ -120,7 +120,7 @@ if (disableTests) {
     Jar qaKerberosStormJar = project.tasks.create('kerberosStormJar', Jar)
     qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('jar'))
     qaKerberosStormJar.dependsOn(project(':elasticsearch-storm').tasks.getByName('itestJar'))
-    qaKerberosStormJar.classifier = 'storm-testing'
+    qaKerberosStormJar.archiveClassifier.set('storm-testing')
     
     // Add projects to the storm testing uber-jar
     [project, project(":elasticsearch-hadoop-mr"), project(":elasticsearch-storm")].forEach { proj ->
@@ -404,7 +404,7 @@ if (disableTests) {
         // Run on namenode since the gateway is not yet set up
         runOn(config.service('hadoop').role('namenode').instance(0))
         dependsOn(jar)
-        jobJar = jar.archivePath
+        jobJar = jar.getArchiveFile().get().getAsFile()
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
         systemProperties([
                 "test.krb5.principal": namenodePrincipal,
@@ -418,7 +418,7 @@ if (disableTests) {
         // Run on namenode since the gateway is not yet set up
         runOn(config.service('hadoop').role('namenode').instance(0))
         dependsOn(jar, createTmp)
-        jobJar = jar.archivePath
+        jobJar = jar.getArchiveFile().get().getAsFile()
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
         systemProperties([
                 "test.krb5.principal": namenodePrincipal,
@@ -436,7 +436,7 @@ if (disableTests) {
         clusterConfiguration = config
         executedOn = config.service('hadoop').role('namenode').instance(0)
         dependsOn(jar)
-        jobJar = jar.archivePath
+        jobJar = jar.getArchiveFile().get().getAsFile()
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
@@ -451,7 +451,7 @@ if (disableTests) {
     HadoopMRJob copyData = config.createClusterTask('copyData', HadoopMRJob.class) {
         clusterConfiguration = config
         dependsOn(createDataDir, jar)
-        jobJar = jar.archivePath
+        jobJar = jar.getArchiveFile().get().getAsFile()
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
         systemProperties([
                 "test.krb5.principal": clientPrincipal,
@@ -470,8 +470,8 @@ if (disableTests) {
         clusterConfiguration = config
         useCluster(testClusters.integTest)
         dependsOn(copyData, setupUsers)
-        jobJar = jar.archivePath
-        libJars(mrJar.archivePath, kerberosItestJar.archivePath)
+        jobJar = jar.getArchiveFile().get().getAsFile()
+        libJars(mrJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
         jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
@@ -497,8 +497,8 @@ if (disableTests) {
         clusterConfiguration = config
         useCluster(testClusters.integTest)
         dependsOn(mrLoadData)
-        jobJar = jar.archivePath
-        libJars(mrJar.archivePath, kerberosItestJar.archivePath)
+        jobJar = jar.getArchiveFile().get().getAsFile()
+        libJars(mrJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
         jobSettings([
                 'es.resource': 'qa_kerberos_mr_data',
@@ -530,8 +530,8 @@ if (disableTests) {
     //    deployModeCluster()
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
-        jobJar = jar.archivePath
-        libJars(sparkJar.archivePath, kerberosItestJar.archivePath)
+        jobJar = jar.getArchiveFile().get().getAsFile()
+        libJars(sparkJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
@@ -562,8 +562,8 @@ if (disableTests) {
     //    deployModeCluster()
     //    principal = clientPrincipal + realm
     //    keytab = clientKeytab.toString()
-        jobJar = jar.archivePath
-        libJars(sparkJar.archivePath, kerberosItestJar.archivePath)
+        jobJar = jar.getArchiveFile().get().getAsFile()
+        libJars(sparkJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
                 'spark.es.resource': 'qa_kerberos_spark_data',
@@ -609,13 +609,13 @@ if (disableTests) {
         dependsOn(jar, setupUsers, copyData, patchBeeline)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/load_to_es.sql')
-        libJars(hiveJar.archivePath, kerberosItestJar.archivePath)
+        libJars(hiveJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                         "-Dtest.krb5.principal=$clientPrincipal$realm " +
                         "-Dtest.krb5.keytab=${clientKeytab.toString()} ",
-                'TEST_LIB': jar.archivePath.toString()
+                'TEST_LIB': jar.getArchiveFile().get().getAsFile().toString()
         ])
     }
     integrationTest.dependsOn(hiveLoadData)
@@ -626,13 +626,13 @@ if (disableTests) {
         dependsOn(hiveLoadData)
         hivePrincipal = hivePrincipalName + realm
         script = new File(resourceDir, 'hive/read_from_es.sql')
-        libJars(hiveJar.archivePath, kerberosItestJar.archivePath)
+        libJars(hiveJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         environmentVariables.putAll([
                 'HADOOP_CLIENT_OPTS':
                         "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                                 "-Dtest.krb5.principal=$clientPrincipal$realm " +
                                 "-Dtest.krb5.keytab=${clientKeytab.toString()} ",
-                'TEST_LIB': jar.archivePath.toString()
+                'TEST_LIB': jar.getArchiveFile().get().getAsFile().toString()
         ])
     }
     integrationTest.dependsOn(hiveReadData)
@@ -646,7 +646,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(jar, setupUsers, copyData)
         script = new File(resourceDir, 'pig/load_to_es.pig')
-        libJars(pigJar.archivePath, kerberosItestJar.archivePath)
+        libJars(pigJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
@@ -658,7 +658,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         dependsOn(pigLoadData)
         script = new File(resourceDir, 'pig/read_from_es.pig')
-        libJars(pigJar.archivePath, kerberosItestJar.archivePath)
+        libJars(pigJar.getArchiveFile().get().getAsFile(), kerberosItestJar.getArchiveFile().get().getAsFile())
         environmentVariables.putAll([
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ])
@@ -695,7 +695,7 @@ if (disableTests) {
         HadoopMRJob copyOutputTask = config.createClusterTask("copy${integrationName.capitalize()}Output".toString(), HadoopMRJob.class) {
             clusterConfiguration = config
             dependsOn(integrationReadTask, createOutputDataDir)
-            jobJar = jar.archivePath
+            jobJar = jar.getArchiveFile().get().getAsFile()
             jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
             systemProperties([
                     "test.krb5.principal": clientPrincipal,
