@@ -183,9 +183,13 @@ distribution {
 
 // Add a task in the root project that collects all the dependencyReport data for each project
 // Concatenates the dependencies CSV files into a single file
-task generateDependenciesReport(type: ConcatFilesTask) {
-    dependsOn rootProject.allprojects.collect { it.tasks.withType(DependenciesInfoTask) }
-    files = fileTree(dir: project.rootDir,  include: '**/dependencies.csv' )
+task generateDependenciesReport(type: ConcatFilesTask) { concatDepsTask ->
+    rootProject.allprojects.collect { 
+        it.tasks.withType(DependenciesInfoTask) { depTask ->
+            concatDepsTask.dependsOn depTask
+            concatDepsTask.getFiles().from(depTask.outputFile)
+        }
+    }
     headerLine = "name,version,url,license"
     target = new File(System.getProperty('csv')?: "${project.buildDir}/reports/dependencies/es-hadoop-dependencies.csv")
 }
