@@ -43,12 +43,3 @@ if (project.hasProperty("find-artifact")) {
         }
     }
 }
-
-// Add a task in the project that collects all the dependencyReport data for each project
-// Concatenates the dependencies CSV files into a single file
-// usage: ./gradlew :dist:generateDependenciesReport -Dcsv=/tmp/deps.csv
-task generateDependenciesReport(type: ConcatFilesTask) {
-    files = fileTree(dir: project.rootDir,  include: '**/dependencies.csv' )
-    headerLine = "name,version,url,license"
-    target = new File(System.getProperty('csv')?: "${project.buildDir}/reports/dependencies/es-hadoop-dependencies.csv")
-}
