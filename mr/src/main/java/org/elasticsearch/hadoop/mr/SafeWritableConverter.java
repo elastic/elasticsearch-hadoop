@@ -31,15 +31,26 @@ class SafeWritableConverter {
         Text.class.getName(); // force class to be loaded
     }
 
-    public void invoke(Object from, BytesArray to) {
+    /**
+     * If from is a Text or BytesWritable, the value is written to the to field, and true is returned. Otherwise does not write to
+     * the to field and returns false.
+     * @param from The object to copy bytes from
+     * @param to The BytesArray to copy bytes to
+     * @return true if from has been handled
+     */
+    public boolean invoke(Object from, BytesArray to) {
         // handle common cases
         if (from instanceof Text) {
             Text t = (Text) from;
             to.bytes(t.getBytes(), t.getLength());
+            return true;
         }
-        if (from instanceof BytesWritable) {
+        else if (from instanceof BytesWritable) {
             BytesWritable b = (BytesWritable) from;
             to.bytes(b.getBytes(), b.getLength());
+            return true;
+        } else {
+            return false;
         }
     }
 }

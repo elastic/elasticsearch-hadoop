@@ -35,10 +35,14 @@ public class WritableBytesConverter extends JdkBytesConverter {
 
     @Override
     public void convert(Object from, BytesArray to) {
-
-        if (safeWritableConverter != null)
-            safeWritableConverter.invoke(from, to);
-
-        super.convert(from, to);
+        final boolean handled;
+        if (safeWritableConverter != null) {
+            handled = safeWritableConverter.invoke(from, to);
+        } else {
+            handled = false;
+        }
+        if (handled == false) {
+            super.convert(from, to);
+        }
     }
 }
