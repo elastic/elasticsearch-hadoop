@@ -22,7 +22,7 @@ import java.util.Properties;
 
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.Utils;
-import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -43,7 +43,7 @@ public class PigSchemaSaveTest {
     @Test
     public void testSchemaSerializationPlusBase64() throws Exception {
         Schema schemaFromString = Utils.getSchemaFromString("name:bytearray,links:{(missing:chararray)}");
-        Schema schemaSaved = IOUtils.deserializeFromBase64(IOUtils.serializeToBase64(schemaFromString));
+        Schema schemaSaved = TestUtils.deserializeFromBase64(TestUtils.serializeToBase64(schemaFromString));
         assertEquals(schemaFromString.toString(), schemaSaved.toString());
     }
 

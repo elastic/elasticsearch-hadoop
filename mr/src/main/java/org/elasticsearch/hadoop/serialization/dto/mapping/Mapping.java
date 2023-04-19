@@ -19,6 +19,10 @@
 
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
+import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonProperty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,9 +31,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.elasticsearch.hadoop.serialization.FieldType;
-import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import java.util.Objects;
 
 /**
  * A mapping has a name and a collection of fields.
@@ -53,7 +55,7 @@ public class Mapping implements Serializable {
         this(index, name, (fields != null ? fields.toArray(new Field[fields.size()]) : Field.NO_FIELDS));
     }
 
-    Mapping(String index, String type, Field[] fields) {
+    Mapping(@JsonProperty("index") String index, @JsonProperty("type") String type, @JsonProperty("fields") Field[] fields) {
         this.index = index;
         this.type = type;
         this.fields = fields;
@@ -153,5 +155,16 @@ public class Mapping implements Serializable {
         } else {
             return String.format("%s=%s", index, Arrays.toString(fields));
         }
+    }
+
+    @Override
+    public boolean equals(Object o)  {
+        if (o instanceof Mapping == false) {
+            return false;
+        }
+        Mapping other = (Mapping) o;
+        return Objects.equals(this.index, other.index) &&
+                Objects.equals(this.type, other.type) &&
+                Objects.deepEquals(this.fields, other.fields);
     }
 }

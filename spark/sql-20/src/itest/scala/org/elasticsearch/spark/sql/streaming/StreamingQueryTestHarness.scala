@@ -30,7 +30,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.streaming.StreamingQueryException
 import org.apache.spark.sql.streaming.StreamingQueryListener
-import org.elasticsearch.hadoop.util.IOUtils
+import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.util.unit.TimeValue
 import org.junit.Assert
 
@@ -386,11 +386,11 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
 
 object TestingSerde extends Serializable {
   def serialize(any: java.io.Serializable): String = {
-    IOUtils.serializeToBase64(any)
+    TestUtils.serializeToBase64(any)
   }
 
   def deserialize[T](line: String): T = {
-    val data: T = IOUtils.deserializeFromBase64(line)
+    val data: T = TestUtils.deserializeFromBase64(line)
     data
   }
 }
