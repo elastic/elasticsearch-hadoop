@@ -18,14 +18,16 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
+
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -34,12 +36,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
-
-import javax.xml.bind.DatatypeConverter;
-
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 
 /**
  * Utility class used internally for the Pig support.
@@ -53,42 +49,38 @@ public abstract class IOUtils {
         ReflectionUtils.makeAccessible(BYTE_ARRAY_BUFFER);
     }
 
-    public static String serializeToBase64(Serializable object) {
+    private static final ObjectMapper mapper = new ObjectMapper().configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false);
+
+    /**
+     * This method serializes object into a json String using jackson. The object must support jackson serialization.
+     */
+    public static String serializeToJsonString(Object object) {
         if (object == null) {
             return StringUtils.EMPTY;
         }
-        FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
-        ObjectOutputStream oos = null;
+        final String json;
         try {
-            oos = new ObjectOutputStream(baos);
-            oos.writeObject(object);
+            json = mapper.writeValueAsString(object);
         } catch (IOException ex) {
-            throw new EsHadoopSerializationException("Cannot serialize object " + object, ex);
-        } finally {
-            close(oos);
+            throw new EsHadoopSerializationException("Cannot serialize object: " + object, ex);
         }
-        return DatatypeConverter.printBase64Binary(baos.bytes().bytes());
+        return json;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Serializable> T deserializeFromBase64(String data) {
+    /**
+     * This method deserializes a String that was created by serializeToJsonString
+     */
+    public static <T> T deserializeFromJsonString(String data, Class<T> clazz) {
         if (!StringUtils.hasLength(data)) {
             return null;
         }
-
-        byte[] rawData = DatatypeConverter.parseBase64Binary(data);
-        ObjectInputStream ois = null;
+        final T object;
         try {
-            ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
-            Object o = ois.readObject();
-            return (T) o;
-        } catch (ClassNotFoundException ex) {
-            throw new EsHadoopIllegalStateException("cannot deserialize object", ex);
-        } catch (IOException ex) {
-            throw new EsHadoopSerializationException("cannot deserialize object", ex);
-        } finally {
-            close(ois);
+            object =  mapper.readValue(data, clazz);
+        } catch (IOException e) {
+            throw new EsHadoopSerializationException("Cannot deserialize string: [" + data + "]", e);
         }
+        return object;
     }
 
     public static String propsToString(Properties props) {

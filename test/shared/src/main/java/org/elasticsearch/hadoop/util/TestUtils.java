@@ -22,13 +22,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
 
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
+
+import javax.xml.bind.DatatypeConverter;
+
+import static org.elasticsearch.hadoop.util.IOUtils.close;
 
 public class TestUtils {
 
@@ -97,5 +106,43 @@ public class TestUtils {
         }
 
         return out.toByteArray();
+    }
+
+    public static String serializeToBase64(Serializable object) {
+        if (object == null) {
+            return StringUtils.EMPTY;
+        }
+        FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(baos);
+            oos.writeObject(object);
+        } catch (IOException ex) {
+            throw new EsHadoopSerializationException("Cannot serialize object " + object, ex);
+        } finally {
+            close(oos);
+        }
+        return DatatypeConverter.printBase64Binary(baos.bytes().bytes());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Serializable> T deserializeFromBase64(String data) {
+        if (!StringUtils.hasLength(data)) {
+            return null;
+        }
+
+        byte[] rawData = DatatypeConverter.parseBase64Binary(data);
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
+            Object o = ois.readObject();
+            return (T) o;
+        } catch (ClassNotFoundException ex) {
+            throw new EsHadoopIllegalStateException("cannot deserialize object", ex);
+        } catch (IOException ex) {
+            throw new EsHadoopSerializationException("cannot deserialize object", ex);
+        } finally {
+            close(ois);
+        }
     }
 }
