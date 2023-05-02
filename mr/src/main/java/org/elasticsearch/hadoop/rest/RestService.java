@@ -419,7 +419,7 @@ public abstract class RestService implements Serializable {
         RestRepository repository = new RestRepository(settings);
         Mapping fieldMapping = null;
         if (StringUtils.hasText(partition.getSerializedMapping())) {
-            fieldMapping = IOUtils.deserializeFromBase64(partition.getSerializedMapping());
+            fieldMapping = IOUtils.deserializeFromJsonString(partition.getSerializedMapping(), Mapping.class);
         }
         else {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));

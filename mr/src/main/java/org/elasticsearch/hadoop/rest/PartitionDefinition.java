@@ -47,7 +47,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
         private PartitionDefinitionBuilder(Settings settings, Mapping resolvedMapping) {
             this.serializedSettings = settings == null ? null : settings.save();
-            this.serializedMapping = resolvedMapping == null ? null : IOUtils.serializeToBase64(resolvedMapping);
+            this.serializedMapping = resolvedMapping == null ? null : IOUtils.serializeToJsonString(resolvedMapping);
         }
 
         public PartitionDefinition build(String index, int shardId) {

@@ -288,7 +288,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         if (Utils.LOGGER.isTraceEnabled()) {
           Utils.LOGGER.trace(s"Transformed filters into DSL ${filterString.mkString("[", ",", "]")}")
         }
-        paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToBase64(filterString))
+        paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToJsonString(filterString))
       }
       else {
         if (Utils.LOGGER.isTraceEnabled()) {

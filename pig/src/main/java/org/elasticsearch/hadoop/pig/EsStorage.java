@@ -142,7 +142,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         // save schema to back-end for JSON translation
         if (!StringUtils.hasText(props.getProperty(ResourceSchema.class.getName()))) {
             // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
-            props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
+            props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToJsonString(s));
         }
     }
 
@@ -204,7 +204,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             this.schema = new ResourceSchema();
         }
         else {
-            this.schema = IOUtils.deserializeFromBase64(s);
+            this.schema = IOUtils.deserializeFromJsonString(s, ResourceSchema.class);
         }
         this.pigTuple = new PigTuple(schema);
     }

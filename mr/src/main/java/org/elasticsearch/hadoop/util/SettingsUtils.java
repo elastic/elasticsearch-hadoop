@@ -29,7 +29,6 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -177,11 +176,11 @@ public abstract class SettingsUtils {
             return;
         }
 
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, IOUtils.serializeToBase64(filters));
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, IOUtils.serializeToJsonString(filters));
     }
 
     public static String[] getFilters(Settings settings) {
-        return IOUtils.deserializeFromBase64(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS));
+        return IOUtils.deserializeFromJsonString(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS), String[].class);
     }
 
     public static String determineSourceFields(Settings settings) {

@@ -21,10 +21,12 @@ package org.elasticsearch.hadoop.serialization.dto.mapping;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonCreator;
+import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonProperty;
 
-@SuppressWarnings("serial")
 public class Field implements Serializable {
 
     static final Field[] NO_FIELDS = new Field[0];
@@ -41,20 +43,24 @@ public class Field implements Serializable {
         this(name, type, (properties != null ? properties.toArray(new Field[properties.size()]) : NO_FIELDS));
     }
 
-    Field(String name, FieldType type, Field[] properties) {
+    @JsonCreator
+    Field(@JsonProperty("name") String name, @JsonProperty("type") FieldType type, @JsonProperty("properties") Field[] properties) {
         this.name = name;
         this.type = type;
         this.properties = properties;
     }
 
+    @JsonProperty("properties")
     public Field[] properties() {
         return properties;
     }
 
+    @JsonProperty("type")
     public FieldType type() {
         return type;
     }
 
+    @JsonProperty("name")
     public String name() {
         return name;
     }
@@ -62,5 +68,16 @@ public class Field implements Serializable {
     @Override
     public String toString() {
         return String.format("%s=%s", name, ((type == FieldType.OBJECT || type == FieldType.NESTED) ? Arrays.toString(properties) : type));
+    }
+
+    @Override
+    public boolean equals(Object o)  {
+        if (o instanceof Field == false) {
+            return false;
+        }
+        Field other = (Field) o;
+        return Objects.equals(this.name, other.name) &&
+                Objects.equals(this.type, other.type) &&
+                Objects.deepEquals(this.properties, other.properties);
     }
 }
