@@ -118,7 +118,7 @@ class InstanceInfo {
      * as well as a groovy AntBuilder, to enable running ant condition checks. The default wait
      * condition is for http on the http port.
      */
-    Closure waitCondition = { InstanceInfo instanceInfo, AntBuilder ant ->
+    Closure waitCondition = { InstanceInfo instanceInfo, groovy.ant.AntBuilder ant ->
         String waitUrl = instanceInfo.httpUri()
         if (waitUrl == null) {
             return true

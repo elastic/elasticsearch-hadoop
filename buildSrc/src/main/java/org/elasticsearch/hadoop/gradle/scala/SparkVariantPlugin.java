@@ -54,7 +54,6 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.scala.ScalaDoc;
 import org.gradle.api.tasks.testing.Test;
-import org.gradle.util.ConfigureUtil;
 
 import static org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP;
 import static org.gradle.api.plugins.JavaBasePlugin.VERIFICATION_GROUP;
@@ -70,6 +69,8 @@ import static org.gradle.api.plugins.JavaPlugin.TEST_TASK_NAME;
 import static org.gradle.api.plugins.scala.ScalaPlugin.SCALA_DOC_TASK_NAME;
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME;
 import static org.gradle.api.tasks.SourceSet.TEST_SOURCE_SET_NAME;
+
+import org.elasticsearch.hadoop.gradle.util.ConfigureUtil;
 
 public class SparkVariantPlugin implements Plugin<Project> {
 
