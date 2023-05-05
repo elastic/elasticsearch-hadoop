@@ -2284,7 +2284,30 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(nested(0).getLong(1), 6)
   }
 
-  
+  @Test
+  def testCommasInFieldNames(): Unit = {
+    val index = wrapIndex("commas-in-names-index")
+    val typed = "data"
+    val (target, docPath) = makeTargets(index, typed)
+    val mapping = wrapMapping("data", s"""{
+                                         |    "dynamic": "strict",
+                                         |    "properties" : {
+                                         |      "some column with a comma, and then some" : {
+                                         |        "type" : "keyword"
+                                         |      }
+                                         |    }
+                                         |  }
+        """.stripMargin)
+    RestUtils.touch(index)
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.postData(docPath, "{\"some column with a comma, and then some\": \"sdfdsf\"}".getBytes("UTF-8"))
+    RestUtils.refresh(target)
+    val df = sqc.read.format("es").load(index)
+    df.printSchema()
+    df.show()
+    assertEquals(1, df.count())
+  }
+
   @Test
   def testMultiIndexes() {
     // add some data

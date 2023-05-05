@@ -20,6 +20,10 @@ package org.elasticsearch.hadoop.util;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 public class StringUtilsTest {
@@ -71,5 +75,33 @@ public class StringUtilsTest {
         // Multi-Index Format is not a legal singular index name, but it should be resolved to one at runtime
         assertFalse(StringUtils.isValidSingularIndexName("abc{date|yyyy-MM-dd}defg"));
 
+    }
+
+    @Test
+    public void testTokenize() {
+        List<String> test1 = Arrays.asList(new String[]{"this", "is a", "test"});
+        String concatenatedString = StringUtils.concatenate(test1);
+        List<String> tokens = StringUtils.tokenize(concatenatedString, ",", true, true);
+        assertEquals(test1, tokens);
+
+        List<String> test2 = Arrays.asList(new String[]{"this", " is a", " test ", " "});
+        concatenatedString = StringUtils.concatenate(test2);
+        tokens = StringUtils.tokenize(concatenatedString, ",", false, false);
+        assertEquals(test2, tokens);
+
+        List<String> test3 = Arrays.asList(new String[]{"this", "is, a", "test"});
+        concatenatedString = StringUtils.concatenate(test3);
+        tokens = StringUtils.tokenize(concatenatedString, ",", true, true);
+        assertEquals(test3, tokens);
+
+        Object[] test4 = new String[]{"this", "is, a", "test"};
+        concatenatedString = StringUtils.concatenate(test4, ";");
+        tokens = StringUtils.tokenize(concatenatedString, ";", true, true);
+        assertEquals(Arrays.asList(test4), tokens);
+
+        List<String> test5 = Arrays.asList(new String[]{"this", "is, a", "test"});
+        concatenatedString = StringUtils.concatenate(test5, ",");
+        tokens = StringUtils.tokenize(concatenatedString, ";,", true, true);
+        assertEquals(test5, tokens);
     }
 }
