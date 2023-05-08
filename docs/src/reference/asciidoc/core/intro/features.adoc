@@ -23,8 +23,5 @@ Facilitates data co-location:: {eh} fully integrates with Hadoop exposing its ne
 
 Apache Hive support:: Run Hive queries against {es} for advanced analystics and _real_time_ responses. {eh} exposes {es} as a Hive table so your scripts can crunch through data faster then ever.
 
-Apache Pig support:: {eh} supports Apache Pig exposing {es} as a _native_ Pig `Storage`. Run your Pig scripts against {es} without any modifications to your configuration or the Pig client.
-
 Apache Spark:: Run fast transformations directly against {es}, either by streaming data or indexing _arbitrary_ ++RDD++s. Available in both Java and Scala flavors.
 
-Apache Storm:: {eh} supports Apache Storm exposing {es} as both a +Spout+ (source) or a +Bolt+ (sink).

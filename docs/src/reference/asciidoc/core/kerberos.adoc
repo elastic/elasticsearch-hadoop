@@ -19,7 +19,7 @@ successful response is returned.
 
 {ehtm} makes use of Hadoop's user management processes; The {krb} credentials of the current Hadoop user are used when
 authenticating to {es}. This means that {krb} authentication in Hadoop must be enabled in order for {eh} to obtain a
-user's {krb} credentials. In the case of using an integration that does not depend on Hadoop's runtime (e.g. Storm),
+user's {krb} credentials. In the case of using an integration that does not depend on Hadoop's runtime,
 additional steps may be required to ensure that a running process has {krb} credentials available for authentication.
 It is recommended that you consult the documentation of each framework that you are using on how to configure security.
 
@@ -411,19 +411,6 @@ https://www.elastic.co/guide/en/elastic-stack-overview/current/mapping-roles.htm
 Once all user accounts are configured and all previous steps for enabling {krb} auth in Hadoop and Hive are complete,
 there should be no differences in creating Hive queries from before.
 
-[[kerberos-pig]]
-=== {krb} with Pig
-
-[[kerberos-pig-requirements]]
-==== Requirements
-
-Before using {krb} authentication to {es} in Pig, {krb} authentication must be enabled for Hadoop. Make sure you have
-done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> as well as the steps
-for <<kerberos-yarn,configuring your YARN services>> before using {krb} authentication for {es}.
-
-If {eh} is configured for {krb} authentication and Hadoop security is enabled, {eh}'s storage functions in Pig will
-automatically obtain delegation tokens for jobs when submitting them to the cluster.
-
 [[kerberos-spark]]
 === {krb} with Spark
 
@@ -563,91 +550,3 @@ The property to set is dependent on your version of Spark:
 * For Spark 2.1.0-2.3.0: set the `spark.yarn.security.credentials.elasticsearch.enabled` property to `false`. This
 property is still accepted in Spark 2.3.0+, but is marked as deprecated.
 
-[[kerberos-storm]]
-=== {krb} with Storm
-
-[[kerberos-storm-requirements]]
-==== Requirements
-
-Your Storm deployment should be secured, but configuring it for security is not strictly required.
-
-Storm is not always deployed alongside a Hadoop distribution. Thus, configuring {krb} authentication for Hadoop is not
-required for using {krb} authentication to {es} on Storm.
-
-[[kerberos-storm-autocred]]
-==== Using Storm's AutoCredential plugins
-
-Storm provides a http://storm.apache.org/releases/2.0.0-SNAPSHOT/SECURITY.html#automatic-credentials-push-and-renewal[
-myriad of plugin interfaces] that can be loaded and used to collect, update, and renew credentials over the lifetime of
-a running topology. {eh} provides the `AutoElasticsearch` class which Storm can use to automatically obtain and renew
-{es} delegation tokens for a topology.
-
-`AutoElasticsearch` implements Storm's `INimbusCredentialPlugin`, `IAutoCredentials`, and `ICredentialsRenewer`
-interfaces. The first of which is used to obtain delegation tokens on Nimbus before submitting a topology. The second
-is used for updating the credentials on the worker nodes, and the third is used for obtaining new delegation tokens
-when the current tokens are close to expiring.
-
-[[kerberos-storm-autocred-settings]]
-===== Configuring AutoElasticsearch
-
-In order for the `AutoElasticsearch` plugin to obtain credentials, {krb} authentication must be enabled for {eh} in its
-settings. You must specify the `es.security.authentication` setting in either the storm.yaml file or on the topology
-configuration.
-
-The `AutoElasticsearch` plugin provides two settings for denoting the principal and keytab to be used when executing:
-
-`es.storm.autocredentials.user.principal` (default none)::
-Required. The principal that the plugin should use for obtaining credentials for this topology. Can be set in the storm.yaml
-configuration or in the topology configuration.
-
-`es.storm.autocredentials.user.keytab` (default none)::
-Required. The path to the keytab on Nimbus that will be used for logging in as the given principal. This can be set in the
-storm.yaml configuration or in the topology configuration. The file must exist on Nimbus.
-
-[[kerberos-storm-autocred-nimbus]]
-===== Configuring Nimbus
-
-Nimbus must be configured to use `AutoElasticsearch` as a credential plugin from the `storm.yaml` configuration file.
-It is safe to specify `AutoElasticsearch` in these settings even if your topology does not interact with {es}. The
-plugin will perform no operations unless `AutoElasticsearch` is explicitly enabled on the topology.
-
-[source,yaml]
-----
-nimbus.autocredential.plugins.classes: ["org.elasticsearch.storm.security.AutoElasticsearch"] <1>
-nimbus.credential.renewers.classes: ["org.elasticsearch.storm.security.AutoElasticsearch"] <2>
-nimbus.credential.renewers.freq.secs: 30 <3>
-----
-<1> The list of auto credential plugins to be run on Nimbus when submitting a topology
-<2> The list of all the credential renewers available for Nimbus to run
-<3> The frequency at which the credential renewers on Nimbus should be executed to check and update credentials.
-
-In order for the plugin to be loaded, {eh} must be present on the Nimbus classpath. You can add it to the classpath by
-using an environment variable on Nimbus.
-
-[source,bash]
-----
-export STORM_EXT_CLASSPATH=/path/to/elasticsearch-hadoop.jar
-----
-
-[[kerberos-storm-autocred-topology]]
-===== Configuring topologies
-
-Once Nimbus is configured, you must add `AutoElasticsearch` to your topology configuration in order for delegation
-tokens to be obtained and updated. If you do not specify it in the topology configuration, then Storm will not attempt
-to obtain {es} delegation tokens when the topology is submitted.
-
-[source,java]
-----
-Config conf = new Config();
-List plugins = new ArrayList();
-plugins.add(AutoElasticsearch.class.getName());
-conf.put(Config.TOPOLOGY_AUTO_CREDENTIALS, plugins); <1>
-...
-conf.put(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos"); <2>
-conf.put(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/elasticsearch.node.address@REALM");
-...
-----
-<1> Configure the topology with `AutoElasticsearch` as one of the auto credential plugins for the topology. This list
-of plugins may contain other auto credential plugins if you have need of them.
-<2> If you have not enabled {krb} authentication for {eh} in the storm.yaml configuration file, you will need to set
-the properties here.

@@ -47,18 +47,6 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 
 <1> 'hive' artifact
 
-.Apache Pig
-["source","xml",subs="attributes"]
-----
-<dependency>
-  <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop-pig</artifactId> <1>
-  <version>{version}</version>
-</dependency>
-----
-
-<1> 'pig' artifact
-
 .Apache Spark
 ["source","xml",subs="attributes"]
 ----
@@ -81,27 +69,13 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | Spark Version | Scala Version | ES-Hadoop Artifact ID
 | 1.0 - 1.2 | 2.10 | <unsupported>
 | 1.0 - 1.2 | 2.11 | <unsupported>
-| 1.3 - 1.6 | 2.10 | elasticsearch-spark-13_2.10
-| 1.3 - 1.6 | 2.11 | elasticsearch-spark-13_2.11
-| 2.0+ | 2.10 | elasticsearch-spark-20_2.10
+| 1.3 - 1.6 | 2.10 | <unsupported> 
+| 1.3 - 1.6 | 2.11 |  <unsupported>
+| 2.0+ | 2.10 | <unsupported> 
 | 2.0+ | 2.11 | elasticsearch-spark-20_2.11
 | 2.0+ | 2.12 | elasticsearch-spark-20_2.12
 | 3.0+ | 2.12 | elasticsearch-spark-30_2.12
 |==========================================================
-
-.Storm
-["source","xml",subs="attributes"]
-----
-<dependency>
-  <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-storm</artifactId> <1>
-  <version>{version}</version>
-</dependency>
-----
-
-<1> 'storm' artifact
-
-Releases are available in the central Maven http://repo1.maven.org/maven[repository].
 
 [[download-dev]]
 === Development Builds

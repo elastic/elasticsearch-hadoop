@@ -439,8 +439,7 @@ names that you would like to return from {es}.
 IMPORTANT: If `es.read.source.filter` is set, an exception will be thrown in the
 case that the connector tries to push down a different source field filtering.
 In these cases you should clear this property and trust that the connector knows
-which fields should be returned. This occurs in SparkSQL, Hive, and when
-specifying a schema in Pig.
+which fields should be returned. This occurs in SparkSQL, and Hive.
 
 [source,bash]
 ----
@@ -625,10 +624,10 @@ Number of retries for a given batch in case {es} is overloaded and data is rejec
 Time to wait between batch write retries that are caused by bulk rejections.
 
 `es.ser.reader.value.class` (default _depends on the library used_)::
-Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Hive, Pig, etc...) used.
+Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Hive, etc...) used.
 
 `es.ser.writer.value.class` (default _depends on the library used_)::
-Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Hive, Pig, etc...) used.
+Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Hive, etc...) used.
 
 [[configuration-runtime]]
 == Runtime options
@@ -791,14 +790,14 @@ use the file's name.
 [[logging]]
 == Logging
 
-{eh} uses http://commons.apache.org/proper/commons-logging/[commons-logging] library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, {eh} logs relevant information about the job progress at `INFO` level. Typically, whatever integration you are using (Map/Reduce, Hive, Pig), each job will print in the console at least one message indicating the {eh} version used:
+{eh} uses http://commons.apache.org/proper/commons-logging/[commons-logging] library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, {eh} logs relevant information about the job progress at `INFO` level. Typically, whatever integration you are using (Map/Reduce, Hive), each job will print in the console at least one message indicating the {eh} version used:
 
 [source,bash]
 ----
 16:13:01,946  INFO main util.Version - Elasticsearch Hadoop v2.0.0.BUILD-SNAPSHOT [f2c5c3e280]
 ----
 
-Configuring logging for Hadoop (or Hive and Pig) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
+Configuring logging for Hadoop (or Hive) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
 {eh} provides the following important packages:
 [cols="^,^",options="header"]
 
@@ -807,11 +806,9 @@ Configuring logging for Hadoop (or Hive and Pig) is outside the scope of this do
 
 |`org.elasticsearch.hadoop.hive`            | Apache Hive integration
 |`org.elasticsearch.hadoop.mr`              | {mr} functionality
-|`org.elasticsearch.hadoop.pig`             | Apache Pig integration
 |`org.elasticsearch.hadoop.rest`            | REST/transport infrastructure
 |`org.elasticsearch.hadoop.serialization`   | Serialization package
 |`org.elasticsearch.spark`                  | Apache Spark package
-|`org.elasticsearch.storm`                  | Apache Storm package
 
 |===
 
@@ -829,6 +826,5 @@ TIP: See the log4j https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j
 === Configure the 'executing' JVM logging not the client
 
 One thing to note is that in almost all cases, one needs to configure logging in the _executing_ JVM, where the Map/Reduce tasks actually run and not on the client, where the job is assembled or monitored. Depending on your library, platform and version this can done through some dedicated settings.
-In particular {mr}-based libraries like Pig or Hive can be difficult to configure since at runtime, they create {mr} tasks to actually perform the work. Thus, one needs to configure logging and pass the configuration to the {mr} layer for logging to occur.
+In particular {mr}-based libraries like Hive can be difficult to configure since at runtime, they create {mr} tasks to actually perform the work. Thus, one needs to configure logging and pass the configuration to the {mr} layer for logging to occur.
 In both cases, this can be achieved through the `SET` command. In particular when using Hadoop 2.6, one can use `mapreduce.job.log4j-properties-file` along with an appropriate https://github.com/apache/hadoop/blob/release-2.6.0/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/resources/container-log4j.properties[`container-log4j.properties`] file. 
-It's worth mentioning that Pig allows jobs to be executed locally and logging to be enabled through `pig -x local -4 myLoggingFile someScript.pig`

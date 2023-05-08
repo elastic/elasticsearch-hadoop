@@ -43,8 +43,8 @@ configurations {
 
 BuildPlugin.disableTransitiveDependencies(project, project.configurations.thirdPartyShaded)
 
-def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-hadoop-pig",
-                    ":elasticsearch-spark-20", ":elasticsearch-storm"]
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive",
+                    ":elasticsearch-spark-20"]
 
 distProjects.each { distProject ->
     def configureDistDependency = { Dependency dependency ->
@@ -82,7 +82,6 @@ dependencies {
     }
     implementation("org.apache.hive:hive-exec:$hiveVersion")
     implementation("org.apache.hive:hive-metastore:$hiveVersion")
-    implementation("org.apache.pig:pig:$pigVersion:h2")
     implementation("org.apache.spark:spark-core_${project.ext.scala211MajorVersion}:$spark20Version") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
@@ -98,13 +97,9 @@ dependencies {
     }
     implementation("org.scala-lang:scala-library:$scala211Version")
     implementation("org.scala-lang:scala-reflect:$scala211Version")
-    implementation("org.apache.storm:storm-core:$stormVersion") {
-        exclude module: "log4j-slf4j-impl"
-    }
     implementation(project.ext.hadoopClient)
     implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
-    implementation("joda-time:joda-time:$jodaVersion")
     compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
 }
 

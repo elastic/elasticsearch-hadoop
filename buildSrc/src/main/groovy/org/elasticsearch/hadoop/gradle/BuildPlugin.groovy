@@ -459,18 +459,14 @@ class BuildPlugin implements Plugin<Project>  {
             javadocOptions.groups = [
                     'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
                     'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
-                    'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
-                    'Elasticsearch Spark' : ['org.elasticsearch.spark*'],
-                    'Elasticsearch Storm' : ['org.elasticsearch.storm*'],
+                    'Elasticsearch Spark' : ['org.elasticsearch.spark*']
             ]
             javadocOptions.links = [ // External doc links
                     "https://docs.oracle.com/javase/8/docs/api/",
                     "https://commons.apache.org/proper/commons-logging/apidocs/",
                     "https://hadoop.apache.org/docs/stable2/api/",
-                    "https://pig.apache.org/docs/r0.15.0/api/",
                     "https://hive.apache.org/javadocs/r1.2.2/api/",
-                    "https://spark.apache.org/docs/latest/api/java/",
-                    "https://storm.apache.org/releases/current/javadocs/"
+                    "https://spark.apache.org/docs/latest/api/java/"
             ]
         }
         // TODO: Remove when root project does not handle distribution

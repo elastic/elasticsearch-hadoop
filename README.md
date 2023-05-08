@@ -1,6 +1,6 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elastic/elasticsearch-hadoop.svg?branch=master)](https://travis-ci.org/elastic/elasticsearch-hadoop)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.
-Supports [Map/Reduce](#mapreduce), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
+Supports [Map/Reduce](#mapreduce), [Apache Hive](#apache-hive), and [Apache Spark](#apache-spark).
 
 See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
@@ -184,33 +184,6 @@ INSERT OVERWRITE TABLE artists
 
 As one can note, currently the reading and writing are treated separately but we're working on unifying the two and automatically translating [HiveQL][] to Elasticsearch queries.
 
-## [Apache Pig][]
-ES-Hadoop provides both read and write functions for Pig so you can access Elasticsearch from Pig scripts.
-
-Register ES-Hadoop jar into your script or add it to your Pig classpath:
-```
-REGISTER /path_to_jar/es-hadoop-<version>.jar;
-```
-Additionally one can define an alias to save some chars:
-```
-%define ESSTORAGE org.elasticsearch.hadoop.pig.EsStorage()
-```
-and use `$ESSTORAGE` for storage definition.
-
-### Reading
-To read data from ES, use `EsStorage` and specify the query through the `LOAD` function:
-```SQL
-A = LOAD 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?q=me*');
-DUMP A;
-```
-
-### Writing
-Use the same `Storage` to write data to Elasticsearch:
-```SQL
-A = LOAD 'src/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);
-B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
-STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
-```
 ## [Apache Spark][]
 ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for writing, methods that work on any `RDD`. Spark SQL is also supported
 
@@ -313,30 +286,6 @@ DataFrame df = sqlContext.read.json("examples/people.json")
 JavaEsSparkSQL.saveToEs(df, "spark/docs")
 ```
 
-## [Apache Storm][]
-ES-Hadoop provides native integration with Storm: for reading a dedicated `Spout` and for writing a specialized `Bolt`
-
-### Reading
-To read data from ES, use `EsSpout`:
-```java
-import org.elasticsearch.storm.EsSpout;
-
-TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout("es-spout", new EsSpout("storm/docs", "?q=me*"), 5);
-builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
-```
-
-### Writing
-To index data to ES, use `EsBolt`:
-
-```java
-import org.elasticsearch.storm.EsBolt;
-
-TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout("spout", new RandomSentenceSpout(), 10);
-builder.setBolt("es-bolt", new EsBolt("storm/docs"), 5).shuffleGrouping("spout");
-```
-
 ## Building the source
 
 Elasticsearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default (`gradlew`), it automatically builds the package and runs the unit tests. For integration testing, use the `integrationTests` task.
@@ -370,10 +319,8 @@ under the License.
 
 [Hadoop]: http://hadoop.apache.org
 [Map/Reduce]: http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html
-[Apache Pig]: http://pig.apache.org
 [Apache Hive]: http://hive.apache.org
 [Apache Spark]: http://spark.apache.org
-[Apache Storm]: http://storm.apache.org
 [HiveQL]: http://cwiki.apache.org/confluence/display/Hive/LanguageManual
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
