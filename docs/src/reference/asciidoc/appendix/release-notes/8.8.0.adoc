@@ -1,0 +1,9 @@
+[[eshadoop-8.8.0]]
+== Elasticsearch for Apache Hadoop version 8.8.0
+
+[[bugs-8.8.0]]
+=== Bug Fixes
+Hive::
+* Fixing WritableBytesConverter to not overwrite bytes with wrong value
+https://github.com/elastic/elasticsearch-hadoop/issues/2072[#2072]
+https://github.com/elastic/elasticsearch-hadoop/pull/2075[#2075]
