@@ -87,7 +87,6 @@ class HiveBeeline extends AbstractClusterTask {
         Map<String, String> environment = collectEnvVars()
 
         project.logger.info("Using Environment: $environment")
-        Thread.sleep(30000) // This is just an experiment. DO NOT MERGE THE PR WITH THIS!!
         project.exec { ExecSpec spec ->
             spec.setCommandLine(commandLine)
             spec.environment(environment)
