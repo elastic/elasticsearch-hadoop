@@ -149,4 +149,11 @@ interface ServiceDescriptor {
      * home directory. If you need to perform set up operations with Gradle tasks, use configureSetupTasks.
      */
     Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration)
+
+    /**
+     * This is a host/port that can be used to check if an instance of the service is ready to be used.
+     * @param configuration The configuration of the instance we want to get the socket address for
+     * @return An InetSocketAddress that can be used to check if the instance whose configuration is given is ready to be used
+     */
+    InetSocketAddress readinessCheckHostAndPort(InstanceConfiguration configuration)
 }

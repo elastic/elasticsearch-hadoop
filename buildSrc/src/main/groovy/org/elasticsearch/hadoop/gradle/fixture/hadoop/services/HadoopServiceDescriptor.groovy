@@ -228,6 +228,48 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    InetSocketAddress readinessCheckHostAndPort(InstanceConfiguration configuration) {
+        RoleDescriptor role = configuration.roleDescriptor
+        SettingsContainer settingsContainer = configuration.getSettingsContainer()
+        if (NAMENODE.equals(role)) {
+            FileSettings hdfsSite = settingsContainer.getFile('hdfs-site.xml')
+            if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
+                return getInetAddress(hdfsSite.getOrDefault('dfs.namenode.https-address', 'localhost:50470'))
+            } else {
+                return getInetAddress(hdfsSite.getOrDefault('dfs.namenode.https-address', 'localhost:50070'))
+            }
+        } else if (DATANODE.equals(role)) {
+            FileSettings hdfsSite = settingsContainer.getFile('hdfs-site.xml')
+            if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
+                return getInetAddress(hdfsSite.getOrDefault('dfs.datanode.https-address', 'localhost:50475'))
+            } else {
+                return getInetAddress(hdfsSite.getOrDefault('dfs.datanode.https-address', 'localhost:50075'))
+            }
+        } else if (RESOURCEMANAGER.equals(role)) {
+            FileSettings yarnSite = settingsContainer.getFile('yarn-site.xml')
+            if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
+                return getInetAddress(yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8090'))
+            } else {
+                return getInetAddress(yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8088'))
+            }
+        } else if (NODEMANAGER.equals(role)) {
+            FileSettings yarnSite = settingsContainer.getFile('yarn-site.xml')
+            return getInetAddress(yarnSite.getOrDefault('yarn.nodemanager.webapp.address', 'localhost:8042'))
+        } else if (HISTORYSERVER.equals(role)) {
+            FileSettings mapredSite = settingsContainer.getFile('mapred-site.xml')
+            return getInetAddress(mapredSite.getOrDefault('mapreduce.jobhistory.webapp.address', 'localhost:19888'))
+        } else if (GATEWAY.equals(role)) {
+            return null // No web interface for Gateway
+        }
+        throw new UnsupportedOperationException("Unknown instance [${role.roleName()}]")
+    }
+
+    private static InetSocketAddress getInetAddress(String hostAndPort) {
+        String[] hostAndPortArray = hostAndPort.split(":")
+        return new InetSocketAddress(hostAndPortArray[0], Integer.valueOf(hostAndPortArray[1]))
+    }
+
+    @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         RoleDescriptor role = configuration.roleDescriptor
         if (NAMENODE.equals(role) || DATANODE.equals(role)) {

@@ -63,6 +63,8 @@ class InstanceInfo {
     /** the pid file the node will use */
     File pidFile
 
+    InetSocketAddress readinessCheckSocketAddress
+
     /** service home dir */
     File homeDir
 
@@ -151,6 +153,7 @@ class InstanceInfo {
         pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(config))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
         confDir = new File(homeDir, config.getServiceDescriptor().confDirName(config))
+        readinessCheckSocketAddress = config.serviceDescriptor.readinessCheckHostAndPort(config)
 
         configFiles = config.getServiceDescriptor().configFiles(config).collect { name -> new File(confDir, name) }
         configContents = config.getServiceDescriptor().collectConfigFilesContents(config)

@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
@@ -120,6 +121,17 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (HIVESERVER.equals(configuration.roleDescriptor)) {
             return null
+        }
+        throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
+    }
+
+    @Override
+    InetSocketAddress readinessCheckHostAndPort(InstanceConfiguration configuration) {
+        if (HIVESERVER.equals(configuration.roleDescriptor)) {
+            FileSettings fileSettings = configuration.getSettingsContainer().getFile('hive-site.xml')
+            String host = fileSettings.getOrDefault('hive.server2.thrift.bind.host', 'localhost')
+            String port = fileSettings.getOrDefault('hive.server2.thrift.port', '10000')
+            return new InetSocketAddress(host, Integer.valueOf(port))
         }
         throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
     }
