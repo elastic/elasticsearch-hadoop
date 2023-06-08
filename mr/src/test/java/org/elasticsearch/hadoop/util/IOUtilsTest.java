@@ -19,6 +19,13 @@
 
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
+import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.junit.Test;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,10 +33,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.junit.Test;
-
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -63,5 +71,20 @@ public class IOUtilsTest {
         InputStream inputStream = IOUtils.open("file:///This/Doesnt/Exist");
         fail("Shouldn't pass");
     }
-
+    @Test
+    public void testDeserializeFromJsonString() {
+        assertNull(IOUtils.deserializeFromJsonString("", String.class));
+        try {
+            IOUtils.deserializeFromJsonString("junk", String.class);
+            fail("Should have thrown an EsHadoopIllegalArgumentException");
+        } catch (EsHadoopSerializationException expected) {}
+        List<Field> fieldsList = new ArrayList<>();
+        fieldsList.add(new Field("%s", FieldType.TEXT));
+        Mapping mapping = new Mapping("*", "*", fieldsList);
+        Mapping roundTripMapping = IOUtils.deserializeFromJsonString(IOUtils.serializeToJsonString(mapping), Mapping.class);
+        assertEquals(mapping, roundTripMapping);
+        String[] filters = new String[]{"{\"exists\":{\"field\":\"id\"}}", "{\"match\":{\"id\":1}}"};
+        String[] roundTripFilters = IOUtils.deserializeFromJsonString(IOUtils.serializeToJsonString(filters), String[].class);
+        assertArrayEquals(filters, roundTripFilters);
+    }
 }
