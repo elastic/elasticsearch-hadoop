@@ -485,12 +485,17 @@ class HadoopClusterFormationTasks {
                         resourceexists {
                             file(file: instance.pidFile.toString())
                         }
+                        or {
+                            instance.readinessCheckSocketAddress == null
+                            socket(server: instance.readinessCheckSocketAddress.hostName, port: instance.readinessCheckSocketAddress.port)
+                        }
                     }
                 }
             }
             // Timed out waiting for pidfiles or failures
             if (project.ant.properties.containsKey("failed${name}".toString())) {
-                waitFailed(project, instance, project.logger, "Failed to start hadoop cluster: timed out after ${waitSeconds} seconds")
+                waitFailed(project, instance, project.logger, "Failed to start ${instance.config.roleDescriptor.roleName()}: timed out " +
+                        "after ${waitSeconds} seconds")
             }
 
             // Check to see if there were any failed markers
