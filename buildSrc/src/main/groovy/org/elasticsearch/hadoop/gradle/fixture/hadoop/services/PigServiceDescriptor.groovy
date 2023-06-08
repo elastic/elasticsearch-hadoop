@@ -120,6 +120,14 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    InetSocketAddress readinessCheckHostAndPort(InstanceConfiguration configuration) {
+        if (GATEWAY.equals(configuration.roleDescriptor)) {
+            return null
+        }
+        throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
+    }
+
+    @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         return ['']
     }
