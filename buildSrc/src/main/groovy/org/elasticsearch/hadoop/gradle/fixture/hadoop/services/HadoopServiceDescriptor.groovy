@@ -207,9 +207,9 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         } else if (RESOURCEMANAGER.equals(role)) {
             FileSettings yarnSite = configFileContents.get('yarn-site.xml')
             if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
-                return "https://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8090')}"
+                return "https://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.https.address', 'localhost:8090')}"
             } else {
-                return "http://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.https.address', 'localhost:8088')}"
+                return "http://${yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8088')}"
             }
         } else if (NODEMANAGER.equals(role)) {
             FileSettings yarnSite = configFileContents.get('yarn-site.xml')
@@ -236,19 +236,19 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
             if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
                 return getInetAddress(hdfsSite.getOrDefault('dfs.namenode.https-address', 'localhost:50470'))
             } else {
-                return getInetAddress(hdfsSite.getOrDefault('dfs.namenode.https-address', 'localhost:50070'))
+                return getInetAddress(hdfsSite.getOrDefault('dfs.namenode.http-address', 'localhost:50070'))
             }
         } else if (DATANODE.equals(role)) {
             FileSettings hdfsSite = settingsContainer.getFile('hdfs-site.xml')
             if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
                 return getInetAddress(hdfsSite.getOrDefault('dfs.datanode.https-address', 'localhost:50475'))
             } else {
-                return getInetAddress(hdfsSite.getOrDefault('dfs.datanode.https-address', 'localhost:50075'))
+                return getInetAddress(hdfsSite.getOrDefault('dfs.datanode.http-address', 'localhost:50075'))
             }
         } else if (RESOURCEMANAGER.equals(role)) {
             FileSettings yarnSite = settingsContainer.getFile('yarn-site.xml')
             if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
-                return getInetAddress(yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8090'))
+                return getInetAddress(yarnSite.getOrDefault('yarn.resourcemanager.webapp.https.address', 'localhost:8090'))
             } else {
                 return getInetAddress(yarnSite.getOrDefault('yarn.resourcemanager.webapp.address', 'localhost:8088'))
             }
