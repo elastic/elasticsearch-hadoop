@@ -5,14 +5,11 @@
 :eh: 	elasticsearch-hadoop
 :mr: 	Map/Reduce
 :sp:	Apache Spark
-:st:	Apache Storm
 :krb:   Kerberos
 :ey:	Elasticsearch on YARN
 :description: Reference documentation of {eh}
 :ver-d: {version}-SNAPSHOT
 :sp-v:	3.2.0
-:st-v:	1.0.1
-:pg-v:	0.15.0
 :hv-v:	2.3.8
 :cs-v:	2.6.3
 :hadoop-docs-v: 3.3.1
@@ -27,7 +24,7 @@ include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 {ehtm} is an `umbrella' project consisting of two similar, yet independent sub-projects with their own, dedicated, section in the documentation:
 
 {eh} proper::
-Interact with {es} from within a Hadoop environment. If you are using {mr}, Hive, Pig, {sp}, or {st}, this
+Interact with {es} from within a Hadoop environment. If you are using {mr}, Hive, or {sp}, this
 project is for you. For feature requests or bugs, please open an issue in the
 https://github.com/elastic/elasticsearch-hadoop/issues[Elasticsearch-Hadoop repository].
 

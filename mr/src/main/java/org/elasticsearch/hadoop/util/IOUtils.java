@@ -38,7 +38,7 @@ import java.net.URL;
 import java.util.Properties;
 
 /**
- * Utility class used internally for the Pig support.
+ * Utility class used internally
  */
 public abstract class IOUtils {
 

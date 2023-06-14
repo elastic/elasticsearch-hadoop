@@ -22,7 +22,6 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HiveServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDescriptor
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.PigServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.SparkYarnServiceDescriptor
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -42,9 +41,8 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
     static final ServiceDescriptor HADOOP = new HadoopServiceDescriptor()
     static final ServiceDescriptor HIVE = new HiveServiceDescriptor()
     static final ServiceDescriptor SPARK = new SparkYarnServiceDescriptor()
-    static final ServiceDescriptor PIG = new PigServiceDescriptor()
 
-    private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HADOOP, HIVE, PIG, SPARK]
+    private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HADOOP, HIVE, SPARK]
                     .collectEntries { [(it.id()): it] }
 
     private final Project project

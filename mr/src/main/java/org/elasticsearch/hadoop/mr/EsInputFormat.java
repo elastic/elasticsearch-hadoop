@@ -281,7 +281,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
          *
          * @param hadoopKey hadoop key
          * @param object the actual value to read
-         * @return returns the key to be used; needed in scenario where the key is immutable (like Pig)
+         * @return returns the key to be used; needed in scenario where the key is immutable
          */
         protected abstract K setCurrentKey(K hadoopKey, Object object);
 
@@ -290,7 +290,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
          *
          * @param hadoopValue hadoop value
          * @param object the actual value to read
-         * @return returns the value to be used; needed in scenario where the passed value is immutable (like Pig)
+         * @return returns the value to be used; needed in scenario where the passed value is immutable
          */
         protected abstract V setCurrentValue(V hadoopValue, Object object);
 

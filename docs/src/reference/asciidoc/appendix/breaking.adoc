@@ -8,6 +8,19 @@ For clarity, we always list any breaking changes at the top of the
 //NOTE: The notable-breaking-changes tagged regions are re-used in the
 //Installation and Upgrade Guide
 
+[[breaking-changes-8.9]]
+=== Breaking Changes in 8.9
+
+[[removals-8.9]]
+==== Removal of supported technologies in 8.9
+
+Support for the following less popular technologies has been removed in {eh} 8.9.
+
+* Spark 1.x (Spark 2.x and 3.x are still supported)
+* Scala 2.10 support for Spark 2.x (Scala 2.11 and higher are still supported)
+* Apache Pig
+* Apache Storm
+
 [[breaking-changes-8.0]]
 === Breaking Changes in 8.0
 

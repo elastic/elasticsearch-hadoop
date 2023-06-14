@@ -5,7 +5,7 @@ Before running {eh}, please do check out the requirements below. This is even mo
 
 NOTE: make sure to verify *all* nodes in a cluster when checking the version of a certain artifact.
 
-TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Pig) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
+TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Hive) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
 
 [[requirements-jdk]]
 === JDK
@@ -78,26 +78,10 @@ $ bin/hive --version
 Hive version {hv-v}
 ----
 
-[[requirements-pig]]
-=== Apache Pig
-
-deprecated::[8.0,Support for Apache Pig in {eh} is deprecated.]
-
-Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently {pg-v}).
-In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
-
-["source","bash",subs="attributes"]
-----
-$ bin/pig -i
-Apache Pig version {pg-v}
-----
-
 [[requirements-spark]]
 === Apache Spark
 
-deprecated::[8.0,Support for Spark 1.x in {eh} is deprecated.]
-
-Spark 1.3.0 or higher. We recommend using the latest release of Spark (currently {sp-v}). As {eh} provides native integration (which is recommended) with {sp}, it does not matter what binary one is using.
+Spark 2.0 or higher. We recommend using the latest release of Spark (currently {sp-v}). As {eh} provides native integration (which is recommended) with {sp}, it does not matter what binary one is using.
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
 
@@ -131,22 +115,7 @@ If planning on using Spark SQL make sure to add the appropriate Spark SQL jar as
 it is _not_ part of the Spark core jar but rather has its own jar. Thus, when constructing the classpath make sure to
 include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-{sp-v}-<distro>.jar+
 
-{eh} supports Spark SQL 1.3 though 1.6, Spark SQL 2.x, and Spark SQL 3.x. {eh} supports Spark SQL 2.x on Scala 2.11 through its main jar.
-Since Spark 1.x, 2.x, and 3.x are not compatible with each other, and Scala versions are not compatible, multiple different artifacts are
+{eh} supports Spark SQL 2.x and Spark SQL 3.x. {eh} supports Spark SQL 2.x on Scala 2.11 through its main jar.
+Since Spark 2.x and 3.x are not compatible with each other, and Scala versions are not compatible, multiple different artifacts are
 provided by {eh}. Choose the jar appropriate for your Spark and Scala version. See the Spark chapter for more information.
-
-[[requirements-storm]]
-=== Apache Storm
-
-deprecated::[8.0,Support for Apache Storm in {eh} is deprecated.]
-
-Storm 1.0.0 or higher. Do note that Storm 1.0.0 broke backwards compatibility with the previous versions (by changing the package name)
-however upgrading is easy and recommended. We recommend using the latest release of Storm (currently {st-v}).
-One can discover the Storm version by looking at its folder or by invoking the command:
-
-["source","bash",subs="attributes"]
-----
-$ bin/storm version
-{st-v}
-----
 

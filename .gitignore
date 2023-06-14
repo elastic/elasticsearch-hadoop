@@ -14,9 +14,6 @@ metastore_db
 /hdfs/data
 /repository-hdfs/data/*
 /mr/src/main/resources/esh-build.properties
-/pig/tmp-pig/*
 /spark/keyvaluerdd.parquet
-/spark/sql-13/default_*
-/spark/sql-13/with_meta_*
 out/
 localRepo/
