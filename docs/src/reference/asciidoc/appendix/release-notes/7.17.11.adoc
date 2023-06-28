@@ -1,0 +1,8 @@
+[[eshadoop-7.17.11]]
+== Elasticsearch for Apache Hadoop version 7.17.11
+
+[[bugs-7.17.11]]
+=== Bug Fixes
+Core::
+* Replacing the use of Java object serialization with Jackson
+https://github.com/elastic/elasticsearch-hadoop/pull/2080[#2080]
