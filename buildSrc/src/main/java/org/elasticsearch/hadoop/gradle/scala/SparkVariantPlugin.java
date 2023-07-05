@@ -54,6 +54,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.scala.ScalaDoc;
 import org.gradle.api.tasks.testing.Test;
+import org.gradle.api.tasks.ScalaSourceDirectorySet;
 
 import static org.gradle.api.plugins.JavaBasePlugin.DOCUMENTATION_GROUP;
 import static org.gradle.api.plugins.JavaBasePlugin.VERIFICATION_GROUP;
@@ -293,7 +294,6 @@ public class SparkVariantPlugin implements Plugin<Project> {
     public void apply(final Project project) {
 
         SparkVariantPluginExtension extension = project.getExtensions().create("sparkVariants", SparkVariantPluginExtension.class, project);
-        final JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
         final JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
 
         // Add a rule that annotates scala-library dependencies with the scala-library capability
@@ -379,7 +379,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
         SourceDirectorySet resourcesSourceSet = sourceSet.getResources();
         resourcesSourceSet.setSrcDirs(Collections.singletonList("src/" + sourceSetName + "/resources"));
 
-        SourceDirectorySet scalaSourceSet = getScalaSourceSet(sourceSet).getScala();
+        ScalaSourceDirectorySet scalaSourceSet = getScalaSourceSet(sourceSet);
         scalaSourceSet.setSrcDirs(Arrays.asList(
                 "src/" + sourceSetName + "/scala",
                 "src/" + sourceSetName + "/" + sparkVariant.getName()
@@ -399,9 +399,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
         additionalSourceSet.setRuntimeClasspath(project.files(additionalSourceSet.getOutput(), mainSourceSet.getOutput(), additionalRuntimeClasspath));
     }
 
-    private static DefaultScalaSourceSet getScalaSourceSet(SourceSet sourceSet) {
-        Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
-        return (DefaultScalaSourceSet) sourceSetConvention.getPlugins().get("scala");
+    private static ScalaSourceDirectorySet getScalaSourceSet(SourceSet sourceSet) {
+        return sourceSet.getExtensions().getByType(ScalaSourceDirectorySet.class);
     }
 
     private static void registerMainVariant(JavaPluginExtension java, SparkVariant sparkVariant, SourceSet main, Object version) {
@@ -454,7 +453,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
             scaladocClasspath.from(main.getCompileClasspath());
 
             scalaDoc.setClasspath(scaladocClasspath);
-            scalaDoc.setSource(getScalaSourceSet(main).getScala());
+            scalaDoc.setSource(getScalaSourceSet(main));
         });
     }
 

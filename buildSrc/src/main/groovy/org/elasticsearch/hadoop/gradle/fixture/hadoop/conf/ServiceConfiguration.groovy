@@ -24,7 +24,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.util.ConfigureUtil
+import org.elasticsearch.hadoop.gradle.util.ConfigureUtil
 
 /**
  * Handles configurations for a sub-cluster of services within the larger Hadoop cluster.
