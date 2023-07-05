@@ -291,6 +291,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
+
         SparkVariantPluginExtension extension = project.getExtensions().create("sparkVariants", SparkVariantPluginExtension.class, project);
         final JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
         final JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
@@ -298,12 +299,11 @@ public class SparkVariantPlugin implements Plugin<Project> {
         // Add a rule that annotates scala-library dependencies with the scala-library capability
         project.getDependencies().getComponents().all(ScalaRuntimeCapability.class);
 
-        extension.defaultVariant(sparkVariant -> configureDefaultVariant(project, sparkVariant, javaPluginExtension, javaPluginConvention));
-        extension.featureVariants(sparkVariant -> configureVariant(project, sparkVariant, javaPluginExtension, javaPluginConvention));
+        extension.defaultVariant(sparkVariant -> configureDefaultVariant(project, sparkVariant, javaPluginExtension));
+        extension.featureVariants(sparkVariant -> configureVariant(project, sparkVariant, javaPluginExtension));
     }
 
-    private static void configureDefaultVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
-                                                JavaPluginConvention javaPluginConvention) {
+    private static void configureDefaultVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension) {
         ConfigurationContainer configurations = project.getConfigurations();
         String capability = sparkVariant.getCapabilityName(project.getVersion());
 
@@ -316,9 +316,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
         configureScalaJarClassifiers(project, sparkVariant);
     }
 
-    private static void configureVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
-                                         JavaPluginConvention javaPluginConvention) {
-        SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
+    private static void configureVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension) {
+        SourceSetContainer sourceSets = javaPluginExtension.getSourceSets();
         ConfigurationContainer configurations = project.getConfigurations();
         TaskContainer tasks = project.getTasks();
         Object version = project.getVersion();
@@ -341,9 +340,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
     }
 
     public static SourceSet configureAdditionalVariantSourceSet(Project project, SparkVariant sparkVariant, String sourceSetName) {
-        final JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
         final JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
-        SourceSetContainer sourceSets = javaPluginConvention.getSourceSets();
+        SourceSetContainer sourceSets = javaPluginExtension.getSourceSets();
         ConfigurationContainer configurations = project.getConfigurations();
         String version = project.getVersion().toString();
 
