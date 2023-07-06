@@ -325,8 +325,8 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureBuildTasks(Project project) {
         // Target Java 1.8 compilation
-        project.sourceCompatibility = '1.8'
-        project.targetCompatibility = '1.8'
+        project.java.sourceCompatibility = '1.8'
+        project.java.targetCompatibility = '1.8'
 
         // TODO: Remove all root project distribution logic. It should exist in a separate dist project.
         if (project != project.rootProject) {
@@ -728,7 +728,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
         String classifier = variant.shouldClassifySparkVersion() && variant.isDefaultVariant() == false ? "-${variant.getName()}" : ''
-        String filename = "${project.archivesBaseName}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
+        String filename = "${project.base.archivesName}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
         // Fix the pom name
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {

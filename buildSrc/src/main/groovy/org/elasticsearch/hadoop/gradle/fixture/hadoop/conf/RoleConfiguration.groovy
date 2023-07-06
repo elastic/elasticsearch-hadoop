@@ -23,7 +23,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.gradle.api.GradleException
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
-import org.gradle.util.ConfigureUtil
+import org.elasticsearch.hadoop.gradle.util.ConfigureUtil
 
 /**
  * Shared configurations for all instances of a role within a Hadoop service.
