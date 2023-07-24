@@ -9,6 +9,7 @@ This section summarizes the changes in each release.
 [[release-notes-7]]
 ===== 7.x
 
+* <<eshadoop-7.17.12>>
 * <<eshadoop-7.17.11>>
 * <<eshadoop-7.17.10>>
 * <<eshadoop-7.17.9>>
@@ -124,6 +125,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/7.17.12.adoc[]
 include::release-notes/7.17.11.adoc[]
 include::release-notes/7.17.10.adoc[]
 include::release-notes/7.17.9.adoc[]
