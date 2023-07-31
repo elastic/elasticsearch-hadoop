@@ -20,7 +20,7 @@ steps:
           setup:
             SPARK_VERSION:
               - '20'
-              - '30'
+              - '30' # TODO, should this actually be 30?
             SCALA_VERSION:
               - '2.10.6'
               - '2.11.8'
