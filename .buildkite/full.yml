@@ -19,8 +19,8 @@ steps:
         matrix:
           setup:
             SPARK_VERSION:
-              - '13'
               - '20'
+              - '30'
             SCALA_VERSION:
               - '2.10.6'
               - '2.11.8'
