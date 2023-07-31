@@ -1,0 +1,13 @@
+steps:
+  - label: 'Run integration tests'
+    command: |
+      rm -Rfv ~/.gradle/init.d
+      ./gradlew --stacktrace clean
+      ./gradlew build integrationTest
+    timeout_in_minutes: 180
+    agents:
+      provider: gcp
+      image: family/elasticsearch-ubuntu-2004
+      machineType: custom-32-98304
+      diskType: pd-ssd
+      diskSizeGb: 350

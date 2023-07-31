@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# On some distros, this directory ends up not readable by the `elasticsearch` user that gets created during tests
+# This fixes that
+# chmod 755 ~
+
+WORKSPACE="$(pwd)"
+export WORKSPACE
+
+# BUILD_NUMBER="$BUILDKITE_BUILD_NUMBER"
+# export BUILD_NUMBER
+
+# COMPOSE_HTTP_TIMEOUT="120"
+# export COMPOSE_HTTP_TIMEOUT
+
+# JOB_BRANCH="$BUILDKITE_BRANCH"
+# export JOB_BRANCH
+
+# GRADLEW="./gradlew --parallel --scan --build-cache --no-watch-fs -Dorg.elasticsearch.build.cache.url=https://gradle-enterprise.elastic.co/cache/"
+# export GRADLEW
+
+# GRADLEW_BAT="./gradlew.bat --parallel --scan --build-cache --no-watch-fs -Dorg.elasticsearch.build.cache.url=https://gradle-enterprise.elastic.co/cache/"
+# export GRADLEW_BAT
+
+export $(cat .ci/java-versions.properties | grep '=' | xargs)
+
+JAVA_HOME="$HOME/.java/$ESH_BUILD_JAVA"
+export JAVA_HOME
+
+RUNTIME_JAVA_HOME="$HOME/.java/$ESH_RUNTIME_JAVA"
+export RUNTIME_JAVA_HOME
+
+JAVA7_HOME="$HOME/.java/java7"
+export JAVA7_HOME
+
+JAVA8_HOME="$HOME/.java/java8"
+export JAVA8_HOME
+
+JAVA9_HOME="$HOME/.java/java9"
+export JAVA9_HOME
+
+JAVA10_HOME="$HOME/.java/java10"
+export JAVA10_HOME
+
+JAVA11_HOME="$HOME/.java/java11"
+export JAVA11_HOME
+
+JAVA12_HOME="$HOME/.java/openjdk12"
+export JAVA12_HOME
+
+JAVA13_HOME="$HOME/.java/openjdk13"
+export JAVA13_HOME
+
+JAVA14_HOME="$HOME/.java/openjdk14"
+export JAVA14_HOME

@@ -1,0 +1,30 @@
+agents:
+  provider: gcp
+  image: family/elasticsearch-ubuntu-2004
+  machineType: custom-32-98304
+  diskType: pd-ssd
+  diskSizeGb: 350
+
+steps:
+  - label: intake
+    command: ./gradlew check -x :elasticsearch-spark-20:integrationTest -x :elasticsearch-spark-13:integrationTest
+    timeout_in_minutes: 240
+
+  - group: spark-scala
+    steps:
+      - label: 'spark-{{matrix.SPARK_VERSION}} / scala-{{matrix.SCALA_VERSION}}'
+        command: ./gradlew :elasticsearch-spark-{{matrix.SPARK_VERSION}}:integrationTest -Pscala.variant={{matrix.SCALA_VERSION}}
+        timeout_in_minutes: 180
+        matrix:
+          setup:
+            SPARK_VERSION:
+              - '13'
+              - '20'
+            SCALA_VERSION:
+              - '2.10.6'
+              - '2.11.8'
+
+  # TODO
+  # - label: dra-snapshot
+  #   command: TODO
+  #   timeout_in_minutes: TODO
