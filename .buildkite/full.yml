@@ -4,6 +4,7 @@ agents:
   machineType: custom-32-98304
   diskType: pd-ssd
   diskSizeGb: 350
+  useVault: false
 
 steps:
   - label: intake
@@ -25,6 +26,7 @@ steps:
               - '2.11.8'
 
   # TODO
+  # - wait
   # - label: dra-snapshot
   #   command: TODO
   #   timeout_in_minutes: TODO
