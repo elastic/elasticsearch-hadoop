@@ -1,9 +1,9 @@
 agents:
   provider: gcp
   image: family/elasticsearch-ubuntu-2004
-  machineType: custom-32-98304
+  machineType: n2-standard-8
   diskType: pd-ssd
-  diskSizeGb: 350
+  diskSizeGb: 100
   useVault: false
 
 steps:
@@ -30,3 +30,20 @@ steps:
   # - label: dra-snapshot
   #   command: TODO
   #   timeout_in_minutes: TODO
+# before: 8.9
+# all spark versions
+
+# 7.17
+# spark 1.x, 2.x, 3.x
+# scala, 2.10, 2.11 for 1.x
+# 2.10,
+
+# es-hadoop-build
+# periodic daily
+
+# all pipelines same split out stuff
+# groupings of spark/scala versions
+
+# use script (python?) to pull all variants from spark/core/build.gradle
+# then grab full scala versions from gradle.properties
+# then generate the pipeline in json
