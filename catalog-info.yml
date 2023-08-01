@@ -7,7 +7,7 @@ metadata:
   description: Elasticsearch tests and checks that are run a few times daily
   links:
     - title: Pipeline
-      url: https://buildkite.com/elastic/elasticsearch-hadoop
+      url: https://buildkite.com/elastic/elasticsearch-hadoop-tests
 spec:
   type: buildkite-pipeline
   system: buildkite
