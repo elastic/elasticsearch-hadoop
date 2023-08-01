@@ -2,9 +2,14 @@ import json
 import re
 from typing import Dict
 
+# Note: If you'd like to add any debug info here, make sure to do it on stderr
+# stdout will be fed into `buildkite-agent pipeline upload`
+
 coreFile = open("spark/core/build.gradle", "r")
 core = coreFile.read()
 coreFile.close()
+
+# `Variant "spark20scala212"` => ["20", "212"]
 groupings = re.findall(r'Variant +"spark([0-9]+)scala([0-9]+)"', core)
 
 groupingsBySparkVersion: Dict[str, list[str]] = {}
@@ -16,6 +21,7 @@ for grouping in groupings:
 gradlePropertiesFile = open("gradle.properties", "r")
 gradleProperties = gradlePropertiesFile.read()
 gradlePropertiesFile.close()
+# `scala210Version = 2.10.7` => ["210", "2.10.7"]
 matches = re.findall(
     r"scala([0-9]+)Version *= *([0-9]+\.[0-9]+\.[0-9]+)", gradleProperties
 )
