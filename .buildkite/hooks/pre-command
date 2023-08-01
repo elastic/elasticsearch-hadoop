@@ -35,3 +35,8 @@ export JAVA13_HOME
 
 JAVA14_HOME="$HOME/.java/openjdk14"
 export JAVA14_HOME
+
+if [[ "$BUILDKITE_COMMAND" == *"dra.sh"* ]]; then
+  # TODO pull alternate vault credentials needed for DRA
+  echo 1
+fi
