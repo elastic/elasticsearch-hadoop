@@ -29,9 +29,9 @@ pipeline = {
     "agents": {
         "provider": "gcp",
         "image": "family/elasticsearch-ubuntu-2004",
-        "machineType": "custom-32-98304",
+        "machineType": "n2-standard-8",
         "diskType": "pd-ssd",
-        "diskSizeGb": "350",
+        "diskSizeGb": "100",
         "useVault": "false",
     },
     "steps": [],
