@@ -46,7 +46,7 @@ intakeTasks = map(
 pipeline["steps"].append(
     {
         "label": "intake",
-        "imeout_in_minutes": 240,
+        "timeout_in_minutes": 240,
         "command": "./gradlew check " + " ".join(intakeTasks),
     }
 )
