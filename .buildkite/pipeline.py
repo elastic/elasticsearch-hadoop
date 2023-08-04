@@ -68,10 +68,18 @@ for sparkVersion in groupingsBySparkVersion.keys():
             }
         )
 
-# TODO
-# - wait
-# - label: dra-snapshot
-#   command: TODO
-#   timeout_in_minutes: TODO
+pipeline["steps"].append(
+    {
+        "wait": None,
+    }
+)
+
+pipeline["steps"].append(
+    {
+        "label": "dra-snapshot",
+        "command": ".buildkite/dra.sh",
+        "timeout_in_minutes": 60,
+    },
+)
 
 print(json.dumps(pipeline, indent=2))

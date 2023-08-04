@@ -38,9 +38,9 @@ find "$WORKSPACE" -type d -path "*/build/distributions" -exec chmod a+w {} \;
 
 docker run --rm \
   --name release-manager \
-  -e VAULT_ADDR \
-  -e VAULT_ROLE_ID \
-  -e VAULT_SECRET_ID \
+  -e VAULT_ADDR="$DRA_VAULT_ADDR" \
+  -e VAULT_ROLE_ID="$DRA_VAULT_ROLE_ID_SECRET" \
+  -e VAULT_SECRET_ID="$DRA_VAULT_SECRET_ID_SECRET" \
   --mount type=bind,readonly=false,src="$PWD",target=/artifacts \
   docker.elastic.co/infra/release-manager:latest \
   cli collect \
