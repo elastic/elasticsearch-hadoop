@@ -46,7 +46,7 @@ docker run --rm \
   cli collect \
   --project elasticsearch-hadoop \
   --branch "$RM_BRANCH" \
-  --commit "$GIT_COMMIT" \
+  --commit "$BUILDKITE_COMMIT" \
   --workflow "$DRA_WORKFLOW" \
   --version "$HADOOP_VERSION" \
   --artifact-set main

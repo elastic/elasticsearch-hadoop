@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from typing import Dict
 
@@ -68,18 +69,19 @@ for sparkVersion in groupingsBySparkVersion.keys():
             }
         )
 
-pipeline["steps"].append(
-    {
-        "wait": None,
-    }
-)
+if os.environ.get("ENABLE_DRA_SNAPSHOT") == "true":
+    pipeline["steps"].append(
+        {
+            "wait": None,
+        }
+    )
 
-pipeline["steps"].append(
-    {
-        "label": "dra-snapshot",
-        "command": ".buildkite/dra.sh",
-        "timeout_in_minutes": 60,
-    },
-)
+    pipeline["steps"].append(
+        {
+            "label": "dra-snapshot",
+            "command": ".buildkite/dra.sh",
+            "timeout_in_minutes": 60,
+        },
+    )
 
 print(json.dumps(pipeline, indent=2))
