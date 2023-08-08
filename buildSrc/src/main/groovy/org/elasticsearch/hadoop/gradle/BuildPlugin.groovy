@@ -62,6 +62,8 @@ import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.gradle.api.plugins.BasePluginExtension
+
 import org.w3c.dom.NodeList
 
 import javax.inject.Inject
@@ -669,7 +671,7 @@ class BuildPlugin implements Plugin<Project>  {
         // Set the pom's destination to the distribution directory
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                def baseExtension = project.getExtensions().getByName('base');
+                BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
                 pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName.get()}-${project.getVersion()}.pom"})
             }
         }
@@ -729,7 +731,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
         String classifier = variant.shouldClassifySparkVersion() && variant.isDefaultVariant() == false ? "-${variant.getName()}" : ''
-        def baseExtension = project.getExtensions().getByName('base')
+        BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
         String filename = "${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
         // Fix the pom name
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
