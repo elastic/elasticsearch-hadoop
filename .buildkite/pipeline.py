@@ -81,6 +81,10 @@ if os.environ.get("ENABLE_DRA_SNAPSHOT") == "true":
             "label": "dra-snapshot",
             "command": ".buildkite/dra.sh",
             "timeout_in_minutes": 60,
+            "agents": {"useVault": "true"},
+            "env": {
+                "USE_DRA_CREDENTIALS": "true",
+            },
         },
     )
 

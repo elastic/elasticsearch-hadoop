@@ -36,11 +36,11 @@ export JAVA13_HOME
 JAVA14_HOME="$HOME/.java/openjdk14"
 export JAVA14_HOME
 
-if [[ "$BUILDKITE_COMMAND" == *"dra.sh"* ]]; then
-  DRA_VAULT_ROLE_ID_SECRET=$(vault read -field=role-id secret/ci/elastic-elasticsearch/legacy-vault-credentials)
+if [[ "$USE_DRA_CREDENTIALS" == "true" ]]; then
+  DRA_VAULT_ROLE_ID_SECRET=$(vault read -field=role-id secret/ci/elastic-elasticsearch-hadoop/legacy-vault-credentials)
   export DRA_VAULT_ROLE_ID_SECRET
 
-  DRA_VAULT_SECRET_ID_SECRET=$(vault read -field=secret-id secret/ci/elastic-elasticsearch/legacy-vault-credentials)
+  DRA_VAULT_SECRET_ID_SECRET=$(vault read -field=secret-id secret/ci/elastic-elasticsearch-hadoop/legacy-vault-credentials)
   export DRA_VAULT_SECRET_ID_SECRET
 
   DRA_VAULT_ADDR=https://secrets.elastic.co:8200
