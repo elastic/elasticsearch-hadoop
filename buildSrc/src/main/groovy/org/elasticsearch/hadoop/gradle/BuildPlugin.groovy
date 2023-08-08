@@ -670,7 +670,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
                 def baseExtension = project.getExtensions().getByName('base');
-                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName}-${project.getVersion()}.pom"})
+                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName.get()}-${project.getVersion()}.pom"})
             }
         }
 
