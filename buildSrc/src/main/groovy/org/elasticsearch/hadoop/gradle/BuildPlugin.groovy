@@ -669,7 +669,8 @@ class BuildPlugin implements Plugin<Project>  {
         // Set the pom's destination to the distribution directory
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                pom.destination = project.provider({"${project.buildDir}/distributions/${project.archivesBaseName}-${project.getVersion()}.pom"})
+                def baseExtension = project.getExtensions().getByName('base');
+                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName}-${project.getVersion()}.pom"})
             }
         }
 
@@ -728,7 +729,8 @@ class BuildPlugin implements Plugin<Project>  {
     private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
         String classifier = variant.shouldClassifySparkVersion() && variant.isDefaultVariant() == false ? "-${variant.getName()}" : ''
-        String filename = "${project.base.archivesName}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
+        def baseExtension = project.getExtensions().getByName('base')
+        String filename = "${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
         // Fix the pom name
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
@@ -739,7 +741,7 @@ class BuildPlugin implements Plugin<Project>  {
         publication.getPom().withXml { XmlProvider xml ->
             Node root = xml.asNode()
             Node artifactId = (root.get('artifactId') as NodeList).get(0) as Node
-            artifactId.setValue("${project.archivesBaseName}_${variant.scalaMajorVersion}")
+            artifactId.setValue("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
         }
     }
 

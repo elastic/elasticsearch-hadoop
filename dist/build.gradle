@@ -144,7 +144,7 @@ publishing {
                 repository.appendNode('url', 'https://clojars.org/repo')
 
                 // Correct the artifact Id, otherwise it is listed as 'dist'
-                root.get('artifactId').get(0).setValue(project.archivesBaseName)
+                root.get('artifactId').get(0).setValue(project.base.archivesName.get())
             }
         }
     }
