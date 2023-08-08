@@ -8,6 +8,8 @@ if [[ "$BUILDKITE_BRANCH" == "main" && "$DRA_WORKFLOW" == "staging" ]]; then
   exit 0
 fi
 
+echo --- Creating distribution
+
 rm -Rfv ~/.gradle/init.d
 HADOOP_VERSION=$(grep eshadoop buildSrc/esh-version.properties | sed "s/eshadoop *= *//g")
 
@@ -23,7 +25,15 @@ if [[ "$BUILDKITE_BRANCH" == "main" ]]; then
   RM_BRANCH=master
 fi
 
+echo "DRA_WORKFLOW=$DRA_WORKFLOW"
+echo "HADOOP_VERSION=$HADOOP_VERSION"
+echo "RM_BRANCH=$RM_BRANCH"
+echo "VERSION_SUFFIX=$VERSION_SUFFIX"
+echo "BUILD_ARGS=$BUILD_ARGS"
+
 ES_BUILD_ID=$(curl -sS "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${RM_BRANCH}.json" | jq -r '.build_id')
+echo "ES_BUILD_ID=$ES_BUILD_ID"
+
 mkdir localRepo
 wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
   -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
@@ -35,6 +45,8 @@ find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
 
 # Allow other users write access to create checksum files
 find "$WORKSPACE" -type d -path "*/build/distributions" -exec chmod a+w {} \;
+
+echo --- Running release-manager
 
 docker run --rm \
   --name release-manager \
