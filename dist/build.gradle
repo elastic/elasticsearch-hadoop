@@ -2,6 +2,7 @@ import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
 import org.elasticsearch.hadoop.gradle.BuildPlugin
+import org.gradle.api.plugins.BasePluginExtension
 
 apply plugin: 'es.hadoop.build'
 
@@ -147,9 +148,10 @@ publishing {
                 Node repository = repositories.appendNode('repository')
                 repository.appendNode('id', 'clojars.org')
                 repository.appendNode('url', 'https://clojars.org/repo')
+                BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class)
 
                 // Correct the artifact Id, otherwise it is listed as 'dist'
-                root.get('artifactId').get(0).setValue(project.archivesBaseName)
+                root.get('artifactId').get(0).setValue(baseExtension.archivesName.get())
             }
         }
     }
