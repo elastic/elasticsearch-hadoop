@@ -21,7 +21,6 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
 fi
 
 RM_BRANCH="$BUILDKITE_BRANCH"
-RM_BRANCH="master" # TODO remove this before merge
 if [[ "$BUILDKITE_BRANCH" == "main" ]]; then
   RM_BRANCH=master
 fi

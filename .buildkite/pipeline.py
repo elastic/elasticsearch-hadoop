@@ -50,31 +50,31 @@ intakeTasks = map(
 )
 
 
-# pipeline["steps"].append(
-#     {
-#         "label": "intake",
-#         "timeout_in_minutes": 240,
-#         "command": "./gradlew check " + " ".join(intakeTasks),
-#     }
-# )
+pipeline["steps"].append(
+    {
+        "label": "intake",
+        "timeout_in_minutes": 240,
+        "command": "./gradlew check " + " ".join(intakeTasks),
+    }
+)
 
-# for sparkVersion in groupingsBySparkVersion.keys():
-#     for scalaVersion in groupingsBySparkVersion[sparkVersion]:
-#         scalaFullVersion = scalaVersions[scalaVersion]
-#         pipeline["steps"].append(
-#             {
-#                 "label": f"spark-{sparkVersion} / scala-{scalaFullVersion}",
-#                 "timeout_in_minutes": 180,
-#                 "command": f"./gradlew :elasticsearch-spark-{sparkVersion}:integrationTest -Pscala.variant={scalaFullVersion}",
-#             }
-#         )
+for sparkVersion in groupingsBySparkVersion.keys():
+    for scalaVersion in groupingsBySparkVersion[sparkVersion]:
+        scalaFullVersion = scalaVersions[scalaVersion]
+        pipeline["steps"].append(
+            {
+                "label": f"spark-{sparkVersion} / scala-{scalaFullVersion}",
+                "timeout_in_minutes": 180,
+                "command": f"./gradlew :elasticsearch-spark-{sparkVersion}:integrationTest -Pscala.variant={scalaFullVersion}",
+            }
+        )
 
 if os.environ.get("ENABLE_DRA_SNAPSHOT") == "true":
-    # pipeline["steps"].append(
-    #     {
-    #         "wait": None,
-    #     }
-    # )
+    pipeline["steps"].append(
+        {
+            "wait": None,
+        }
+    )
 
     pipeline["steps"].append(
         {
