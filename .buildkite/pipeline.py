@@ -69,7 +69,7 @@ for sparkVersion in groupingsBySparkVersion.keys():
             }
         )
 
-if os.environ.get("ENABLE_DRA_SNAPSHOT") == "true":
+if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
     pipeline["steps"].append(
         {
             "wait": None,
@@ -78,7 +78,7 @@ if os.environ.get("ENABLE_DRA_SNAPSHOT") == "true":
 
     pipeline["steps"].append(
         {
-            "label": "dra-snapshot",
+            "label": "DRA Snapshot Workflow",
             "command": ".buildkite/dra.sh",
             "timeout_in_minutes": 60,
             "agents": {"useVault": "true"},
