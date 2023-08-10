@@ -133,7 +133,7 @@ spec:
           message: 'Publishes DRA snapshot 2x per day'
           env:
             DRA_WORKFLOW: snapshot
-        Snapshot on 7.17:
+        Snapshot periodically on 7.17:
           branch: '7.17'
           cronline: '0 0,12 * * * America/New_York'
           message: 'Publishes DRA snapshot 2x per day'
@@ -151,7 +151,7 @@ spec:
           message: 'Publishes DRA staging 2x per day'
           env:
             DRA_WORKFLOW: staging
-        Staging on 7.17:
+        Staging periodically on 7.17:
           branch: '7.17'
           cronline: '0 0,12 * * * America/New_York'
           message: 'Publishes DRA staging 2x per day'
