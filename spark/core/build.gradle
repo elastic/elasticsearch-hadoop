@@ -9,6 +9,9 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
+
+    // Changing the formatting of these lines could break .buildkite/pipeline.py, it uses regex to parse the `spark20scala212` part
+    // We should maybe move these to a separate config file that can be read from both this file and the pipeline script in the future if it creates issues
     setCoreDefaultVariant "spark20scala212", spark24Version, scala212Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
     addCoreFeatureVariant "spark20scala211", spark24Version, scala211Version

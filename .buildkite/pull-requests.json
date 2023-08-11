@@ -1,0 +1,27 @@
+{
+  "jobs": [
+    {
+      "enabled": true,
+      "pipeline_slug": "elasticsearch-hadoop-tests",
+      "allow_org_users": true,
+      "allowed_repo_permissions": [
+        "admin",
+        "write"
+      ],
+      "set_commit_status": false,
+      "build_on_commit": true,
+      "build_on_comment": true,
+      "trigger_comment_regex": "^(?:(?:buildkite\\W+)?(?:build|test)\\W+(?:this|it))",
+      "always_trigger_comment_regex": "^(?:(?:buildkite\\W+)?(?:build|test)\\W+(?:this|it))",
+      "skip_ci_labels": [
+        "skip-ci"
+      ],
+      "skip_ci_on_only_changed": [
+        "^docs/",
+        "\\.md$",
+        "\\.mdx$",
+        "^\\.buildkite/pull_requests\\.json$"
+      ]
+    }
+  ]
+}
