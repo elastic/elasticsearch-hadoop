@@ -17,3 +17,4 @@ metastore_db
 /spark/keyvaluerdd.parquet
 out/
 localRepo/
+.vscode
