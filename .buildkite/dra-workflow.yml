@@ -1,0 +1,6 @@
+steps:
+  - label: DRA Workflow
+command: .buildkite/dra.sh
+timeout_in_minutes: 60
+env:
+  USE_DRA_CREDENTIALS: true
