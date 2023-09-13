@@ -6,7 +6,6 @@ echo "steps:"
 
 source .buildkite/branches.sh
 
-BRANCHES=(main 8.9 7.17)
 for BRANCH in "${BRANCHES[@]}"; do
   cat <<EOF
   - trigger: elasticsearch-hadoop-dra-workflow
