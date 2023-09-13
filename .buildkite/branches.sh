@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # This determines which branches will have pipelines triggered periodically, for tests and dra workflows.
-BRANCHES=(main 8.10 8.9 7.17)
+BRANCHES=( $(curl -s https://raw.githubusercontent.com/elastic/elasticsearch/main/branches.json | jq -r '.branches[].branch') )
