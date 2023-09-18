@@ -98,6 +98,7 @@ spec:
       default_branch: main
       branch_configuration: 'main 8.* 7.17'
       cancel_intermediate_builds: false
+      skip_intermediate_builds: false
       teams:
         elasticsearch-team: {}
         everyone:
