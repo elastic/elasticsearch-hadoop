@@ -52,10 +52,8 @@ boolean localRepo = project.getProperties().containsKey("localRepo")
 // TODO: Clean this up when we get to variants, they should persist their classes dirs in a sane way
 configurations {
     compileClasspath {
-        beforeLocking {
-            attributes {
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
-            }
+        attributes {
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
         }
     }
 }
