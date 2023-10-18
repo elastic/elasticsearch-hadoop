@@ -56,13 +56,13 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(3, 2, 4)
+        return new Version(3, 3, 3)
     }
 
     String hadoopVersionCompatibility() {
         // The spark artifacts that interface with Hadoop have a hadoop version in their names.
         // This version is not always a version that Hadoop still distributes.
-        return "3.2"
+        return "3"
     }
 
     @Override
