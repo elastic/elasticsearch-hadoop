@@ -50,8 +50,10 @@ class RowSerializationEventConverterTest {
     val rawEvent = eventConverter.getRawEvent(iaeFailure)
 
     // Scala 2.13 changed what toString() looks like, so can't do an exact match here:
-    assertTrue(rawEvent.contains("(StructField(field1,StringType,true), " +
-      "StructField(field2,StringType,true), StructField(field3,StringType,true)),[value1,value2,value3])"))
+    assertTrue(rawEvent.contains("(StructField(field1,StringType,true),"))
+    assertTrue(rawEvent.contains("StructField(field2,StringType,true),"))
+    assertTrue(rawEvent.contains("StructField(field3,StringType,true)),"))
+    assertTrue(rawEvent.contains("[value1,value2,value3])"))
     val timestamp = eventConverter.getTimestamp(iaeFailure)
     assertTrue(StringUtils.hasText(timestamp))
     assertTrue(DateUtils.parseDate(timestamp).getTime.getTime > 1L)

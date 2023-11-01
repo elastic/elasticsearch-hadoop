@@ -310,7 +310,11 @@ class BuildPlugin implements Plugin<Project>  {
                 resolve.eachDependency { DependencyResolveDetails details ->
                     // There are tons of slf4j-* variants. Search for all of them, and lock them down.
                     if (details.requested.name.contains("slf4j-")) {
-                        details.useVersion "1.7.6"
+                        // Some projects make use of the slf4j binding libraries that are from the implementation side,
+                        // so these must be left alone.
+                        if (details.requested.group.equals("org.apache.logging.log4j") == false) {
+                            details.useVersion "1.7.6"
+                        }
                     }
                     // Be careful with log4j version settings as they can be easily missed.
                     if (details.requested.name.contains("org.apache.logging.log4j") && details.requested.name.contains("log4j-")) {
