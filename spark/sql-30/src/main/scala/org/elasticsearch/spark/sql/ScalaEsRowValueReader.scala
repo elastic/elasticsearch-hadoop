@@ -59,8 +59,20 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
     else {
       val rowOrd = 
       if (inArray) {
-        if (rowColumnsMap.contains(sparkRowField)) {
-            rowColumns(sparkRowField)
+        // Recollect the current field name. If the last thing we read before a new object in a list was an empty
+        // object, we won't be able to find the correct row order for the next row being created.
+        // Example: foo:[{bar: baz, qux:{}},{bar:bizzy}]
+        //                              ^   ^____This could break because parser think's that
+        //                               \_________ this field is the current one and loads the wrong row order
+        // By re-resolving the current field, we can avoid this edge case, because that is managed by a stack in the
+        // superclass instead of the local sparkRowField.
+        var latestRowField = if (getCurrentField == null) null else getCurrentField.getFieldName
+        if (latestRowField == null) {
+          latestRowField = Utils.ROOT_LEVEL_NAME
+        }
+
+        if (rowColumnsMap.contains(latestRowField)) {
+            rowColumns(latestRowField)
         }
         else {
           currentArrayRowOrder
