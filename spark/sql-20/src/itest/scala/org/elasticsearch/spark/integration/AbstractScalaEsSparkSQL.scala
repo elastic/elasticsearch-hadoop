@@ -35,9 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{Row, SQLContext, SaveMode, SparkSession}
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.Decimal
 import org.apache.spark.sql.types.DecimalType
@@ -55,8 +53,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.elasticsearch.hadoop.util.TestUtils.resource
-import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
+import org.elasticsearch.hadoop.util.TestUtils.{docEndpoint, resource}
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
@@ -87,9 +84,9 @@ import org.junit.runners.Parameterized.Parameters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import org.apache.spark.rdd.RDD
+import org.elasticsearch.spark.acc.EsSparkAccumulators
 
 import javax.xml.bind.DatatypeConverter
-import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
@@ -2539,6 +2536,49 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("string", dataType.typeName)
     val head = df.head()
     assertThat(head.getString(0), containsString("Chipotle"))
+  }
+
+  @Test
+  def testSparkAccumulators() = {
+    def config(metricsPrefix: String): Map[String, String] = {
+      val index = wrapIndex(s"spark-test-accumulators-${metricsPrefix}")
+      val typename = "data"
+      val target = resource(index, typename, version)
+      Map[String, String](
+        ES_RESOURCE_READ -> target,
+        ES_RESOURCE_WRITE -> target,
+        ES_METRICS_PREFIX -> metricsPrefix
+      )
+    }
+
+    val data = Seq(
+      Row("doc1"),
+      Row("doc2"),
+      Row("doc3")
+    )
+    val inputRdd = sc.makeRDD(data)
+    val schema = new StructType()
+      .add("field1", StringType, nullable = false)
+    val df = sqc.createDataFrame(inputRdd, schema)
+
+    df.saveToEs(config("single-write"))
+
+    val doubleWritesConfig = config("double-write")
+    df.saveToEs(doubleWritesConfig)
+    df.saveToEs(doubleWritesConfig)
+
+    val readWriteConfig = config("read-write")
+    df.saveToEs(readWriteConfig)
+    val outputDf = sqc.esDF(readWriteConfig)
+
+    import org.elasticsearch.hadoop.mr.Counter._
+    assertEquals(inputRdd.count(), EsSparkAccumulators.get("single-write", DOCS_SENT))
+    assertEquals(inputRdd.count() * 2, EsSparkAccumulators.get("double-write", DOCS_SENT))
+    assertEquals(inputRdd.count(), EsSparkAccumulators.get("read-write", DOCS_SENT))
+    assertEquals(0, EsSparkAccumulators.get("read-write", DOCS_RECEIVED)) // lazy reads before the action count
+    assertEquals(outputDf.count(), EsSparkAccumulators.get("read-write", DOCS_RECEIVED))
+    assertEquals(outputDf.count() * 2, EsSparkAccumulators.get("read-write", DOCS_RECEIVED))
+    EsSparkAccumulators.clear()
   }
 
   /**

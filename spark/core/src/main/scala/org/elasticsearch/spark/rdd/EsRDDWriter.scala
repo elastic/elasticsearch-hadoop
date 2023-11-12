@@ -21,7 +21,7 @@ package org.elasticsearch.spark.rdd
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.TaskContext
-import org.apache.spark.util.TaskCompletionListener
+import org.apache.spark.util.{LongAccumulator, TaskCompletionListener}
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
@@ -35,6 +35,7 @@ import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor
 import org.elasticsearch.hadoop.serialization.bulk.PerEntityPoolingMetadataExtractor
 import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.spark.acc.EsSparkAccumulators
 import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
@@ -71,7 +72,10 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     val writer = RestService.createWriter(settings, taskContext.partitionId.toLong, -1, log)
 
     val listener = new TaskCompletionListener {
-      override def onTaskCompletion(context: TaskContext): Unit = writer.close()
+      override def onTaskCompletion(context: TaskContext): Unit = {
+        EsSparkAccumulators.add(writer.repository.stats(), settings.getMetricsPrefix)
+        writer.close()
+      }
     }
     taskContext.addTaskCompletionListener(listener)
 

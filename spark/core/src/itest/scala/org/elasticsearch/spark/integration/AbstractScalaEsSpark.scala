@@ -25,7 +25,6 @@ import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 import java.{lang => jl}
 import java.{util => ju}
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -33,17 +32,8 @@ import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_JOIN
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
-import org.elasticsearch.hadoop.util.TestUtils.resource
-import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.{ES_INDEX_AUTO_CREATE, ES_INDEX_READ_MISSING_AS_EMPTY, ES_INPUT_JSON, ES_MAPPING_EXCLUDE, ES_MAPPING_ID, ES_MAPPING_JOIN, ES_METRICS_PREFIX, ES_QUERY, ES_READ_METADATA, ES_RESOURCE, ES_RESOURCE_READ, ES_RESOURCE_WRITE}
+import org.elasticsearch.hadoop.util.TestUtils.{docEndpoint, resource}
 import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.rest.RestUtils.ExtendedRestClient
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
@@ -51,6 +41,7 @@ import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.spark.acc.EsSparkAccumulators
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
@@ -79,7 +70,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-
 import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
 import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
 
@@ -906,6 +896,46 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     } catch {
       case e: EsHadoopIllegalArgumentException => //Expected
     }
+  }
+
+  @Test
+  def testSparkAccumulators() = {
+    def config(metricsPrefix: String): Map[String, String] = {
+      val index = wrapIndex(s"spark-test-accumulators-${metricsPrefix}")
+      val typename = "data"
+      val target = resource(index, typename, version)
+      Map[String, String](
+        ES_RESOURCE_READ -> target,
+        ES_RESOURCE_WRITE -> target,
+        ES_METRICS_PREFIX -> metricsPrefix
+      )
+    }
+
+    val data = Seq(
+      Map("field1" -> "doc1"),
+      Map("field1" -> "doc2"),
+      Map("field1" -> "doc3")
+    )
+    val inputRdd = sc.makeRDD(data)
+
+    inputRdd.saveToEs(config("single-write"))
+
+    val doubleWritesConfig = config("double-write")
+    inputRdd.saveToEs(doubleWritesConfig)
+    inputRdd.saveToEs(doubleWritesConfig)
+
+    val readWriteConfig = config("read-write")
+    inputRdd.saveToEs(readWriteConfig)
+    val outputRdd = sc.esRDD(readWriteConfig)
+
+    import org.elasticsearch.hadoop.mr.Counter._
+    assertEquals(inputRdd.count(), EsSparkAccumulators.get("single-write", DOCS_SENT))
+    assertEquals(inputRdd.count() * 2, EsSparkAccumulators.get("double-write", DOCS_SENT))
+    assertEquals(inputRdd.count(), EsSparkAccumulators.get("read-write", DOCS_SENT))
+    assertEquals(0, EsSparkAccumulators.get("read-write", DOCS_RECEIVED)) // lazy reads before the action count
+    assertEquals(outputRdd.count(), EsSparkAccumulators.get("read-write", DOCS_RECEIVED))
+    assertEquals(outputRdd.count() * 2, EsSparkAccumulators.get("read-write", DOCS_RECEIVED))
+    EsSparkAccumulators.clear()
   }
 
   def wrapIndex(index: String) = {
