@@ -25,6 +25,7 @@ import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 import java.{lang => jl}
 import java.{util => ju}
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -32,8 +33,17 @@ import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.{ES_INDEX_AUTO_CREATE, ES_INDEX_READ_MISSING_AS_EMPTY, ES_INPUT_JSON, ES_MAPPING_EXCLUDE, ES_MAPPING_ID, ES_MAPPING_JOIN, ES_METRICS_PREFIX, ES_QUERY, ES_READ_METADATA, ES_RESOURCE, ES_RESOURCE_READ, ES_RESOURCE_WRITE}
-import org.elasticsearch.hadoop.util.TestUtils.{docEndpoint, resource}
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_JOIN
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
+import org.elasticsearch.hadoop.util.TestUtils.resource
+import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
 import org.elasticsearch.hadoop.rest.RestUtils
 import org.elasticsearch.hadoop.rest.RestUtils.ExtendedRestClient
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
@@ -70,6 +80,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+
 import org.elasticsearch.spark.integration.ScalaUtils.propertiesAsScalaMap
 import org.elasticsearch.spark.rdd.JDKCollectionConvertersCompat.Converters._
 

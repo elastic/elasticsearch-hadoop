@@ -17,31 +17,31 @@ For Spark, the same principle exists with https://spark.apache.org/docs/latest/r
 2+h| Data focused
 
 | BYTES_SENT     | Total number of data/communication bytes sent over the network to {es}
-| BYTES_ACCEPTED | Data/Documents accepted by {es} in bytes
-| BYTES_RETRIED  | Data/Documents rejected by {es} in bytes
-| BYTES_RECEIVED | Data/Documents received from {es} in bytes
+| BYTES_ACCEPTED | Data/Documents accepted by {es} in bytes 
+| BYTES_RETRIED  | Data/Documents rejected by {es} in bytes 
+| BYTES_RECEIVED | Data/Documents received from {es} in bytes 
 
 2+h| Document focused
 
 | DOCS_SENT     | Number of docs sent over the network to {es}
-| DOCS_ACCEPTED | Number of documents sent and accepted by {es}
-| DOCS_RETRIED  | Number of documents sent but rejected by {es}
-| DOCS_RECEIVED | Number of documents received from {es}
+| DOCS_ACCEPTED | Number of documents sent and accepted by {es} 
+| DOCS_RETRIED  | Number of documents sent but rejected by {es} 
+| DOCS_RECEIVED | Number of documents received from {es} 
 
 2+h| Network focused
 
 | BULK_TOTAL   | Number of bulk requests made to {es}
-| BULK_RETRIES | Number of bulk retries (caused by document rejections)
+| BULK_RETRIES | Number of bulk retries (caused by document rejections) 
 | SCROLL_TOTAL | Number of scroll pulled from {es}
-| NODE_RETRIES | Number of node fall backs (caused by network errors)
-| NET_RETRIES  | Number of network retries (caused by network errors)
+| NODE_RETRIES | Number of node fall backs (caused by network errors) 
+| NET_RETRIES  | Number of network retries (caused by network errors) 
 
 2+h| Time focused
 
-| NET_TOTAL_TIME_MS 		 | Overall time (in ms) spent over the network
-| BULK_TOTAL_TIME_MS 		 | Time (in ms) spent over the network by the bulk requests
-| BULK_RETRIES_TOTAL_TIME_MS | Time (in ms) spent over the network retrying bulk requests
-| SCROLL_TOTAL_TIME_MS       | Time (in ms) spent over the network reading the scroll requests
+| NET_TOTAL_TIME_MS 		 | Overall time (in ms) spent over the network 
+| BULK_TOTAL_TIME_MS 		 | Time (in ms) spent over the network by the bulk requests 
+| BULK_RETRIES_TOTAL_TIME_MS | Time (in ms) spent over the network retrying bulk requests 
+| SCROLL_TOTAL_TIME_MS       | Time (in ms) spent over the network reading the scroll requests 
 
 |===
 

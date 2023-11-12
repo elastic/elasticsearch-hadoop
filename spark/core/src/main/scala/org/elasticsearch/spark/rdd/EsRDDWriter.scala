@@ -21,7 +21,7 @@ package org.elasticsearch.spark.rdd
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.TaskContext
-import org.apache.spark.util.{LongAccumulator, TaskCompletionListener}
+import org.apache.spark.util.TaskCompletionListener
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider

@@ -53,7 +53,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.elasticsearch.hadoop.util.TestUtils.{docEndpoint, resource}
+import org.elasticsearch.hadoop.util.TestUtils.resource
+import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
@@ -87,6 +88,7 @@ import org.apache.spark.rdd.RDD
 import org.elasticsearch.spark.acc.EsSparkAccumulators
 
 import javax.xml.bind.DatatypeConverter
+import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
