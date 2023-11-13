@@ -68,7 +68,10 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
         // superclass instead of the local sparkRowField.
         var latestRowField = if (getCurrentField == null) null else getCurrentField.getFieldName
         if (latestRowField == null) {
-          latestRowField = Utils.ROOT_LEVEL_NAME
+          throw new IllegalStateException(
+            "No field information could be found while creating map for " +
+              s"array: previous field [${sparkRowField}], row order [${currentArrayRowOrder}]"
+          )
         }
 
         if (rowColumnsMap.contains(latestRowField)) {
