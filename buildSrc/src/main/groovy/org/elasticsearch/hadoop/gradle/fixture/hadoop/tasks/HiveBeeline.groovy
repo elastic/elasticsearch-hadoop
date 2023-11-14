@@ -28,7 +28,7 @@ import org.gradle.process.ExecSpec
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
-class HiveBeeline extends AbstractClusterTask {
+abstract class HiveBeeline extends AbstractClusterTask {
 
     File script
     List<File> libJars = []
