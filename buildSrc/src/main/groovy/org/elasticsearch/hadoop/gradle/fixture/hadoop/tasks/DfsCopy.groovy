@@ -27,7 +27,7 @@ import org.gradle.api.file.CopySpec
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-class DfsCopy extends AbstractClusterTask {
+abstract class DfsCopy extends AbstractClusterTask {
 
     File dfsSource
     File localSource
