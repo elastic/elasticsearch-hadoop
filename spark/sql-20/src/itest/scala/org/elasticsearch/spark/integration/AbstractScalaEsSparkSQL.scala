@@ -35,9 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.{Row, SQLContext, SaveMode, SparkSession}
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.Decimal
 import org.apache.spark.sql.types.DecimalType
@@ -88,7 +86,6 @@ import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import org.apache.spark.rdd.RDD
 
 import javax.xml.bind.DatatypeConverter
-import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.EsAssume
 import org.elasticsearch.hadoop.TestData
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
@@ -292,6 +289,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     df.take(1).foreach(println)
     assertEquals(1, df.count())
+    val head = df.head()
+    val arr = head.getSeq[Row](0);
+    assertThat(arr.size, is(2))
+    assertEquals(arr(0).getString(0), "1")
+    assertEquals(arr(0).getString(1), "2")
+    assertEquals(arr(1).getString(0), "unu")
+    assertEquals(arr(1).getString(1), "doi")
+    val topLevel = head.getString(1)
+    assertEquals(topLevel, "root")
   }
   
   @Test
@@ -346,9 +352,30 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val mapping = SchemaUtilsTestable.rowInfo(cfgSettings)
 
     val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(target)
-    df.printSchema()
-    df.take(1).foreach(println)
+//    df.printSchema()
+//    df.take(1).foreach(println)
     assertEquals(1, df.count())
+
+    val document = df.take(1).head
+    assertEquals(text, document.getString(1)) // .foo
+    assertEquals(0L, document.getLong(2)) // .level
+    assertEquals(text, document.getString(3)) // .level1
+
+    val bar = document.getStruct(0) // .bar
+    assertEquals(10L, bar.getLong(1)) // .bar.foo2
+    assertEquals(1L, bar.getLong(2)) // .bar.level
+    assertEquals(2L, bar.getLong(3)) // .bar.level2
+
+    val barbar = bar.getStruct(0) // .bar.bar
+    assertEquals(2L, barbar.getLong(1)) // .bar.bar.level
+    assertTrue(barbar.getBoolean(2)) // .bar.bar.level3
+
+    val barbarbar = barbar.getSeq[Row](0) // .bar.bar.bar
+    assertEquals(2, barbarbar.size)
+    val barbarbar0bar = barbarbar.head // .bar.bar.bar.[0]
+    assertEquals(1L, barbarbar0bar.getLong(0)) // .bar.bar.bar.[0].bar
+    val barbarbar1bar = barbarbar.last // .bar.bar.bar.[1]
+    assertEquals(2L, barbarbar1bar.getLong(0)) // .bar.bar.bar.[1].bar
   }
 
   @Test
@@ -368,6 +395,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.printSchema()
     df.take(1).foreach(println)
     assertEquals(1, df.count())
+
+    val document = df.head()
+    assertEquals(5L, document.getLong(0)) // .foo
+    val nested = document.getStruct(1) // .nested
+    val bar = nested.getSeq[Row](0) // .nested.bar
+    assertEquals(2, bar.size)
+    val bar1 = bar.head // .nested.bar.[1]
+    assertEquals(20L, bar1.getLong(0)) // .nested.bar.[1].age
+    assertEquals(new Timestamp(115, 0, 1, 0, 0, 0, 0), bar1.getTimestamp(1)) // .nested.bar.[1].date
+    val bar2 = bar.last // .nested.bar.[2]
+    assertEquals(20L, bar2.getLong(0)) // .nested.bar.[2].age
+    assertEquals(new Timestamp(115, 0, 1, 0, 0, 0, 0), bar2.getTimestamp(1)) // .nested.bar.[2].date
+    assertEquals("now", nested.getString(1)) // .nested.what
   }
 
   @Test
@@ -1562,17 +1602,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("array", bar.dataType.typeName)
     val scores = bar.dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[StructType]("scores")
     assertEquals("array", scores.dataType.typeName)
-    
-    val head = df.head
-    val foo = head.getSeq[Long](0)
-    assertEquals(5, foo(0))
-    assertEquals(6, foo(1))
-    // nested
-    val nested = head.getStruct(1)
-    assertEquals("now", nested.getString(1))
-    val nestedDate = nested.getSeq[Row](0)
-    val nestedScores = nestedDate(0).getSeq[Long](1)
-    assertEquals(2l, nestedScores(1))
+
+    val document = df.head
+    val foo = document.getSeq[Long](0) // .foo
+    assertEquals(5, foo(0)) // .foo[0]
+    assertEquals(6, foo(1)) // .foo[1]
+    val nested = document.getStruct(1) // .nested
+    assertEquals("now", nested.getString(1)) // .nested.what
+
+    val nestedBar = nested.getSeq[Row](0) // .nested.bar.[0]
+    val nestedScores = nestedBar(0).getSeq[Long](1) // .nested.bar.[0].scores
+    assertEquals(2l, nestedScores(1)) // .nested.bar.[0].scores.[1]
+
+    val nestedScores2 = nestedBar(1).getSeq[Long](1) // .nested.bar.[1].scores
+    assertEquals(4l, nestedScores2(1)) // .nested.bar.[1].scores.[1]
   }
 
   //@Test
@@ -2281,6 +2324,69 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertThat(nested.size, is(3))
     assertEquals(nested(0).getString(0), "anne")
     assertEquals(nested(0).getLong(1), 6)
+    assertEquals(nested(1).getString(0), "bob")
+    assertEquals(nested(1).getLong(1), 100)
+    assertEquals(nested(2).getString(0), "charlie")
+    assertEquals(nested(2).getLong(1), 15)
+  }
+
+  @Test
+  def testNestedWithEmptyObjectAtTail() {
+    val mapping = wrapMapping("data",
+      s"""{
+         |  "properties": {
+         |    "name": { "type": "$keyword" },
+         |    "nested-field": {
+         |      "type": "nested",
+         |      "properties": {
+         |        "key": {"type": "$keyword"},
+         |        "subnested-field": {
+         |          "type": "nested",
+         |          "properties": {
+         |            "subkey": {"type": "$keyword"}
+         |          }
+         |        }
+         |      }
+         |    }
+         |  }
+         |}
+""".stripMargin)
+
+    val index = wrapIndex("sparksql-test-nested-empty-object-at-tail")
+    val typed = "data"
+    val (target, _) = makeTargets(index, typed)
+    RestUtils.touch(index)
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+
+    val data = """{"name":"nested-empty-object","nested-field":[{"key": "value1","subnested-field":{}},{"key": "value2"}]}""".stripMargin
+
+    sc.makeRDD(Seq(data)).saveJsonToEs(target)
+    val df = sqc.read.format("es").load(index)
+
+    println(df.schema.treeString)
+
+    val dataType = df.schema("nested-field").dataType
+    assertEquals("array", dataType.typeName)
+    val array = dataType.asInstanceOf[ArrayType]
+    assertEquals("struct", array.elementType.typeName)
+    val struct = array.elementType.asInstanceOf[StructType]
+    assertEquals("string", struct("key").dataType.typeName)
+    assertEquals("array", struct("subnested-field").dataType.typeName)
+
+    val subArrayType = struct("subnested-field").dataType
+    assertEquals("array", subArrayType.typeName)
+    val subArray = subArrayType.asInstanceOf[ArrayType]
+    assertEquals("struct", subArray.elementType.typeName)
+    val subStruct = subArray.elementType.asInstanceOf[StructType]
+    assertEquals("string", subStruct("subkey").dataType.typeName)
+
+    val head = df.head()
+    val nested = head.getSeq[Row](1) // .nested-field
+    assertThat(nested.size, is(2))
+    assertEquals(nested(0).getString(0), "value1") // .nested-field.[0].key matches
+    assertEquals(nested(0).getSeq(1).size, 1) // .nested-field.[0].subnested-field is singleton list
+    assertNull(nested(0).getSeq[Row](1).head.get(0)) // .nested-field.[0].subnested-field.[0] is empty objet
+    assertEquals(nested(1).getString(0), "value2") // .nested-field.[1].key matches
   }
 
   
