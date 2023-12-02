@@ -28,7 +28,7 @@ import org.gradle.process.ExecSpec
 
 import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
 
-class SparkApp extends AbstractClusterTask {
+abstract class SparkApp extends AbstractClusterTask {
 
     enum Master {
         LOCAL, YARN, STANDALONE

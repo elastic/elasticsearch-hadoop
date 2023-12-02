@@ -28,7 +28,7 @@ import org.gradle.process.ExecSpec
 
 import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
 
-class HadoopMRJob extends AbstractClusterTask {
+abstract class HadoopMRJob extends AbstractClusterTask {
 
     String jobClass
     File jobJar
