@@ -23,7 +23,7 @@ import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.util.ConfigureUtil
+import org.elasticsearch.hadoop.gradle.util.ConfigureUtil
 
 /**
  * All the configurations that can be set hierarchically for a cluster.

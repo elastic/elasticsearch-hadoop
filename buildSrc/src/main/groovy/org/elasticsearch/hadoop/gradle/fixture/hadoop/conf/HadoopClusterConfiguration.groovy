@@ -27,7 +27,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.SparkYarnServiceD
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.util.ConfigureUtil
+import org.elasticsearch.hadoop.gradle.util.ConfigureUtil
 
 /**
  * Configuration for a Hadoop cluster, used for integration tests.

@@ -6,7 +6,10 @@ import org.elasticsearch.hadoop.gradle.BuildPlugin
 apply plugin: 'es.hadoop.build'
 
 description = "Elasticsearch for Apache Hadoop"
-project.archivesBaseName = 'elasticsearch-hadoop'
+
+base {
+  archivesName = 'elasticsearch-hadoop'
+}
 
 def sparkVariantIncluded = 'spark20scala211'
 
