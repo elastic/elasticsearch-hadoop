@@ -9,6 +9,7 @@ This section summarizes the changes in each release.
 [[release-notes-7]]
 ===== 7.x
 
+* <<eshadoop-7.17.16>>
 * <<eshadoop-7.17.15>>
 * <<eshadoop-7.17.14>>
 * <<eshadoop-7.17.13>>
@@ -85,7 +86,6 @@ This section summarizes the changes in each release.
 // Template
 [[eshadoop-5.3.1]]
 == Elasticsearch for Apache Hadoop version 5.3.1
-Month 00, 2017
 
 [[deprecation-5.3.1]]
 === Deprecations
@@ -126,8 +126,13 @@ Section::
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
+(No changes)
+ES-Hadoop 5.3.1 is a version compatibility release, tested specifically against
+Elasticsearch 5.3.1.
+
 ////////////////////////
 
+include::release-notes/7.17.16.adoc[]
 include::release-notes/7.17.15.adoc[]
 include::release-notes/7.17.14.adoc[]
 include::release-notes/7.17.13.adoc[]
