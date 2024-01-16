@@ -1,0 +1,13 @@
+[[eshadoop-8.12.0]]
+== Elasticsearch for Apache Hadoop version 8.12.0
+
+[[bugs-8.12.0]]
+=== Bug Fixes
+Core::
+* Correctly handling EsHadoopException in TransportPool.validate()
+https://github.com/elastic/elasticsearch-hadoop/pull/2150[#2150]
+Spark::
+* Nested objects fail parsing in Spark SQL when empty objects present
+https://github.com/elastic/elasticsearch-hadoop/issues/2157[#2157]
+* Always resolve current field name in SparkSQL when creating Row objects inside of arrays
+https://github.com/elastic/elasticsearch-hadoop/pull/2158[#2158]
