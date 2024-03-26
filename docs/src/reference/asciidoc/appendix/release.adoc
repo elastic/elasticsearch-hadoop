@@ -9,6 +9,7 @@ This section summarizes the changes in each release.
 [[release-notes-7]]
 ===== 7.x
 
+* <<eshadoop-7.17.19>>
 * <<eshadoop-7.17.18>>
 * <<eshadoop-7.17.17>>
 * <<eshadoop-7.17.16>>
@@ -134,6 +135,7 @@ Elasticsearch 5.3.1.
 
 ////////////////////////
 
+include::release-notes/7.17.19.adoc[]
 include::release-notes/7.17.18.adoc[]
 include::release-notes/7.17.17.adoc[]
 include::release-notes/7.17.16.adoc[]
