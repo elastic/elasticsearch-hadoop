@@ -58,7 +58,7 @@ sparkVariants {
             add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:1.7.6")
 
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
-            add(variant.configuration('test', 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+            add(variant.configuration('test', 'implementation'), "com.esotericsoftware:kryo:4.0.2")
             add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
