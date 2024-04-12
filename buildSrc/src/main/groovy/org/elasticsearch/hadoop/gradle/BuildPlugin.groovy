@@ -281,7 +281,7 @@ class BuildPlugin implements Plugin<Project>  {
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "junit:junit:${project.ext.junitVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "joda-time:joda-time:2.8")
-            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.slf4j:slf4j-log4j12:1.7.6")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.slf4j:slf4j-log4j12:${project.ext.slf4jVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}")
             add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-1.2-api:${project.ext.log4jVersion}")
@@ -313,7 +313,7 @@ class BuildPlugin implements Plugin<Project>  {
                         // Some projects make use of the slf4j binding libraries that are from the implementation side,
                         // so these must be left alone.
                         if (details.requested.group.equals("org.apache.logging.log4j") == false) {
-                            details.useVersion "1.7.6"
+                            details.useVersion project.ext.slf4jVersion
                         }
                     }
                     // Be careful with log4j version settings as they can be easily missed.
