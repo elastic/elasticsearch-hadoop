@@ -55,10 +55,10 @@ sparkVariants {
             add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
             add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
             add(variant.configuration('compileOnly'), "com.google.protobuf:protobuf-java:2.5.0")
-            add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:1.7.6")
+            add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
 
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
-            add(variant.configuration('test', 'implementation'), "com.esotericsoftware.kryo:kryo:2.21")
+            add(variant.configuration('test', 'implementation'), "com.esotericsoftware:kryo:4.0.2")
             add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'

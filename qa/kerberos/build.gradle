@@ -73,7 +73,7 @@ dependencies {
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.12:2.6.7.1")
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("org.json4s:json4s-jackson_2.12:3.2.11")
-    compileOnly("org.slf4j:slf4j-api:1.7.6")
+    compileOnly("org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
 
     implementation("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
     implementation("org.apache.spark:spark-sql_2.12:$project.ext.spark30Version")
