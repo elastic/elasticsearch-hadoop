@@ -685,34 +685,43 @@ public abstract class RestService implements Serializable {
         // no routing necessary; select the relevant target shard/node
         Map<ShardInfo, NodeInfo> targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
         repository.close();
+        String nodeAddress;
+        if (targetShards.isEmpty()) {
+            List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            nodeAddress = nodes.get(new Random().nextInt(nodes.size()));
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Shards not found for partition writer instance [%s], so node [%s] has been randomly selected",
+                        currentInstance, nodeAddress));
+            }
+        } else {
+            List<ShardInfo> orderedShards = new ArrayList<ShardInfo>(targetShards.keySet());
+            // make sure the order is strict
+            Collections.sort(orderedShards);
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("Partition writer instance [%s] discovered [%s] primary shards %s", currentInstance, orderedShards.size(), orderedShards));
+            }
 
-        Assert.isTrue(!targetShards.isEmpty(),
-                String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters? or all shards failed?)", resource));
-
-
-        List<ShardInfo> orderedShards = new ArrayList<ShardInfo>(targetShards.keySet());
-        // make sure the order is strict
-        Collections.sort(orderedShards);
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("Partition writer instance [%s] discovered [%s] primary shards %s", currentInstance, orderedShards.size(), orderedShards));
+            // if there's no task info, just pick a random bucket
+            if (currentInstance <= 0) {
+                currentInstance = new Random().nextInt(targetShards.size()) + 1;
+            }
+            int bucket = (int) (currentInstance % targetShards.size());
+            ShardInfo chosenShard = orderedShards.get(bucket);
+            NodeInfo targetNode = targetShards.get(chosenShard);
+            nodeAddress = targetNode.getPublishAddress();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Partition writer instance [%s] assigned using primary shard [%s] to choose node [%s]",
+                        currentInstance, chosenShard.getName(), nodeAddress));
+            }
         }
-
-        // if there's no task info, just pick a random bucket
-        if (currentInstance <= 0) {
-            currentInstance = new Random().nextInt(targetShards.size()) + 1;
-        }
-        int bucket = (int)(currentInstance % targetShards.size());
-        ShardInfo chosenShard = orderedShards.get(bucket);
-        NodeInfo targetNode = targetShards.get(chosenShard);
 
         // pin settings
-        SettingsUtils.pinNode(settings, targetNode.getPublishAddress());
+        SettingsUtils.pinNode(settings, nodeAddress);
         String node = SettingsUtils.getPinnedNode(settings);
         repository = new RestRepository(settings);
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]",
-                    currentInstance, chosenShard.getName(), node));
+            log.debug(String.format("Partition writer instance [%s] assigned to address [%s]", currentInstance, node));
         }
 
         return repository;
