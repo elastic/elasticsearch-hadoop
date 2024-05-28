@@ -60,7 +60,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(3, 1, 2)
+        return new Version(3, 1, 3)
     }
 
     @Override
