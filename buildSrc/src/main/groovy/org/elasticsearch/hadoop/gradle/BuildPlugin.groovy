@@ -70,6 +70,15 @@ import javax.inject.Inject
 
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariant
+import org.gradle.api.artifacts.ResolvableDependencies;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedComponentResult;
+import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.specs.AndSpec;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import java.util.stream.Collectors;
 
 class BuildPlugin implements Plugin<Project>  {
 
@@ -845,10 +854,8 @@ class BuildPlugin implements Plugin<Project>  {
         precommitTasks.add(licenseHeaders)
 
         if (!project.path.startsWith(":qa")) {
-            TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
-                dependencies = project.configurations.runtimeClasspath.fileCollection {
-                    !(it instanceof ProjectDependency)
-                }
+            TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {                
+                dependencies = project.configurations.runtimeClasspath
                 mapping from: /hadoop-.*/, to: 'hadoop'
                 mapping from: /hive-.*/, to: 'hive'
                 mapping from: /jackson-.*/, to: 'jackson'

@@ -51,6 +51,16 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.gradle.api.artifacts.ResolvableDependencies;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedComponentResult;
+import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.specs.AndSpec;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import java.util.stream.Collectors;
+import org.gradle.api.artifacts.Configuration;
 
 /**
  * A task to check licenses for dependencies.
@@ -94,7 +104,7 @@ import java.util.stream.Collectors;
  * for the dependency. This artifact will be redistributed by us with the release to
  * comply with the license terms.
  */
-public class DependencyLicensesTask extends DefaultTask {
+public abstract class DependencyLicensesTask extends DefaultTask {
 
     private final Pattern regex = Pattern.compile("-v?\\d+.*");
 
@@ -148,7 +158,28 @@ public class DependencyLicensesTask extends DefaultTask {
         return dependencies;
     }
 
-    public void setDependencies(FileCollection dependencies) {
+    public void setDependencies(Configuration configuration) {
+        ResolvableDependencies incoming = configuration.getIncoming();
+        dependencies = incoming.artifactView(viewConfiguration -> {
+            Set<ComponentIdentifier> firstLevelDependencyComponents = incoming.getResolutionResult()
+                .getRootComponent()
+                .map(rootComponent -> rootComponent.getDependencies()
+                        .stream()
+                        .filter(dependency -> dependency instanceof ResolvedDependencyResult)
+                        .map(dependency -> (ResolvedDependencyResult) dependency)
+                        .filter(dependency -> dependency.getSelected() instanceof ResolvedComponentResult)
+                        .map(dependency -> dependency.getSelected().getId())
+                        .collect(Collectors.toSet())
+                ).get();
+            Spec<ComponentIdentifier> componentFilter = (identifier -> identifier instanceof ModuleComponentIdentifier
+                    && ((ModuleComponentIdentifier) identifier).getGroup().startsWith("org.elasticsearch") == false);
+            Spec<ComponentIdentifier> firstLevelFilter = (identifier -> firstLevelDependencyComponents.contains(identifier));
+            viewConfiguration.componentFilter(
+                new AndSpec<>(firstLevelFilter, componentFilter)
+            );
+        }).getFiles();
+
+
         this.dependencies = dependencies;
     }
 
