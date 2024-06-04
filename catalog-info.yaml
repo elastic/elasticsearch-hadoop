@@ -20,6 +20,7 @@ spec:
       name: elasticsearch-hadoop / tests
     spec:
       repository: elastic/elasticsearch-hadoop
+      clone_method: https
       pipeline_file: .buildkite/pipeline.py
       default_branch: main
       branch_configuration: 'main 8.* 7.17'
@@ -58,6 +59,7 @@ spec:
       name: elasticsearch-hadoop / on-merge
     spec:
       repository: elastic/elasticsearch-hadoop
+      clone_method: https
       pipeline_file: .buildkite/pipeline.py
       env:
         ENABLE_DRA_WORKFLOW: 'true'
@@ -95,6 +97,7 @@ spec:
       name: elasticsearch-hadoop / dra-workflow
     spec:
       repository: elastic/elasticsearch-hadoop
+      clone_method: https
       pipeline_file: .buildkite/dra-workflow.yml
       env:
         ENABLE_DRA_WORKFLOW: 'true'
@@ -134,6 +137,7 @@ spec:
       name: elasticsearch-hadoop / dra-workflow-trigger
     spec:
       repository: elastic/elasticsearch-hadoop
+      clone_method: https
       pipeline_file: .buildkite/dra-workflow.trigger.sh
       default_branch: main
       branch_configuration: main
@@ -174,6 +178,7 @@ spec:
       name: elasticsearch-hadoop / tests-trigger
     spec:
       repository: elastic/elasticsearch-hadoop
+      clone_method: https
       pipeline_file: .buildkite/tests.trigger.sh
       default_branch: main
       branch_configuration: main
