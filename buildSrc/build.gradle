@@ -26,7 +26,7 @@ repositories {
     mavenCentral()
 
     // For resolving propdeps (provided/optional dependencies)
-    maven { url "https://repo.spring.io/plugins-snapshot" }
+    maven { url 'https://repo.spring.io/plugins-snapshot' }
 
     // For Elasticsearch snapshots.
     if (localRepo) {
