@@ -300,7 +300,7 @@ public class RestRepository implements Closeable, StatsAware {
         Map<String, GeoField> geoInfo = new LinkedHashMap<String, GeoField>();
         for (Entry<String, GeoType> geoEntry : fields.entrySet()) {
             String fieldName = geoEntry.getKey();
-            geoInfo.put(fieldName, MappingUtils.parseGeoInfo(geoEntry.getValue(), geoMapping.get(fieldName)));
+            geoInfo.put(fieldName, MappingUtils.parseGeoInfo(geoEntry.getValue(), MappingUtils.getGeoMapping(geoMapping, fieldName)));
         }
 
         return geoInfo;

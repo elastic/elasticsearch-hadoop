@@ -47,6 +47,25 @@ public abstract class MappingUtils {
                 "_parent", "_routing", "_index", "_size", "_timestamp", "_ttl", "_field_names", "_meta"));
     }
 
+    public static Object getGeoMapping(Map<String, Object> map, String path) {
+        String[] keys = path.split("\\.");
+        Object currentValue = map;
+
+        for (String key : keys) {
+            if (currentValue instanceof ArrayList) {
+                currentValue = ((ArrayList)currentValue).get(0);
+            }
+
+            if (currentValue instanceof Map) {
+                currentValue = ((Map<String, Object>) currentValue).get(key);
+            } else {
+                return null;
+            }
+        }
+
+        return currentValue;
+    }
+
     public static void validateMapping(String fields, Mapping mapping, FieldPresenceValidation validation, Log log) {
         if (StringUtils.hasText(fields)) {
             validateMapping(StringUtils.tokenize(fields), mapping, validation, log);
