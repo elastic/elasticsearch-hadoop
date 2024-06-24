@@ -1882,6 +1882,56 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testGeoShapePointDeep() {
+    val mapping = wrapMapping("data", s"""{
+    |      "properties": {
+    |        "name": {
+    |          "type": "$keyword"
+    |        },
+    |        "location": {
+    |          "properties": {
+    |            "deep": {
+    |              "type": "geo_shape"
+    |          }
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin)
+
+    val index = wrapIndex("sparksql-test-geoshape-point-geoshape-deep")
+    val typed = "data"
+    val (target, _) = makeTargets(index, typed)
+    RestUtils.touch(index)
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+
+    val point = """{"name":"point", "location": { "deep":{ "type" : "point", "coordinates": [100.0, 0.0]  } }}""".stripMargin
+
+    sc.makeRDD(Seq(point)).saveJsonToEs(target)
+    val df = sqc.read.format("es").load(index)
+
+    println(df.schema.treeString)
+
+    val dataType = df.schema("location").dataType.asInstanceOf[StructType]("deep").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    assertEquals("double", coords.typeName)
+
+    val head = df.select("location.*").head()
+
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("point"))
+    val array = obj.getSeq[Double](1)
+    assertThat(array(0), is(100.0d))
+    assertThat(array(1), is(0.0d))
+  }
+
+  @Test
   def testGeoShapeLine() {
     val mapping = wrapMapping("data", s"""{
     |      "properties": {
