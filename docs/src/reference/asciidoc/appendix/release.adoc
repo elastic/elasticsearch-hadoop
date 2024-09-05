@@ -9,6 +9,7 @@ This section summarizes the changes in each release.
 [[release-notes-8]]
 ===== 8.x
 
+* <<eshadoop-8.15.1>>
 * <<eshadoop-8.15.0>>
 * <<eshadoop-8.14.3>>
 * <<eshadoop-8.14.2>>
@@ -112,6 +113,7 @@ Elasticsearch 5.3.1.
 
 ////////////////////////
 
+include::release-notes/8.15.1.adoc[]
 include::release-notes/8.15.0.adoc[]
 include::release-notes/8.14.3.adoc[]
 include::release-notes/8.14.2.adoc[]
