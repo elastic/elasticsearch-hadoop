@@ -36,7 +36,8 @@ public class EsMajorVersion implements Serializable {
     public static final EsMajorVersion V_6_X = new EsMajorVersion((byte) 6, "6.x");
     public static final EsMajorVersion V_7_X = new EsMajorVersion((byte) 7, "7.x");
     public static final EsMajorVersion V_8_X = new EsMajorVersion((byte) 8, "8.x");
-    public static final EsMajorVersion LATEST = V_8_X;
+    public static final EsMajorVersion V_9_X = new EsMajorVersion((byte) 9, "9.x");
+    public static final EsMajorVersion LATEST = V_9_X;
 
     public final byte major;
     private final String version;
@@ -91,6 +92,9 @@ public class EsMajorVersion implements Serializable {
         }
         if (version.startsWith("8.")) {
             return new EsMajorVersion((byte) 8, version);
+        }
+        if (version.startsWith("9.")) {
+            return new EsMajorVersion((byte) 9, version);
         }
         throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version [" + version + "]." +
                 "Highest supported version is [" + LATEST.version + "]. You may need to upgrade ES-Hadoop.");
