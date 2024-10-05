@@ -59,7 +59,7 @@ public class CommandTest {
     public static Collection<Object[]> data() {
 
         // make sure all versions are tested. Throw if a new one is seen:
-        if (EsMajorVersion.LATEST != EsMajorVersion.V_8_X) {
+        if (EsMajorVersion.LATEST != EsMajorVersion.V_9_X) {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
@@ -76,7 +76,8 @@ public class CommandTest {
                 EsMajorVersion.V_5_X,
                 EsMajorVersion.V_6_X,
                 EsMajorVersion.V_7_X,
-                EsMajorVersion.V_8_X};
+                EsMajorVersion.V_8_X,
+                EsMajorVersion.V_9_X};
 
         for (EsMajorVersion version : versions) {
             for (boolean asJson : asJsons) {
