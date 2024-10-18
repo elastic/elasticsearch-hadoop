@@ -69,7 +69,7 @@ Indexing performance depends _heavily_ on the type of data being targeted and it
 [[help]]
 === Getting help
 
-If you need help, there is a strong, helpful community of users on the https://discuss.elastic.co/c/elasticsearch-and-hadoop[forum] and http://www.elastic.co/community/[Slack] who are happy to help out.
+If you need help, there is a strong, helpful community of users on the https://discuss.elastic.co/[forum] and http://www.elastic.co/community/[Slack] who are happy to help out.
 
 If something is not working, there are two possibilities:
 
