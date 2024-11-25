@@ -32,7 +32,7 @@ import org.gradle.api.publish.ivy.IvyArtifact
 
 class HadoopFixturePlugin implements Plugin<Project> {
 
-    private static final String APACHE_MIRROR = "https://apache.osuosl.org/"
+    private static final String APACHE_MIRROR = "https://archive.apache.org/dist/"
 
     static class HadoopFixturePluginExtension {
         private NamedDomainObjectContainer<HadoopClusterConfiguration> clusters
