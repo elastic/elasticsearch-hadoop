@@ -8,6 +8,17 @@ For clarity, we always list any breaking changes at the top of the
 //NOTE: The notable-breaking-changes tagged regions are re-used in the
 //Installation and Upgrade Guide
 
+=== Deprecations in 8.18
+
+The following functionality has been deprecated in {eh} 8.18 and will be removed
+in a future version. While this won’t have an immediate impact on your
+applications, we strongly encourage you take the described steps to update your
+code after upgrading to 8.18.
+
+==== Spark 2.x support is deprecated
+
+Spark 2.x is no longer maintained. Spark 3 are still supported.
+
 [[breaking-changes-8.9]]
 === Breaking Changes in 8.9
 
