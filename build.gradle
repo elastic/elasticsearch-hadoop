@@ -74,8 +74,6 @@ develocity {
       publishing.onlyIf { false }
     }
 
-    // def gitRevision = buildParams.gitRevision
-
     background {
       tag OS.current().name()
       tag Architecture.current().name()
@@ -129,8 +127,8 @@ develocity {
           link 'Source', "${prBaseUrl}/tree/${System.getenv('BUILDKITE_COMMIT')}"
           link 'Pull Request', "https://github.com/${repository}/pull/${prId}"
         } else {
-          // value 'Git Commit ID', gitRevision.get()
-          // link 'Source', "https://github.com/${repository}/tree/${gitRevision.get()}"
+          value 'Git Commit ID', System.getenv('BUILDKITE_COMMIT')
+          link 'Source', "https://github.com/${repository}/tree/${System.getenv('BUILDKITE_COMMIT')}"
         }
 
         buildFinished { result ->
