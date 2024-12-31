@@ -29,10 +29,8 @@ import scala.reflect.ClassTag
 
 package object sql {
 
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
   implicit def sqlContextFunctions(sc: SQLContext)= new SQLContextFunctions(sc)
 
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
   class SQLContextFunctions(sc: SQLContext) extends Serializable {
     def esDF() = EsSparkSQL.esDF(sc)
     def esDF(resource: String) = EsSparkSQL.esDF(sc, resource)
@@ -44,20 +42,16 @@ package object sql {
 
   // the sparkDatasetFunctions already takes care of this
   // but older clients might still import it hence why it's still here
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
   implicit def sparkDataFrameFunctions(df: DataFrame) = new SparkDataFrameFunctions(df)
 
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
   class SparkDataFrameFunctions(df: DataFrame) extends Serializable {
     def saveToEs(resource: String): Unit = { EsSparkSQL.saveToEs(df, resource) }
     def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit = { EsSparkSQL.saveToEs(df, resource, cfg) }
     def saveToEs(cfg: scala.collection.Map[String, String]): Unit = { EsSparkSQL.saveToEs(df, cfg)    }
   }
-
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
+  
   implicit def sparkSessionFunctions(ss: SparkSession)= new SparkSessionFunctions(ss)
-
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
+  
   class SparkSessionFunctions(ss: SparkSession) extends Serializable {
     def esDF() = EsSparkSQL.esDF(ss)
     def esDF(resource: String) = EsSparkSQL.esDF(ss, resource)
@@ -67,10 +61,8 @@ package object sql {
     def esDF(resource: String, query: String, cfg: scala.collection.Map[String, String]) = EsSparkSQL.esDF(ss, resource, query, cfg)
   }
 
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
   implicit def sparkDatasetFunctions[T : ClassTag](ds: Dataset[T]) = new SparkDatasetFunctions(ds)
-
-  @deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
+  
   class SparkDatasetFunctions[T : ClassTag](ds: Dataset[T]) extends Serializable {
     def saveToEs(resource: String): Unit =  { EsSparkSQL.saveToEs(ds, resource) }
     def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit =  { EsSparkSQL.saveToEs(ds, resource, cfg) }

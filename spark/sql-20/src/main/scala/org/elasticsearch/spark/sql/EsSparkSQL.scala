@@ -37,7 +37,6 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.Map
 
-@deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
 object EsSparkSQL {
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
