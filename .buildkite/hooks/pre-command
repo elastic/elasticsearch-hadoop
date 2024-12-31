@@ -55,3 +55,4 @@ if [[ "${BUILDKITE_LABEL:-}" == *"Pipeline upload"* || "${BUILDKITE_LABEL:-}" ==
 
 <summary>Gradle build scan links</summary>
 EOF
+fi
