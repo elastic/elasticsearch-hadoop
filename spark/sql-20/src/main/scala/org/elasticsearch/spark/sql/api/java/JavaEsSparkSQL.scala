@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.spark.sql.EsSparkSQL
 
+@deprecated("Support for Apache Spark 2 is deprecated. Use Spark 3.")
 object JavaEsSparkSQL {
 
   // specify the return types to make sure the bytecode is generated properly (w/o any scala.collections in it)

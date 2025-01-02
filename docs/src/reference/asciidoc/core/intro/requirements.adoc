@@ -81,6 +81,8 @@ Hive version {hv-v}
 [[requirements-spark]]
 === Apache Spark
 
+deprecated::[9.0,Support for Spark 2.x in {eh} is deprecated.]
+
 Spark 2.0 or higher. We recommend using the latest release of Spark (currently {sp-v}). As {eh} provides native integration (which is recommended) with {sp}, it does not matter what binary one is using.
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
