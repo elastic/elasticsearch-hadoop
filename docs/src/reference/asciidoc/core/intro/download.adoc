@@ -69,8 +69,8 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | Spark Version | Scala Version | ES-Hadoop Artifact ID
 | 1.0 - 2.x | 2.10 | <unsupported>
 | 1.0 - 1.6 | 2.11 | <unsupported>
-| 2.x | 2.11 | elasticsearch-spark-20_2.11
-| 2.x | 2.12 | elasticsearch-spark-20_2.12
+| 2.x | 2.11 | <unsupported>
+| 2.x | 2.12 | <unsupported>
 | 3.0+ | 2.12 | elasticsearch-spark-30_2.12
 | 3.2+ | 2.13 | elasticsearch-spark-30_2.13
 |==========================================================
