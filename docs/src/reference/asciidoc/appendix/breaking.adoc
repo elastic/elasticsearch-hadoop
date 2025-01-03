@@ -17,7 +17,7 @@ code after upgrading to 8.18.
 
 ==== Spark 2.x support is deprecated
 
-Spark 2.x is no longer maintained. Spark 3 are still supported.
+Spark 2.x is no longer maintained. Spark 3 is still supported.
 
 [[breaking-changes-8.9]]
 === Breaking Changes in 8.9
