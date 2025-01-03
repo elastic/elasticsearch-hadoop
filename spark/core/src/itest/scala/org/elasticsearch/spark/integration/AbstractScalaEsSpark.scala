@@ -854,10 +854,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = resource(index, typename, version)
 
     val rawCore = List( Map("colint" -> 1, "colstr" -> "s"),
-                         Map("colint" -> null, "colstr" -> null) )
+                         Map("colint" -> 9, "colstr" -> null) )
     sc.parallelize(rawCore, 1).saveToEs(target)
     val qjson =
-      """{"query":{"range":{"colint":{"from":null,"to":"9","include_lower":true,"include_upper":true}}}}"""
+      """{"query":{"range":{"colint":{"lte":"9"}}}}"""
 
     val esRDD = EsSpark.esRDD(sc, target, qjson)
     val scRDD = sc.esRDD(target, qjson)
