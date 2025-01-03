@@ -834,15 +834,15 @@ class BuildPlugin implements Plugin<Project>  {
         integrationTest.maxHeapSize = "2g"
 
         integrationTest.testLogging {
-            displayGranularity 0
+            displayGranularity = 0
             events "started", "failed" //, "standardOut", "standardError"
-            exceptionFormat "full"
-            showCauses true
-            showExceptions true
-            showStackTraces true
+            exceptionFormat = "full"
+            showCauses = true
+            showExceptions = true
+            showStackTraces = true
             stackTraceFilters "groovy"
-            minGranularity 2
-            maxGranularity 2
+            minGranularity = 2
+            maxGranularity = 2
         }
 
         integrationTest.reports.html.required = false
