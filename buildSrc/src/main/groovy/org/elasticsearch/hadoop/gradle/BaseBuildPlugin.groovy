@@ -163,20 +163,20 @@ class BaseBuildPlugin implements Plugin<Project> {
      */
     private static void configureRepositories(Project project) {
         project.repositories.mavenCentral()
-        project.repositories.maven { url "https://clojars.org/repo" }
+        project.repositories.maven { url = "https://clojars.org/repo" }
 
         // For Elasticsearch snapshots.
-        project.repositories.maven { url "https://snapshots.elastic.co/maven/" } // default
-        project.repositories.maven { url "https://oss.sonatype.org/content/repositories/snapshots" } // oss-only
+        project.repositories.maven { url = "https://snapshots.elastic.co/maven/" } // default
+        project.repositories.maven { url = "https://oss.sonatype.org/content/repositories/snapshots" } // oss-only
 
         // Elastic artifacts
-        project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
-        project.repositories.maven { url "https://oss.sonatype.org/content/groups/public/" } // oss-only
+        project.repositories.maven { url = "https://artifacts.elastic.co/maven/" } // default
+        project.repositories.maven { url = "https://oss.sonatype.org/content/groups/public/" } // oss-only
 
         // Add Ivy repos in order to pull Elasticsearch distributions that have bundled JDKs
         for (String repo : ['snapshots', 'artifacts']) {
             project.repositories.ivy {
-                url "https://${repo}.elastic.co/downloads"
+                url = "https://${repo}.elastic.co/downloads"
                 patternLayout {
                     artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
                 }
@@ -188,8 +188,8 @@ class BaseBuildPlugin implements Plugin<Project> {
             // Extract the revision number of the snapshot via regex:
             String revision = (project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
             project.repositories.maven {
-                name 'lucene-snapshots'
-                url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
+                name = 'lucene-snapshots'
+                url = "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
     }
