@@ -30,6 +30,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
+import javax.inject.Inject
+
 apply plugin: 'es.hadoop.build'
 apply plugin: 'scala'
 apply plugin: HadoopFixturePlugin
@@ -87,6 +89,11 @@ dependencies {
 // =============================================================================
 // Testing jars
 // =============================================================================
+
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
+}
 
 // Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
 // in the file path on CI.
@@ -235,10 +242,13 @@ if (disableTests) {
     File itestResourceDir = project.sourceSets.itest.resources.getSrcDirs().head()
 
     Task setupUsers = project.tasks.create("setupUsers", DefaultTestClustersTask) {
+        def injected = project.objects.newInstance(InjectedExecOps)
+
         useCluster(testClusters.integTest)
+        def executablePath = project.runtimeJavaHome.toString() + "/bin/java"
         doLast {
-            project.javaexec {
-                executable = project.runtimeJavaHome.toString() + "/bin/java"
+            injected.javaexec {
+                executable = executablePath
                 mainClass = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
                 classpath = sourceSets.main.runtimeClasspath
                 systemProperty('es.nodes', esAddress)
