@@ -53,7 +53,7 @@ abstract class HadoopMRJob extends AbstractClusterTask {
     @Internal
     ExecOperations execOperations
 
-    @Inject //@javax.inject.Inject
+    @Inject
     HadoopMRJob(ExecOperations execOperations) {
         this.execOperations = execOperations
     }

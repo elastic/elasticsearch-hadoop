@@ -149,7 +149,9 @@ if (disableTests) {
     AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
         dependsOn project.configurations.kdcFixture
         executable = new File(project.runtimeJavaHome, 'bin/java')
-        env 'CLASSPATH', "${ -> project.configurations.kdcFixture.asPath }"
+
+        def fixturefileCollection = project.configurations.kdcFixture
+        env 'CLASSPATH', "${ -> fixturefileCollection.asPath }"
         waitCondition = { fixture, ant ->
             // the kdc wrapper writes the ports file when
             // it's ready, so we can just wait for the file to exist
