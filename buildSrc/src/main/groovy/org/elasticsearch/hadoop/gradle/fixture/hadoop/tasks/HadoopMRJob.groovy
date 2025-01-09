@@ -26,6 +26,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
@@ -48,6 +49,8 @@ abstract class HadoopMRJob extends AbstractClusterTask {
     List<String> args = []
     @Input
     Map<String, String> systemProperties = [:]
+
+    @Internal
     ExecOperations execOperations
 
     @Inject //@javax.inject.Inject
