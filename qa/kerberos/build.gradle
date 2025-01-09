@@ -247,7 +247,7 @@ if (disableTests) {
         useCluster(testClusters.integTest)
         def executablePath = project.runtimeJavaHome.toString() + "/bin/java"
         doLast {
-            injected.javaexec {
+            injected.getExecOps().javaexec {
                 executable = executablePath
                 mainClass = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
                 classpath = sourceSets.main.runtimeClasspath
