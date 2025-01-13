@@ -239,7 +239,7 @@ class AntFixture extends AntTask implements Fixture {
      */
     @Internal
     protected File getBaseDir() {
-        return new File(project.buildDir, "fixtures/${name}")
+        return new File(getProjectLayout().buildDirectory.getAsFile().get(), "fixtures/${name}")
     }
 
     /** Returns the working directory for the process. Defaults to "cwd" inside baseDir. */
