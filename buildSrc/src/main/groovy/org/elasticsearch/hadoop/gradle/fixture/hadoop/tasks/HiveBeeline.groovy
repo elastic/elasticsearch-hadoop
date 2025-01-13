@@ -26,8 +26,12 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
+
+import javax.inject.Inject
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
@@ -39,6 +43,14 @@ abstract class HiveBeeline extends AbstractClusterTask {
     List<File> libJars = []
     @Input
     String hivePrincipal
+
+    @Internal
+    ExecOperations execOperations
+
+    @Inject
+    HiveBeeline(ExecOperations execOperations) {
+        this.execOperations = execOperations
+    }
 
     void libJars(File... files) {
         libJars.addAll(files)
@@ -86,8 +98,8 @@ abstract class HiveBeeline extends AbstractClusterTask {
 
         Map<String, String> environment = collectEnvVars()
 
-        project.logger.info("Using Environment: $environment")
-        project.exec { ExecSpec spec ->
+        logger.info("Using Environment: $environment")
+        execOperations.exec { ExecSpec spec ->
             spec.setCommandLine(commandLine)
             spec.environment(environment)
         }

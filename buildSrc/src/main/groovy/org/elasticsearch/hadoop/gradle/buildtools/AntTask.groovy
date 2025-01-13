@@ -25,6 +25,7 @@ import org.apache.tools.ant.DefaultLogger
 import org.apache.tools.ant.Project
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.tasks.TaskAction
 
 import javax.inject.Inject
@@ -45,6 +46,11 @@ abstract class AntTask extends DefaultTask {
 
     @Inject
     protected FileSystemOperations getFileSystemOperations() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Inject
+    protected ProjectLayout getProjectLayout() {
         throw new UnsupportedOperationException();
     }
 
