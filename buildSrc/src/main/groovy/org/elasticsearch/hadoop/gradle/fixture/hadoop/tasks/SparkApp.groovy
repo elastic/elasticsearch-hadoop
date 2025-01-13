@@ -29,7 +29,10 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
+
+import javax.inject.Inject
 
 import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
 
@@ -61,6 +64,14 @@ abstract class SparkApp extends AbstractClusterTask {
     List<File> libJars = []
     @Input
     List<String> args = []
+
+    @Internal
+    ExecOperations execOperations
+
+    @Inject
+    SparkApp(ExecOperations execOperations) {
+        this.execOperations = execOperations
+    }
 
     void deployMode(DeployMode mode) {
         deployMode = mode
@@ -159,8 +170,8 @@ abstract class SparkApp extends AbstractClusterTask {
         Map<String, String> finalEnv = collectEnvVars()
 
         // Do command
-        project.logger.info("Command Env: " + finalEnv)
-        project.exec { ExecSpec spec ->
+        logger.info("Command Env: " + finalEnv)
+        execOperations.exec { ExecSpec spec ->
             spec.commandLine(commandLine)
             spec.environment(finalEnv)
         }
