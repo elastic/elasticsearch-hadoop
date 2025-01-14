@@ -26,8 +26,12 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
+
+import javax.inject.Inject
 
 import static org.elasticsearch.hadoop.gradle.util.ObjectUtil.unapplyString
 
@@ -45,6 +49,14 @@ abstract class HadoopMRJob extends AbstractClusterTask {
     List<String> args = []
     @Input
     Map<String, String> systemProperties = [:]
+
+    @Internal
+    ExecOperations execOperations
+
+    @Inject
+    HadoopMRJob(ExecOperations execOperations) {
+        this.execOperations = execOperations
+    }
 
     void jobSetting(String key, Object value) {
         jobSettings.put(key, value)
@@ -152,9 +164,9 @@ abstract class HadoopMRJob extends AbstractClusterTask {
         Map<String, String> finalEnv = collectEnvVars()
 
         // Do command
-        project.logger.info("Executing Command: " + commandLine)
-        project.logger.info("Command Env: " + finalEnv)
-        project.exec { ExecSpec spec ->
+        logger.info("Executing Command: " + commandLine)
+        logger.info("Command Env: " + finalEnv)
+        execOperations.exec { ExecSpec spec ->
             spec.commandLine(commandLine)
             spec.environment(finalEnv)
         }
