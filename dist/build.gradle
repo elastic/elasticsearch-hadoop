@@ -12,6 +12,8 @@ base {
   archivesName = 'elasticsearch-hadoop'
 }
 
+def sparkVariantIncluded = 'spark30scala212'
+
 configurations {
     embedded {
         canBeResolved = true
@@ -45,20 +47,28 @@ configurations {
 
 BuildPlugin.disableTransitiveDependencies(project, project.configurations.thirdPartyShaded)
 
-def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive"]
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-spark-30"]
 
 distProjects.each { distProject ->
+    def configureDistDependency = { Dependency dependency ->
+        if (distProject == ":elasticsearch-spark-30") {
+            dependency.capabilities {
+                requireCapability("org.elasticsearch.spark.sql.variant:$sparkVariantIncluded:$project.version")
+            }
+        }
+    }
+
     dependencies {
         // This is only going to pull in each project's regular jar to create the project-wide uberjar.
-        add('embedded', project(distProject))
+        add('embedded', project(distProject), configureDistDependency)
         // To squash Javadoc warnings.
-        add('javadocDependencies', project(distProject))
+        add('javadocDependencies', project(distProject), configureDistDependency)
         // This will pull all java sources (including generated) for the project-wide javadoc.
-        add('javadocSources', project(distProject))
+        add('javadocSources', project(distProject), configureDistDependency)
         // This will pull all non-generated sources for the project-wide source jar.
-        add('additionalSources', project(distProject))
+        add('additionalSources', project(distProject), configureDistDependency)
         // This will pull in the regular jar, javadoc jar, and source jar to be packaged in the distribution.
-        add('dist', project(distProject))
+        add('dist', project(distProject), configureDistDependency)
     }
 }
 
