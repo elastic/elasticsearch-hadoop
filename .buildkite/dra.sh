@@ -4,7 +4,7 @@ set -euo pipefail
 
 DRA_WORKFLOW=${DRA_WORKFLOW:-snapshot}
 
-if [[ ("$BUILDKITE_BRANCH" == "main" || "$BUILDKITE_BRANCH" == *.x) && "$DRA_WORKFLOW" == "staging" ]]; then
+if [[ "$BUILDKITE_BRANCH" == *.x && "$DRA_WORKFLOW" == "staging" ]]; then
   exit 0
 fi
 
@@ -12,6 +12,7 @@ echo --- Creating distribution
 
 rm -Rfv ~/.gradle/init.d
 HADOOP_VERSION=$(grep eshadoop buildSrc/esh-version.properties | sed "s/eshadoop *= *//g")
+BASE_VERSION="$HADOOP_VERSION"
 
 VERSION_SUFFIX=""
 BUILD_ARGS="-Dbuild.snapshot=false"
@@ -23,6 +24,11 @@ fi
 RM_BRANCH="$BUILDKITE_BRANCH"
 if [[ "$BUILDKITE_BRANCH" == "main" ]]; then
   RM_BRANCH=master
+fi
+
+if [[ -n "${VERSION_QUALIFIER:-}" ]]; then
+  BUILD_ARGS="$BUILD_ARGS -Dbuild.version_qualifier=$VERSION_QUALIFIER"
+  HADOOP_VERSION="${HADOOP_VERSION}-${VERSION_QUALIFIER}"
 fi
 
 echo "DRA_WORKFLOW=$DRA_WORKFLOW"
@@ -60,5 +66,6 @@ docker run --rm \
   --branch "$RM_BRANCH" \
   --commit "$BUILDKITE_COMMIT" \
   --workflow "$DRA_WORKFLOW" \
-  --version "$HADOOP_VERSION" \
+  --qualifier "${VERSION_QUALIFIER:-}" \
+  --version "$BASE_VERSION" \
   --artifact-set main
