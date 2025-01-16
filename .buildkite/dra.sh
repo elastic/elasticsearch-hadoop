@@ -16,6 +16,7 @@ BASE_VERSION="$HADOOP_VERSION"
 
 VERSION_SUFFIX=""
 BUILD_ARGS="-Dbuild.snapshot=false"
+QUALIFIER_BUILD_ARGS=""
 if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   VERSION_SUFFIX="-SNAPSHOT"
   BUILD_ARGS="-Dbuild.snapshot=true"
@@ -27,7 +28,7 @@ if [[ "$BUILDKITE_BRANCH" == "main" ]]; then
 fi
 
 if [[ -n "${VERSION_QUALIFIER:-}" ]]; then
-  BUILD_ARGS="$BUILD_ARGS -Dbuild.version_qualifier=$VERSION_QUALIFIER"
+  QUALIFIER_BUILD_ARGS="-Dbuild.version_qualifier=$VERSION_QUALIFIER"
   HADOOP_VERSION="${HADOOP_VERSION}-${VERSION_QUALIFIER}"
 fi
 
@@ -44,7 +45,7 @@ mkdir localRepo
 wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
   -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
 
-./gradlew -S -PlocalRepo=true "${BUILD_ARGS}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution
+./gradlew -S -PlocalRepo=true "${BUILD_ARGS}" "${QUALIFIER_BUILD_ARGS}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution
 
 # Allow other users access to read the artifacts so they are readable in the container
 find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
