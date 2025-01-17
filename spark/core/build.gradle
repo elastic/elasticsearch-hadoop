@@ -10,12 +10,10 @@ apply plugin: 'spark.variants'
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
 
-    // Changing the formatting of these lines could break .buildkite/pipeline.py, it uses regex to parse the `spark20scala212` part
+    // Changing the formatting of these lines could break .buildkite/pipeline.py, it uses regex to parse the `spark30scala212` part
     // We should maybe move these to a separate config file that can be read from both this file and the pipeline script in the future if it creates issues
-    setCoreDefaultVariant "spark20scala212", spark24Version, scala212Version
+    setCoreDefaultVariant "spark30scala212", spark30Version, scala212Version
     addCoreFeatureVariant "spark30scala213", spark30Version, scala213Version
-    addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
-    addCoreFeatureVariant "spark20scala211", spark24Version, scala211Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -44,7 +42,6 @@ sparkVariants {
             add(variant.configuration('api'), "org.scala-lang:scala-library:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
-                exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
             }
 
@@ -59,29 +56,11 @@ sparkVariants {
             add(variant.configuration('test', 'implementation'), project(":test:shared"))
             add(variant.configuration('test', 'implementation'), "com.esotericsoftware:kryo:4.0.2")
             add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
-                exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
             }
 
             add(variant.configuration('itest', 'implementation'), project(":test:shared"))
             add(variant.configuration('test', 'implementation'), "org.elasticsearch:securemock:1.2")
-
-            if (variant.scalaMajorVersion == '2.10') {
-                add(variant.configuration('implementation'), "org.apache.spark:spark-unsafe_${variant.scalaMajorVersion}:${variant.sparkVersion}")
-                add(variant.configuration('implementation'), "org.apache.avro:avro:1.7.7")
-                add(variant.configuration('implementation'), "log4j:log4j:1.2.17")
-                add(variant.configuration('implementation'), "com.google.code.findbugs:jsr305:2.0.1")
-                add(variant.configuration('implementation'), "org.json4s:json4s-ast_2.10:3.2.10")
-                add(variant.configuration('implementation'), "com.esotericsoftware.kryo:kryo:2.21")
-                add(variant.configuration('compileOnly'), "org.apache.hadoop:hadoop-annotations:${project.ext.hadoopVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
-                add(variant.configuration('compileOnly'), "org.codehaus.woodstox:stax2-api:3.1.4")
-                if (variant.sparkVersion == spark22Version) {
-                    add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:${variant.sparkVersion}")
-                }
-            }
-
             add(variant.configuration('additionalSources'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('javadocSources'), project(":elasticsearch-hadoop-mr"))
         }
@@ -126,21 +105,6 @@ sparkVariants {
             title = "${rootProject.description} ${version} API"
         }
     }
-}
-
-// deal with the messy conflicts out there
-// Ignore the scalaCompilerPlugin configurations since it is immediately resolved to configure the scala compiler tasks
-configurations.matching{ it.name.contains('CompilerPlugin') == false && (it.name.contains("spark30") || it.name.contains("Spark30")) == false}.all { Configuration conf ->
-    conf.resolutionStrategy {
-        eachDependency { details ->
-            // change all javax.servlet artifacts to the one used by Spark otherwise these will lead to
-            // SecurityException (signer information wrong)
-            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
-                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
-            }
-        }
-    }
-    conf.exclude group: "org.mortbay.jetty"
 }
 
 if (JavaVersion.current() >= JavaVersion.VERSION_17) {

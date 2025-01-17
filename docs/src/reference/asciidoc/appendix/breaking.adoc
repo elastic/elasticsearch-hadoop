@@ -8,6 +8,16 @@ For clarity, we always list any breaking changes at the top of the
 //NOTE: The notable-breaking-changes tagged regions are re-used in the
 //Installation and Upgrade Guide
 
+[[breaking-changes-90]]
+=== Breaking Changes in 9.0
+
+This section details the breaking changes when upgrading {eh} from 8.x to 9.0.
+
+[[removals-9.0]]
+==== Removal of Spark 2.x
+
+Support for the Spark 2.x has been removed in {eh} 9.0. Spark 3.x is the new default supported version.
+
 === Deprecations in 8.18
 
 The following functionality has been deprecated in {eh} 8.18 and will be removed

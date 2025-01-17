@@ -12,7 +12,7 @@ base {
   archivesName = 'elasticsearch-hadoop'
 }
 
-def sparkVariantIncluded = 'spark20scala211'
+def sparkVariantIncluded = 'spark30scala212'
 
 configurations {
     embedded {
@@ -47,17 +47,17 @@ configurations {
 
 BuildPlugin.disableTransitiveDependencies(project, project.configurations.thirdPartyShaded)
 
-def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive",
-                    ":elasticsearch-spark-20"]
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-spark-30"]
 
 distProjects.each { distProject ->
     def configureDistDependency = { Dependency dependency ->
-        if (distProject == ":elasticsearch-spark-20") {
+        if (distProject == ":elasticsearch-spark-30") {
             dependency.capabilities {
                 requireCapability("org.elasticsearch.spark.sql.variant:$sparkVariantIncluded:$project.version")
             }
         }
     }
+
     dependencies {
         // This is only going to pull in each project's regular jar to create the project-wide uberjar.
         add('embedded', project(distProject), configureDistDependency)
@@ -86,17 +86,17 @@ dependencies {
     }
     implementation("org.apache.hive:hive-exec:$hiveVersion")
     implementation("org.apache.hive:hive-metastore:$hiveVersion")
-    implementation("org.apache.spark:spark-core_${project.ext.scala211MajorVersion}:$spark20Version") {
+    implementation("org.apache.spark:spark-core_${project.ext.scala212MajorVersion}:$spark30Version") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-yarn_${project.ext.scala211MajorVersion}:$spark20Version") {
+    implementation("org.apache.spark:spark-yarn_${project.ext.scala212MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-sql_${project.ext.scala211MajorVersion}:$spark20Version") {
+    implementation("org.apache.spark:spark-sql_${project.ext.scala212MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-streaming_${project.ext.scala211MajorVersion}:$spark20Version") {
+    implementation("org.apache.spark:spark-streaming_${project.ext.scala212MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
     implementation("org.scala-lang:scala-library:$scala211Version")
@@ -104,7 +104,7 @@ dependencies {
     implementation(project.ext.hadoopClient)
     implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
-    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala211MajorVersion}:$spark20Version")
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala212MajorVersion}:$spark30Version")
 }
 
 // Configure uber jar
