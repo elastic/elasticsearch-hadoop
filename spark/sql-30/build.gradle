@@ -77,7 +77,7 @@ sparkVariants {
 
             // Scala compiler needs these for arcane reasons, but they are not used in the api nor the runtime
             add(variant.configuration('compileOnly'), "org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7:1.0.0")
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.10.5")
             add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:3.6.6")
             add(variant.configuration('compileOnly'), "org.json4s:json4s-ast_${variant.scalaMajorVersion}:3.6.6")
             add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:$variant.sparkVersion")
