@@ -67,8 +67,8 @@ dependencies {
     implementation("org.scala-lang:scala-reflect:${scala212Version}")
     implementation(project(":elasticsearch-spark-30")) {
         capabilities {
-            // Spark 3.x on Scala 2.12
-            requireCapability("org.elasticsearch.spark.sql.variant:spark30scala212:$project.version")
+            // Spark 3.x on Scala 2.13
+            requireCapability("org.elasticsearch.spark.sql.variant:spark30scala213:$project.version")
         }
     }
     

@@ -12,7 +12,7 @@ base {
   archivesName = 'elasticsearch-hadoop'
 }
 
-def sparkVariantIncluded = 'spark30scala212'
+def sparkVariantIncluded = 'spark30scala213'
 
 configurations {
     embedded {
