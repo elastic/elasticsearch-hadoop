@@ -63,8 +63,8 @@ configurations {
 dependencies {
     implementation(project(":elasticsearch-hadoop-mr"))
 
-    implementation("org.scala-lang:scala-library:${scala212Version}")
-    implementation("org.scala-lang:scala-reflect:${scala212Version}")
+    implementation("org.scala-lang:scala-library:${scala213Version}")
+    implementation("org.scala-lang:scala-reflect:${scala213Version}")
     implementation(project(":elasticsearch-spark-30")) {
         capabilities {
             // Spark 3.x on Scala 2.13
