@@ -99,8 +99,8 @@ dependencies {
     implementation("org.apache.spark:spark-streaming_${project.ext.scala212MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.scala-lang:scala-library:$scala211Version")
-    implementation("org.scala-lang:scala-reflect:$scala211Version")
+    implementation("org.scala-lang:scala-library:$scala213Version")
+    implementation("org.scala-lang:scala-reflect:$scala213Version")
     implementation(project.ext.hadoopClient)
     implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
