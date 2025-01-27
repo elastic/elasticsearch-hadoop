@@ -86,17 +86,17 @@ dependencies {
     }
     implementation("org.apache.hive:hive-exec:$hiveVersion")
     implementation("org.apache.hive:hive-metastore:$hiveVersion")
-    implementation("org.apache.spark:spark-core_${project.ext.scala212MajorVersion}:$spark30Version") {
+    implementation("org.apache.spark:spark-core_${project.ext.scala213MajorVersion}:$spark30Version") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-yarn_${project.ext.scala212MajorVersion}:$spark30Version") {
+    implementation("org.apache.spark:spark-yarn_${project.ext.scala213MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-sql_${project.ext.scala212MajorVersion}:$spark30Version") {
+    implementation("org.apache.spark:spark-sql_${project.ext.scala213MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
-    implementation("org.apache.spark:spark-streaming_${project.ext.scala212MajorVersion}:$spark30Version") {
+    implementation("org.apache.spark:spark-streaming_${project.ext.scala213MajorVersion}:$spark30Version") {
         exclude group: 'org.apache.hadoop'
     }
     implementation("org.scala-lang:scala-library:$scala213Version")
@@ -104,7 +104,7 @@ dependencies {
     implementation(project.ext.hadoopClient)
     implementation("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
-    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala212MajorVersion}:$spark30Version")
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scala213MajorVersion}:$spark30Version")
 }
 
 // Configure uber jar
