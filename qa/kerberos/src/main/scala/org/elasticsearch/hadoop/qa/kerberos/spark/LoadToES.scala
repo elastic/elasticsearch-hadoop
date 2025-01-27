@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.qa.kerberos.spark
 
 import java.security.PrivilegedExceptionAction
 import org.apache.spark.SparkConf
+import scala.collection.ArrayOps
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin
