@@ -49,7 +49,7 @@ sparkVariants {
             add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
 
             add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.9.10")
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.10.5")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
             add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
             add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
 
