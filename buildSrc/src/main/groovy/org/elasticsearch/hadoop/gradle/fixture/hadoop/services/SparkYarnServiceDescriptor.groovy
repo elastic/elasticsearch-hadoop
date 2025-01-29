@@ -78,6 +78,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     @Override
     String artifactName(ServiceConfiguration configuration) {
         Version version = configuration.getVersion()
+        // artifact name: https://spark.apache.org/downloads.html
         return "spark-$version-bin-hadoop${hadoopVersionCompatibility()}-scala2.13"
     }
 
