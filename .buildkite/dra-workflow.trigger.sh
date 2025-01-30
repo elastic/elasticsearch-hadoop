@@ -16,7 +16,7 @@ for BRANCH in "${BRANCHES[@]}"; do
       env:
         DRA_WORKFLOW: snapshot
 EOF
-	if [[ "$BRANCH" != "main" ]]; then
+	if [[ "$BRANCH" != "9.0" ]]; then
 		cat <<EOF
   - trigger: elasticsearch-hadoop-dra-workflow
     label: Trigger DRA staging workflow for $BRANCH
@@ -27,7 +27,7 @@ EOF
         DRA_WORKFLOW: staging
 EOF
 	else
-		# Pass version qualifier to main builds
+		# Pass version qualifier to 9.0 builds
 		cat <<EOF
   - trigger: elasticsearch-hadoop-dra-workflow
     label: Trigger DRA staging workflow for $BRANCH
@@ -36,7 +36,7 @@ EOF
       branch: "$BRANCH"
       env:
         DRA_WORKFLOW: staging
-        VERSION_QUALIFIER: alpha1
+        VERSION_QUALIFIER: beta1
 EOF
 	fi
 done
