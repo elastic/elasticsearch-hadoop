@@ -16,7 +16,7 @@ BASE_VERSION="$HADOOP_VERSION"
 
 VERSION_SUFFIX=""
 BUILD_ARGS="-Dbuild.snapshot=false"
-QUALIFIER_BUILD_ARGS=""
+QUALIFIER_BUILD_ARGS="-Dbuild.version_qualifier=\"\""
 if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   VERSION_SUFFIX="-SNAPSHOT"
   BUILD_ARGS="-Dbuild.snapshot=true"
