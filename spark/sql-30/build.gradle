@@ -9,8 +9,8 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.sql.variant'
-    setDefaultVariant "spark30scala212", spark30Version, scala212Version
-    addFeatureVariant "spark30scala213", spark30Version, scala213Version
+    setDefaultVariant "spark30scala213", spark30Version, scala213Version
+    addFeatureVariant "spark30scala212", spark30Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets

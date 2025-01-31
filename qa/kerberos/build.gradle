@@ -63,22 +63,22 @@ configurations {
 dependencies {
     implementation(project(":elasticsearch-hadoop-mr"))
 
-    implementation("org.scala-lang:scala-library:${scala212Version}")
-    implementation("org.scala-lang:scala-reflect:${scala212Version}")
+    implementation("org.scala-lang:scala-library:${scala213Version}")
+    implementation("org.scala-lang:scala-reflect:${scala213Version}")
     implementation(project(":elasticsearch-spark-30")) {
         capabilities {
-            // Spark 3.x on Scala 2.12
-            requireCapability("org.elasticsearch.spark.sql.variant:spark30scala212:$project.version")
+            // Spark 3.x on Scala 2.13
+            requireCapability("org.elasticsearch.spark.sql.variant:spark30scala213:$project.version")
         }
     }
     
-    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.12:2.6.7.1")
-    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
-    compileOnly("org.json4s:json4s-jackson_2.12:3.2.11")
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${scala213MajorVersion}:2.9.10")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.9.10")
+    compileOnly("org.json4s:json4s-jackson_${scala213MajorVersion}:3.6.7")
     compileOnly("org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
 
     implementation("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
-    implementation("org.apache.spark:spark-sql_2.12:$project.ext.spark30Version")
+    implementation("org.apache.spark:spark-sql_${scala213MajorVersion}:$project.ext.spark30Version")
 
     implementation( project(path: ':elasticsearch-hadoop-mr', configuration: 'itestJarConfig'))
 
