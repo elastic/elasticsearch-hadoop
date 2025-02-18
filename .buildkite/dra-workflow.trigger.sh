@@ -36,7 +36,7 @@ EOF
       branch: "$BRANCH"
       env:
         DRA_WORKFLOW: staging
-        VERSION_QUALIFIER: beta1
+        VERSION_QUALIFIER: rc1
 EOF
 	fi
 done
