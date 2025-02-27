@@ -1,8 +1,0 @@
-[[eshadoop-8.11.1]]
-== Elasticsearch for Apache Hadoop version 8.11.1
-
-[[enhancements-8.11.1]]
-=== Enhancements
-Spark::
-* Upgrade to Spark 3.3.3
-https://github.com/elastic/elasticsearch-hadoop/pull/2148[#2148]

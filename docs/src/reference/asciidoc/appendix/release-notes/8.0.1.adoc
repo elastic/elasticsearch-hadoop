@@ -1,5 +1,0 @@
-[[eshadoop-8.0.1]]
-== Elasticsearch for Apache Hadoop version 8.0.1
-
-ES-Hadoop 8.0.1 is a version compatibility release, tested specifically against
-Elasticsearch 8.0.1.
