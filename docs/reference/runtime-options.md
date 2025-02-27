@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration-runtime.html
+navigation_title: Runtime options
 ---
-
-# Runtime options [configuration-runtime]
+# {{esh-full}} runtime options
 
 When using elasticsearch-hadoop, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return elasticsearch-hadoop.
 

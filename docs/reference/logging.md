@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/logging.html
+navigation_title: Logging
 ---
-
-# Logging [logging]
+# Logging in {{esh-full}}
 
 elasticsearch-hadoop uses [commons-logging](http://commons.apache.org/proper/commons-logging/) library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, elasticsearch-hadoop logs relevant information about the job progress at `INFO` level. Typically, whatever integration you are using (Map/Reduce, Hive), each job will print in the console at least one message indicating the elasticsearch-hadoop version used:
 

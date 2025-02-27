@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/install.html
+navigation_title: Installation
 ---
-
-# Installation [install]
+# {{esh-full}} installation
 
 elasticsearch-hadoop binaries can be obtained either by downloading them from the [elastic.co](http://elastic.co) site as a ZIP (containing project jars, sources and documentation) or by using any [Maven](http://maven.apache.org/)-compatible tool with the following dependency:
 

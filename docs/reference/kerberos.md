@@ -1,19 +1,13 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/kerberos.html
+navigation_title: Kerberos
 ---
-
-# Kerberos [kerberos]
-
-::::{note}
-Added in 6.7.
-::::
-
+# {{esh-full}} and Kerberos
 
 ::::{important}
 Kerberos support for Elasticsearch for Apache Hadoop requires {{es}} 6.7 or greater
 ::::
-
 
 Securing Hadoop means using Kerberos. {{es}} supports Kerberos as an authentication method. While the use of Kerberos is not required for securing {{es}}, it is a convenient option for those who already deploy Kerberos to secure their Hadoop clusters. This chapter aims to explain the steps needed to set up elasticsearch-hadoop to use Kerberos authentication for {{es}}.
 

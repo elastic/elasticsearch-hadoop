@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/resources.html
+navigation_title: Resources
 ---
-
-# Resources [resources]
+# {{esh-full}} resources
 
 Project home page
 :   [GitHub](http://github.com/elasticsearch/elasticsearch-hadoop)

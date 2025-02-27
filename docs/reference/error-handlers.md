@@ -1,21 +1,15 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/errorhandlers.html
+navigation_title: Error handlers
 ---
-
-# Error handlers [errorhandlers]
-
-::::{note}
-Added in 6.4.
-::::
-
+# {{esh-full}} error handlers
 
 Elasticsearch for Apache Hadoop is designed to be a mostly hands off integration. Most of the features are managed through conventions and configurations and no substantial amount of code is required to get up and running with the connector. When it comes to exceptions, substantial effort has been put into handling the most common and expected errors from {{es}}. In the case where errors are unexpected or indicative of a real problem, the connector adopts a "fail-fast" approach. We realize that this approach is not the best for all users, especially those concerned with uptime of their jobs.
 
 In these situations, users can handle unexpected errors by specifying the actions to take when encountering them. To this end, we have provided a set of APIs and extensions that users can implement in order to tailor the connector’s behavior toward encountering failures in the most common locations to their needs.
 
-
-### Error Handler Mechanics [errorhandlers-mechanics]
+## Error handler mechanics [errorhandlers-mechanics]
 
 Each type of failure that can be handled in elasticsearch-hadoop has its own error handler API tailored to operation being performed. An error handler is simply a function that is called when an error occurs, and informs elasticsearch-hadoop how to proceed. Multiple error handlers may be specified for each type of failure. When a failure occurs, each error handler will be executed in the order that they are specified in the configuration.
 
@@ -25,7 +19,7 @@ If every handler in the provided list of handlers chooses to "pass", it is marke
 
 In the following sections, we will detail the different types of error handlers, where they are called, how to configure them, and how to write your own if you need to.
 
-## Bulk Write Error Handlers [errorhandlers-bulk]
+## Bulk write error handlers [errorhandlers-bulk]
 
 When writing data, the connector batches up documents into a bulk request before sending them to {{es}}. In the response, {{es}} returns a status for each document sent, which may include rejections or failures. A common error encountered here is a *rejection* which means that the shard that the document was meant to be written to was too busy to accept the write. Other failures here might include documents that are refused because they do not conform to the current index mapping, or conflict with the current version of the document.
 
@@ -38,8 +32,7 @@ Elasticsearch for Apache Hadoop provides an API to handle document level errors 
 
 There are a few default error handlers provided by the connector:
 
-
-#### HTTP Retry Handler [errorhandlers-bulk-http]
+### HTTP Retry Handler [errorhandlers-bulk-http]
 
 Always configured as the first error handler for bulk writes.
 
@@ -349,11 +342,9 @@ Elasticsearch for Apache Hadoop provides an API to handle serialization errors a
 Serialization Error Handlers are not yet available for Hive. Elasticsearch for Apache Hadoop uses Hive’s SerDe constructs to convert data into bulk entries before being sent to the output format. SerDe objects do not have a cleanup method that is called when the object ends its lifecycle. Because of this, we do not support serialization error handlers in Hive as they cannot be closed at the end of the job execution.
 ::::
 
-
 There are a few default error handlers provided by the connector:
 
-
-#### Drop and Log Error Handler [errorhandlers-serialization-log]
+### Drop and Log Error Handler [errorhandlers-serialization-log]
 
 Default Handler Name: `log`
 
@@ -371,7 +362,7 @@ Available configurations for this handler:
 :   The logger level to use when logging the error message. Available options are `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`, and `TRACE`.
 
 
-#### Abort on Failure Error Handler [errorhandlers-serialization-fail]
+### Abort on Failure Error Handler [errorhandlers-serialization-fail]
 
 Default Handler Name: `fail`
 
@@ -380,7 +371,7 @@ When this handler is called it rethrows the error given to it and aborts. This h
 There are no configurations for this handler.
 
 
-#### Elasticsearch Error Handler [errorhandlers-serialization-es]
+### Elasticsearch Error Handler [errorhandlers-serialization-es]
 
 Default Handler Name: `es`
 
@@ -426,8 +417,7 @@ Available configurations for this handler:
 `es.write.rest.error.handler.es.return.error.reason` (optional)
 :   In the case that the error return value is `PASS`, this optional text setting allows a user to specify the reason for the handler to pass the data along to the next handler in the chain.
 
-
-### Using Serialization Error Handlers [errorhandlers-serialization-use]
+## Using Serialization Error Handlers [errorhandlers-serialization-use]
 
 To configure serialization error handlers, you must specify the handlers in order with the following properties.
 
@@ -467,7 +457,7 @@ es.write.data.error.handler.log.logger.name = SerializationErrors <2>
 At this point, the Abort on Failure built-in handler is effectively ignored since the Drop and Log built-in handler will always mark an error as consumed. This practice can prove to be hazardous, as potentially important errors may simply be ignored. In many cases, it is preferable for users to write their own error handler to handle expected exceptions.
 
 
-#### Writing Your Own Serialization Handlers [errorhandlers-serialization-user-handlers]
+### Writing Your Own Serialization Handlers [errorhandlers-serialization-user-handlers]
 
 Let’s say that you are streaming some unstructured data to {{es}}. In this scenario, your data is not fully sanitized and may contain field values that cannot be translated to JSON by the connector. You may not want to have your streaming job fail on this data, as you are potentially expecting it to contain errors. In this situation, you may want to log the data in a more comprehensive manner than to rely on the logging solution’s toString() method for your data.
 
@@ -524,7 +514,7 @@ es.write.data.error.handler.customLog = org.myproject.myhandlers.CustomLogOnErro
 Now, your custom logging error handler will be invoked whenever a serialization failure occurs, and will instruct the connector that it is ok with ignoring those failures to continue processing.
 
 
-#### Advanced Concepts [errorhandlers-serialization-advanced]
+### Advanced Concepts [errorhandlers-serialization-advanced]
 
 Instead of logging data and dropping it, what if you wanted to persist it somewhere for safe keeping? What if we wanted to pass properties into our handlers to parameterize their behavior? Lets create a handler that stores error information in a local file for later analysis.
 
@@ -637,7 +627,7 @@ Note: Deserialization Error Handlers only allow handling of errors that occur wh
 There are a few default error handlers provided by the connector:
 
 
-#### Drop and Log Error Handler [errorhandlers-read-json-log]
+### Drop and Log Error Handler [errorhandlers-read-json-log]
 
 Default Handler Name: `log`
 
@@ -655,7 +645,7 @@ Available configurations for this handler:
 :   The logger level to use when logging the error message. Available options are `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`, and `TRACE`.
 
 
-#### Abort on Failure Error Handler [errorhandlers-read-json-fail]
+### Abort on Failure Error Handler [errorhandlers-read-json-fail]
 
 Default Handler Name: `fail`
 
@@ -664,7 +654,7 @@ When this handler is called it rethrows the error given to it and aborts. This h
 There are no configurations for this handler.
 
 
-#### Elasticsearch Error Handler [errorhandlers-read-json-es]
+### Elasticsearch Error Handler [errorhandlers-read-json-es]
 
 Default Handler Name: `es`
 
@@ -711,7 +701,7 @@ Available configurations for this handler:
 :   In the case that the error return value is `PASS`, this optional text setting allows a user to specify the reason for the handler to pass the data along to the next handler in the chain.
 
 
-### Using Deserialization Error Handlers [errorhandlers-read-json-use]
+## Using Deserialization Error Handlers [errorhandlers-read-json-use]
 
 To configure deserialization error handlers, you must specify the handlers in order with the following properties.
 
@@ -751,7 +741,7 @@ es.read.data.error.handler.log.logger.name = DeserializationErrors <2>
 At this point, the Abort on Failure built-in handler is effectively ignored since the Drop and Log built-in handler will always mark an error as consumed. This practice can prove to be hazardous, as potentially important errors may simply be ignored. In many cases, it is preferable for users to write their own error handler to handle expected exceptions.
 
 
-#### Writing Your Own Deserialization Error Handlers [errorhandlers-read-json-user-handlers]
+### Writing Your Own Deserialization Error Handlers [errorhandlers-read-json-user-handlers]
 
 Let’s say that you are reading a large index of log data from {{es}}. In this scenario, your log data is highly unstructured, and not all of its contents are critical to your process. Due to the volume of data being read, your job takes a long time to complete. In this case, you might want to replace records that cannot be read with a dummy record to mark the failure, and not interrupt your processing. The offending data should be logged and dropped.
 
@@ -816,7 +806,7 @@ es.read.data.error.handler.returnDummy = org.myproject.myhandlers.ReturnDummyHan
 Now, your dummy data error handler will be invoked whenever a deserialization failure occurs, and will instruct the connector to use your provided dummy record instead of the malformed data.
 
 
-#### Advanced Concepts [errorhandlers-read-json-advanced]
+### Advanced Concepts [errorhandlers-read-json-advanced]
 
 What if instead of logging data and dropping it, what if you wanted to persist it somewhere for safe keeping? What if we wanted to pass properties into our handlers to parameterize their behavior? Lets create a handler that stores error information in a local file for later analysis.
 

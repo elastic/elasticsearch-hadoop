@@ -5,7 +5,6 @@ mapped_pages:
 
 # Apache Hive integration [hive]
 
-[TBC: FANCY QUOTE]
 Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data sets are [defined](https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations) through *tables* (that expose type information) in which data can be [loaded](https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations), [selected and transformed](https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations) through built-in operators or custom/user defined functions (or [UDF](https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions)s).
 
 

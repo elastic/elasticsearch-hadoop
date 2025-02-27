@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/mapping.html
+navigation_title: Mapping and types
 ---
-
-# Mapping and types [mapping]
+# Mapping and types in {{esh-full}}
 
 As explained in the previous sections, elasticsearch-hadoop integrates closely with the Hadoop ecosystem and performs close introspection of the type information so that the data flow between {{es}} and Hadoop is as transparent as possible. This section takes a closer look at how the type conversion takes place and how data is mapped between the two systems.
 

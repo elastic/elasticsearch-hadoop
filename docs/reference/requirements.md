@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html
+navigation_title: Requirements
 ---
-
-# Requirements [requirements]
+# {{esh-full}} requirements
 
 Before running elasticsearch-hadoop, please do check out the requirements below. This is even more so important when deploying elasticsearch-hadoop across a cluster where the software on some machines might be slightly out of sync. While elasticsearch-hadoop tries its best to fall back and do various validations of its environment, doing a quick sanity check especially during upgrades can save you a lot of headaches.
 

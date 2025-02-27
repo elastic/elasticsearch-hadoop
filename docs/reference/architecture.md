@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/arch.html
+navigation_title: Architecture
 ---
-
-# Architecture [arch]
+# {{esh-full}} architecture
 
 At the core, elasticsearch-hadoop integrates two *distributed* systems: **Hadoop**, a distributed computing platform and **{{es}}**, a real-time search and analytics engine. From a high-level view both provide a computational component: Hadoop through Map/Reduce or recent libraries like Apache Spark on one hand, and {{es}} through its search and aggregation on the other.
 
@@ -12,7 +12,7 @@ elasticsearch-hadoop goal is to *connect* these two entities so that they can tr
 
 ## Map/Reduce and Shards [arch-shards]
 
-A critical component for scalability is parallelism or splitting a task into multiple, smaller ones that execute at the same time, on different nodes in the cluster. The concept is present in both Hadoop through its `splits` (the number of parts in which a source or input can be divided) and {{es}} through [`shards`](docs-content://reference/glossary/index.md#glossary-shard) (the number of parts in which a index is divided into).
+A critical component for scalability is parallelism or splitting a task into multiple, smaller ones that execute at the same time, on different nodes in the cluster. The concept is present in both Hadoop through its `splits` (the number of parts in which a source or input can be divided) and {{es}} through `shards` (the number of parts in which a index is divided into).
 
 In short, roughly speaking more input splits means more tasks that can read at the same time, different parts of the source. More shards means more *buckets* from which to read an index content (at the same time).
 
@@ -38,7 +38,7 @@ Due to the similarity in concepts, through-out the docs one can think interchang
 
 Shards play a critical role when reading information from {{es}}. Since it acts as a source, elasticsearch-hadoop will create one Hadoop `InputSplit` per {{es}} shard, or in case of Apache Spark one `Partition`, that is given a query that works against index `I`. elasticsearch-hadoop will dynamically discover the number of shards backing `I` and then for each shard will create, in case of Hadoop an input split (which will determine the maximum number of Hadoop tasks to be executed) or in case of Spark a partition which will determine the `RDD` maximum parallelism.
 
-With the default settings, {{es}} uses **5** [`primary`](docs-content://reference/glossary/index.md#glossary-primary-shard) shards per index which will result in the same number of tasks on the Hadoop side for each query.
+With the default settings, {{es}} uses **5** `primary` shards per index which will result in the same number of tasks on the Hadoop side for each query.
 
 ::::{note}
 elasticsearch-hadoop does not query the same shards - it iterates through all of them (primaries and replicas) using a round-robin approach. To avoid data duplication, only one shard is used from each shard group (primary and replicas).

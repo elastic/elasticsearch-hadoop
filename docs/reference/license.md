@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/license.html
+navigation_title: License
 ---
-
-# License [license]
+# {{esh-full}} license [license]
 
 elasticsearch-hadoop is Open Source, released under [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.md):
 

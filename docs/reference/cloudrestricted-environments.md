@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/cloud.html
+navigation_title: Cloud or restricted environments
 ---
-
-# Cloud/restricted environments [cloud]
+# {{esh-full}} Cloud or restricted environments [cloud]
 
 In an ideal setup, elasticsearch-hadoop achieves best performance when {{es}} and Hadoop are fully accessible from every other, that is each node on the Hadoop side can access every node inside the {{es}} cluster. This allows maximum parallelism between the two system and thus, as the clusters scale *out* so does the communication between them.
 

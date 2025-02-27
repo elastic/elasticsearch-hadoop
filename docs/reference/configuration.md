@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html
+navigation_title: Configuration
 ---
-
-# Configuration [configuration]
+# {{esh-full}} configuration
 
 elasticsearch-hadoop behavior can be customized through the properties below, typically by setting them on the target job’s Hadoop `Configuration`. However some of them can be specified through other means depending on the library used (see the relevant section).
 

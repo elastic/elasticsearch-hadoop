@@ -1,11 +1,11 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/features.html
+navigation_title: Key features
 ---
+# {{esh-full}} key features [features]
 
-# Key features [features]
-
-The key features of Elasticsearch for Apache Hadoop include:
+The key features of {{esh-full}} include:
 
 Scalable Map/Reduce model
 :   elasticsearch-hadoop is built around Map/Reduce: *every* operation done in elasticsearch-hadoop results in multiple Hadoop tasks (based on the number of target shards) that interact, in parallel with {{es}}.

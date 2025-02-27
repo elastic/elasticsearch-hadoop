@@ -1,9 +1,9 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/performance.html
+navigation_title: Performance considerations
 ---
-
-# Performance considerations [performance]
+# Performance considerations in {{esh-full}}
 
 As the connector itself does not abstract {{es}} nor is it stateful per se (does not keep any state between jobs and only sends writes in bulk - see below), when looking at performance, one should keep an eye on {{es}} itself and its behavior.
 
