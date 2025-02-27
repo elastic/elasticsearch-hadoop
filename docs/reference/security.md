@@ -35,7 +35,7 @@ Username/Password
 PKI/X.509
 :   Use X.509 certificates to authenticate elasticsearch-hadoop to elasticsearch-hadoop. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {{es}}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {{es}} cluster. That is one setup the key to authenticate elasticsearch-hadoop and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
-### Secure Settings [keystore] 
+### Secure Settings [#keystore] 
 
 elasticsearch-hadoop is configured using settings that sometimes contain sensitive information such as passwords. It may not be desirable for those property values to appear in the job configuration as plain text. For these situations, elasticsearch-hadoop supports reading some secure properties from a keystore file.
 
