@@ -362,7 +362,7 @@ If automatic index creation is used, please review [this](/reference/mapping-typ
 ::::
 
 
-elasticsearch-hadoop automatically converts Hadoop built-in `Writable` types to {{es}} [field types](elasticsearch://docs/reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
+elasticsearch-hadoop automatically converts Hadoop built-in `Writable` types to {{es}} [field types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
 
 | `Writable` | {{es}} type |
 | --- | --- |
@@ -383,5 +383,5 @@ elasticsearch-hadoop automatically converts Hadoop built-in `Writable` types to 
 | `AbstractMapWritable` | `map` |
 | `ShortWritable` | `short` |
 
-It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `Text` (basically a `String`) or an `ArrayWritable`.
+It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `Text` (basically a `String`) or an `ArrayWritable`.
 
