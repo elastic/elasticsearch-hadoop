@@ -8,7 +8,7 @@ mapped_pages:
 # {{esh-full}}
 
 {{esh-full}} is an umbrella project consisting of two similar, yet independent sub-projects: `elasticsearch-hadoop` and `repository-hdfs`.
-This documentation pertains to `elasticsearch-hadoop`. For information about `repository-hdfs` and using HDFS as a back-end repository for doing snapshot or restore from or to {{es}}, go to [Hadoop HDFS repository plugin](elasticsearch://docs/reference/elasticsearch-plugins/repository-hdfs.md).
+This documentation pertains to `elasticsearch-hadoop`. For information about `repository-hdfs` and using HDFS as a back-end repository for doing snapshot or restore from or to {{es}}, go to [Hadoop HDFS repository plugin](elasticsearch://reference/elasticsearch-plugins/repository-hdfs.md).
 
 {{esh-full}} is an [open-source](./license.md), stand-alone, self-contained, small library that allows Hadoop jobs (whether using Map/Reduce or libraries built upon it such as Hive or new upcoming libraries like Apache Spark ) to *interact* with {{es}}. One can think of it as a *connector* that allows data to flow *bi-directionaly* so that applications can leverage transparently the {{es}} engine capabilities to significantly enrich their capabilities and increase the performance.
 

@@ -267,7 +267,7 @@ saveToEs(javaRDD, "my-collection-{media_type}/doc");  <1>
 
 #### Handling document metadata [spark-write-meta]
 
-{{es}} allows each document to have its own [metadata](elasticsearch://docs/reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs). In other words, for `RDD`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
+{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs). In other words, for `RDD`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the `Metadata` Java [enum](http://docs.oracle.com/javase/tutorial/java/javaOO/enum.md) within `org.elasticsearch.spark.rdd` package which identifies its type - `id`, `ttl`, `version`, etc…​ Thus an `RDD` keys can be a `Map` containing the `Metadata` for each document and its associated values. If `RDD` key is not of type `Map`, elasticsearch-hadoop will consider the object as representing the document id and use it accordingly. This sounds more complicated than it is, so let us see some examples.
 
@@ -514,7 +514,7 @@ When dealing with multi-value/array fields, please see [this](/reference/mapping
 ::::
 
 
-elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://docs/reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
+elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
 
 | Scala type | {{es}} type |
 | --- | --- |
@@ -552,7 +552,7 @@ in addition, the following *implied* conversion applies for Java types:
 
 The conversion is done as a *best* effort; built-in Java and Scala types are guaranteed to be properly converted, however there are no guarantees for user types whether in Java or Scala. As mentioned in the tables above, when a `case` class is encountered in Scala or `JavaBean` in Java, the converters will try to `unwrap` its content and save it as an `object`. Note this works only for top-level user objects - if the user object has other user objects nested in, the conversion is likely to fail since the converter does not perform nested `unwrapping`. This is done on purpose since the converter has to *serialize* and *deserialize* the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way too close to the realm of ORMs and arguably introduces too much complexity for little to no gain; thanks to the processing functionality in Spark and the plugability in elasticsearch-hadoop one can easily transform objects into other types, if needed with minimal effort and maximum control.
 
-It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `String` or a `Traversable`.
+It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `String` or a `Traversable`.
 
 
 ## Spark Streaming support [spark-streaming]
@@ -854,7 +854,7 @@ jssc.start();
 
 #### Handling document metadata [spark-streaming-write-meta]
 
-{{es}} allows each document to have its own [metadata](elasticsearch://docs/reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs).
+{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs).
 
 This is no different in Spark Streaming. For `DStreams`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
@@ -1064,7 +1064,7 @@ in addition, the following *implied* conversion applies for Java types:
 | `Map` | `object` |
 | *Java Bean* | `object` (see `Map`) |
 
-It is worth re-mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `String` or a `Traversable`.
+It is worth re-mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `String` or a `Traversable`.
 
 
 ## Spark SQL support [spark-sql]
@@ -1374,7 +1374,7 @@ The connector translates the query into:
 }
 ```
 
-Further more, the pushdown filters can work on `analyzed` terms (the default) or can be configured to be *strict* and provide `exact` matches (work only on `not-analyzed` fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are.  This and other topics are discussed at length in the {{es}} [Reference Documentation](elasticsearch://docs/reference/query-languages/query-dsl-term-query.md).
+Further more, the pushdown filters can work on `analyzed` terms (the default) or can be configured to be *strict* and provide `exact` matches (work only on `not-analyzed` fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are.  This and other topics are discussed at length in the {{es}} [Reference Documentation](elasticsearch://reference/query-languages/query-dsl-term-query.md).
 
 Note that `double.filtering`, available since elasticsearch-hadoop 2.2 for Spark 1.6 or higher, allows filters that are already pushed down to {{es}} to be processed/evaluated by Spark as well (default) or not. Turning this feature off, especially when dealing with large data sizes speed things up. However one should pay attention to the semantics as turning this off, might return different results (depending on how the data is indexed, `analyzed` vs `not_analyzed`). In general, when turning *strict* on, one can disable `double.filtering` as well.
 
@@ -1458,7 +1458,7 @@ val smiths = sqlContext.esDF("spark/people","?q=Smith") <1>
 
 In some cases, especially when the index in {{es}} contains a lot of fields, it is desireable to create a `DataFrame` that contains only a *subset* of them. While one can modify the `DataFrame` (by working on its backing `RDD`) through the official Spark API or through dedicated queries, elasticsearch-hadoop allows the user to specify what fields to include and exclude from {{es}} when creating the `DataFrame`.
 
-Through `es.read.field.include` and `es.read.field.exclude` properties, one can indicate what fields to include or exclude from the index mapping. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://docs/reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included and no properties/fields are excluded. Note that these properties can include leading and trailing wildcards. Including part of a hierarchy of fields without a trailing wildcard does not imply that the entire hierarcy is included. However in most cases it does not make sense to include only part of a hierarchy, so a trailing wildcard should be included.
+Through `es.read.field.include` and `es.read.field.exclude` properties, one can indicate what fields to include or exclude from the index mapping. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included and no properties/fields are excluded. Note that these properties can include leading and trailing wildcards. Including part of a hierarchy of fields without a trailing wildcard does not imply that the entire hierarcy is included. However in most cases it does not make sense to include only part of a hierarchy, so a trailing wildcard should be included.
 
 For example:
 
@@ -1510,7 +1510,7 @@ When dealing with multi-value/array fields, please see [this](/reference/mapping
 ::::
 
 
-elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://docs/reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
+elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
 
 While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.md#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
 
@@ -1716,7 +1716,7 @@ If automatic index creation is used, please review [this](/reference/mapping-typ
 ::::
 
 
-elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://docs/reference/elasticsearch/mapping-reference/field-data-types.md) as shown in the table below:
+elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) as shown in the table below:
 
 While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.md#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
 

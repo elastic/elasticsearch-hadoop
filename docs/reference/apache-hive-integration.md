@@ -258,4 +258,4 @@ While {{es}} understands Hive types up to version 2.0, it is backwards compatibl
 ::::
 
 
-It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://docs/reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `string` or an `array`.
+It is worth mentioning that rich data types available only in {{es}}, such as [`GeoPoint`](elasticsearch://reference/elasticsearch/mapping-reference/geo-point.md) or [`GeoShape`](elasticsearch://reference/elasticsearch/mapping-reference/geo-shape.md) are supported by converting their structure into the primitives available in the table above. For example, based on its storage a `geo_point` might be returned as a `string` or an `array`.
