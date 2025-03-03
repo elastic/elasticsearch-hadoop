@@ -239,7 +239,7 @@ Added in 2.1.
 
 
 `es.mapping.include` (default none)
-:   Field/property to be included in the document sent to {{es}}. Useful for *extracting* the needed data from entities. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://docs/reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
+:   Field/property to be included in the document sent to {{es}}. Useful for *extracting* the needed data from entities. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
 
 ::::{important}
 The `es.mapping.include` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing data that is implicitly excluded, any jobs with these property conflicts will refuse to execute!
@@ -252,7 +252,7 @@ Added in 2.1.
 
 
 `es.mapping.exclude` (default none)
-:   Field/property to be excluded in the document sent to {{es}}. Useful for *eliminating* unneeded data from entities. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://docs/reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded.
+:   Field/property to be excluded in the document sent to {{es}}. Useful for *eliminating* unneeded data from entities. The syntax is similar to that of {{es}} [include/exclude](elasticsearch://reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded.
 
 ::::{important}
 The `es.mapping.exclude` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing data that is explicitly excluded, any jobs with these property conflicts will refuse to execute!
@@ -320,7 +320,7 @@ Added in 2.2.
 
 
 `es.read.field.as.array.include` (default empty)
-:   Fields/properties that should be considered as arrays/lists. Since {{es}} can map one or multiple values to a field, elasticsearch-hadoop cannot determine from the mapping whether to treat a field on a document as a single value or an array. When encountering multiple values, elasticsearch-hadoop automatically reads the field into the appropriate array/list type for an integration, but in strict mapping scenarios (like Spark SQL) this may lead to problems (an array is encountered when Spark’s Catalyst engine expects a single value). The syntax for this setting is similar to that of {{es}} [include/exclude](elasticsearch://docs/reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified, meaning no fields/properties are treated as arrays.
+:   Fields/properties that should be considered as arrays/lists. Since {{es}} can map one or multiple values to a field, elasticsearch-hadoop cannot determine from the mapping whether to treat a field on a document as a single value or an array. When encountering multiple values, elasticsearch-hadoop automatically reads the field into the appropriate array/list type for an integration, but in strict mapping scenarios (like Spark SQL) this may lead to problems (an array is encountered when Spark’s Catalyst engine expects a single value). The syntax for this setting is similar to that of {{es}} [include/exclude](elasticsearch://reference/elasticsearch/rest-apis/retrieve-selected-fields.md#source-filtering). Multiple values can be specified by using a comma. By default, no value is specified, meaning no fields/properties are treated as arrays.
 
 ::::{note}
 Not all fields need to specify `es.read.field.as.array` to be treated as an array. Fields of type `nested` are always treated as an array of objects and should not be marked under `es.read.field.as.array.include`.
@@ -520,7 +520,7 @@ Added in 5.0.0.
 :   Whether to discover the nodes within the {{es}} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, elasticsearch-hadoop uses the target index shards (and their hosting nodes) unless `es.nodes.client.only` is enabled.
 
 `es.nodes.client.only` (default false)
-:   Whether to use {{es}} [client nodes](elasticsearch://docs/reference/elasticsearch/configuration-reference/node-settings.md) (or *load-balancers*). When enabled, elasticsearch-hadoop will route *all* its requests (after nodes discovery, if enabled) through the *client* nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default. Enabling it also disables `es.nodes.data.only` (since a client node is a non-data node).
+:   Whether to use {{es}} [client nodes](elasticsearch://reference/elasticsearch/configuration-reference/node-settings.md) (or *load-balancers*). When enabled, elasticsearch-hadoop will route *all* its requests (after nodes discovery, if enabled) through the *client* nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default. Enabling it also disables `es.nodes.data.only` (since a client node is a non-data node).
 
 ::::{note}
 Added in 2.1.2.
@@ -528,7 +528,7 @@ Added in 2.1.2.
 
 
 `es.nodes.data.only` (default true)
-:   Whether to use {{es}} [data nodes](elasticsearch://docs/reference/elasticsearch/configuration-reference/node-settings.md) only. When enabled, elasticsearch-hadoop will route *all* its requests (after nodes discovery, if enabled) through the *data* nodes within the cluster. The purpose of this configuration setting is to avoid overwhelming non-data nodes as these tend to be "smaller" nodes. This is enabled by default.
+:   Whether to use {{es}} [data nodes](elasticsearch://reference/elasticsearch/configuration-reference/node-settings.md) only. When enabled, elasticsearch-hadoop will route *all* its requests (after nodes discovery, if enabled) through the *data* nodes within the cluster. The purpose of this configuration setting is to avoid overwhelming non-data nodes as these tend to be "smaller" nodes. This is enabled by default.
 
 ::::{note}
 Added in 5.0.0.
@@ -536,7 +536,7 @@ Added in 5.0.0.
 
 
 `es.nodes.ingest.only` (default false)
-:   Whether to use {{es}} [ingest nodes](elasticsearch://docs/reference/elasticsearch/configuration-reference/node-settings.md) only. When enabled, elasticsearch-hadoop will route *all* of its requests (after nodes discovery, if enabled) through the *ingest* nodes within the cluster. The purpose of this configuration setting is to avoid incurring the cost of forwarding data meant for a pipeline from non-ingest nodes; Really only useful when writing data to an Ingest Pipeline (see `es.ingest.pipeline` above).
+:   Whether to use {{es}} [ingest nodes](elasticsearch://reference/elasticsearch/configuration-reference/node-settings.md) only. When enabled, elasticsearch-hadoop will route *all* of its requests (after nodes discovery, if enabled) through the *ingest* nodes within the cluster. The purpose of this configuration setting is to avoid incurring the cost of forwarding data meant for a pipeline from non-ingest nodes; Really only useful when writing data to an Ingest Pipeline (see `es.ingest.pipeline` above).
 
 ::::{note}
 Added in 2.2.
