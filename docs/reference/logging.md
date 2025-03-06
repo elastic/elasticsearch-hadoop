@@ -30,7 +30,7 @@ log4j.category.org.elasticsearch.hadoop.mr=DEBUG
 ```
 
 ::::{tip}
-See the log4j [javadoc](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PropertyConfigurator.md#doConfigure%28java.lang.String,%20org.apache.log4j.spi.LoggerRepository%29) for more information.
+See the log4j [javadoc](https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PropertyConfigurator.html#doConfigure%28java.lang.String,%20org.apache.log4j.spi.LoggerRepository%29) for more information.
 ::::
 
 

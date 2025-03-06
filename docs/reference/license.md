@@ -5,7 +5,7 @@ navigation_title: License
 ---
 # {{esh-full}} license [license]
 
-elasticsearch-hadoop is Open Source, released under [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.md):
+elasticsearch-hadoop is Open Source, released under [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.html):
 
 ```
 Licensed to Elasticsearch under one or more contributor license agreements.
