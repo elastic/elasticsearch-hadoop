@@ -1,0 +1,26 @@
+project: 'Elasticsearch for Apache Hadoop reference'
+toc:
+  - file: index.md
+  - file: setup-requirements.md
+    children:
+      - file: key-features.md
+      - file: requirements.md
+      - file: installation.md
+  - file: reference.md
+    children:
+      - file: architecture.md
+      - file: configuration.md
+      - file: runtime-options.md
+      - file: security.md
+      - file: logging.md
+      - file: mapreduce-integration.md
+      - file: apache-hive-integration.md
+      - file: apache-spark-support.md
+      - file: mapping-types.md
+      - file: error-handlers.md
+      - file: kerberos.md
+      - file: hadoop-metrics.md
+      - file: performance-considerations.md
+      - file: cloudrestricted-environments.md
+  - file: resources.md
+  - file: license.md

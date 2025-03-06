@@ -1,9 +1,0 @@
-[[eshadoop-8.11.2]]
-== Elasticsearch for Apache Hadoop version 8.11.2
-
-[[bugs-8.11.2]]
-=== Bug Fixes
-Spark::
-* Nested objects fail parsing in Spark SQL when empty objects present
-https://github.com/elastic/elasticsearch-hadoop/issues/2157[#2157]
-https://github.com/elastic/elasticsearch-hadoop/pull/2158[#2158]

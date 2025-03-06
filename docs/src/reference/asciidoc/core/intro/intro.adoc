@@ -1,5 +1,0 @@
-include::features.adoc[]
-
-include::requirements.adoc[]
-
-include::download.adoc[]
