@@ -5,7 +5,7 @@ mapped_pages:
 
 # Hadoop metrics [metrics]
 
-The Hadoop system records a set of metric counters for each job that it runs. elasticsearch-hadoop extends on that and provides metrics about its activity for each job run by leveraging the Hadoop [Counters](http://hadoop.apache.org/docs/r3.3.1/api/org/apache/hadoop/mapred/Counters.md) infrastructure. During each run, elasticsearch-hadoop sends statistics from each task instance, as it is running, which get aggregated by the Map/Reduce infrastructure and are available through the standard Hadoop APIs.
+The Hadoop system records a set of metric counters for each job that it runs. elasticsearch-hadoop extends on that and provides metrics about its activity for each job run by leveraging the Hadoop [Counters](http://hadoop.apache.org/docs/r3.3.1/api/org/apache/hadoop/mapred/Counters.html) infrastructure. During each run, elasticsearch-hadoop sends statistics from each task instance, as it is running, which get aggregated by the Map/Reduce infrastructure and are available through the standard Hadoop APIs.
 
 elasticsearch-hadoop provides the following counters, available under `org.elasticsearch.hadoop.mr.Counter` enum:
 
@@ -33,7 +33,7 @@ elasticsearch-hadoop provides the following counters, available under `org.elast
 | BULK_RETRIES_TOTAL_TIME_MS | Time (in ms) spent over the network retrying bulk requests |
 | SCROLL_TOTAL_TIME_MS | Time (in ms) spent over the network reading the scroll requests |
 
-One can use the counters programatically, depending on the API used, through [mapred](http://hadoop.apache.org/docs/r3.3.1/api/index.md?org/apache/hadoop/mapred/Counters.md) or [mapreduce](http://hadoop.apache.org/docs/r3.3.1/api/index.md?org/apache/hadoop/mapreduce/Counter.md). Whatever the choice, elasticsearch-hadoop performs automatic reports without any user intervention. In fact, when using elasticsearch-hadoop one will see the stats reported at the end of the job run, for example:
+One can use the counters programatically, depending on the API used, through [mapred](http://hadoop.apache.org/docs/r3.3.1/api/index.html?org/apache/hadoop/mapred/Counters.md) or [mapreduce](http://hadoop.apache.org/docs/r3.3.1/api/index.html?org/apache/hadoop/mapreduce/Counter.md). Whatever the choice, elasticsearch-hadoop performs automatic reports without any user intervention. In fact, when using elasticsearch-hadoop one will see the stats reported at the end of the job run, for example:
 
 ```bash
 13:55:08,100  INFO main mapreduce.Job - Job job_local127738678_0013 completed successfully

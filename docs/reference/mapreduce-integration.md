@@ -10,7 +10,7 @@ For low-level or performance-sensitive environments, elasticsearch-hadoop provid
 
 ## Installation [_installation]
 
-In order to use elasticsearch-hadoop, the [jar](/reference/installation.md) needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI [Generic Options](http://hadoop.apache.org/docs/r1.2.1/commands_manual.md#Generic`Options) (if your jar implements the [Tool](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.md) interface), be distributed through Hadoop’s [DistributedCache](http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.md#DistributedCache) or made available by provisioning the cluster manually.
+In order to use elasticsearch-hadoop, the [jar](/reference/installation.md) needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI [Generic Options](http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options) (if your jar implements the [Tool](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html) interface), be distributed through Hadoop’s [DistributedCache](http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache) or made available by provisioning the cluster manually.
 
 ::::{important}
 All the options above affect *only* the code running on the distributed nodes. If your code that launches the Hadoop job refers to elasticsearch-hadoop, make sure to include the JAR in the `HADOOP_CLASSPATH`: `HADOOP_CLASSPATH="<colon-separated-paths-to-your-jars-including-elasticsearch-hadoop>"`
@@ -42,7 +42,7 @@ Simply use the configuration object when constructing the Hadoop job and you are
 
 ## Writing data to {{es}} [_writing_data_to_es]
 
-With elasticsearch-hadoop, Map/Reduce jobs can write data to {{es}} making it searchable through [indexes](docs-content://reference/glossary/index.md#glossary-index). elasticsearch-hadoop supports both (so-called)  [*old*](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.md) and [*new*](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.md) Hadoop APIs.
+With elasticsearch-hadoop, Map/Reduce jobs can write data to {{es}} making it searchable through [indexes](docs-content://reference/glossary/index.md#glossary-index). elasticsearch-hadoop supports both (so-called)  [*old*](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html) and [*new*](http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html) Hadoop APIs.
 
 `EsOutputFormat` expects a `Map<Writable, Writable>` representing a *document* value that is converted internally into a JSON document and indexed in {{es}}. Hadoop `OutputFormat` requires implementations to expect a key and a value however, since for {{es}} only the document (that is the value) is necessary, `EsOutputFormat` ignores the key.
 
