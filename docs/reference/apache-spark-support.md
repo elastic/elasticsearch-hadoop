@@ -44,7 +44,7 @@ $ ./bin/spark-submit --conf spark.es.resource=index/type ... <1>
 
 #### Writing data to {{es}} [spark-write]
 
-With elasticsearch-hadoop, any `RDD` can be saved to {{es}} as long as its content can be translated into documents. In practice this means the `RDD` type needs to be a `Map` (whether a Scala or a Java one), a [`JavaBean`](http://docs.oracle.com/javase/tutorial/javabeans/) or a Scala [case class](http://docs.scala-lang.org/tutorials/tour/case-classes.md). When that is not the case, one can easily *transform* the data in Spark or plug-in their own custom [`ValueWriter`](/reference/configuration.md#configuration-serialization).
+With elasticsearch-hadoop, any `RDD` can be saved to {{es}} as long as its content can be translated into documents. In practice this means the `RDD` type needs to be a `Map` (whether a Scala or a Java one), a [`JavaBean`](http://docs.oracle.com/javase/tutorial/javabeans/) or a Scala [case class](http://docs.scala-lang.org/tutorials/tour/case-classes.html). When that is not the case, one can easily *transform* the data in Spark or plug-in their own custom [`ValueWriter`](/reference/configuration.md#configuration-serialization).
 
 ##### Scala [spark-write-scala]
 
@@ -267,7 +267,7 @@ saveToEs(javaRDD, "my-collection-{media_type}/doc");  <1>
 
 #### Handling document metadata [spark-write-meta]
 
-{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs). In other words, for `RDD`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
+{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs). In other words, for `RDD`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the `Metadata` Java [enum](http://docs.oracle.com/javase/tutorial/java/javaOO/enum.md) within `org.elasticsearch.spark.rdd` package which identifies its type - `id`, `ttl`, `version`, etc…​ Thus an `RDD` keys can be a `Map` containing the `Metadata` for each document and its associated values. If `RDD` key is not of type `Map`, elasticsearch-hadoop will consider the object as representing the document id and use it accordingly. This sounds more complicated than it is, so let us see some examples.
 
@@ -433,7 +433,7 @@ sc.esRDD("radio/artists", "?q=me*") <1>
 1. create an `RDD` streaming all the documents matching `me*` from index `radio/artists`
 
 
-The documents from {{es}} are returned, by default, as a `Tuple2` containing as the first element the document id and the second element the actual document represented through Scala [collections](http://docs.scala-lang.org/overviews/collections/overview.md), namely one `Map[String, Any]`where the keys represent the field names and the value their respective values.
+The documents from {{es}} are returned, by default, as a `Tuple2` containing as the first element the document id and the second element the actual document represented through Scala [collections](http://docs.scala-lang.org/overviews/collections/overview.html), namely one `Map[String, Any]`where the keys represent the field names and the value their respective values.
 
 
 ##### Java [spark-read-java]
@@ -575,7 +575,7 @@ Spark Streaming support provides special optimizations to allow for conservation
 
 #### Writing `DStream` to {{es}} [spark-streaming-write]
 
-Like `RDD`s, any `DStream` can be saved to {{es}} as long as its content can be translated into documents. In practice this means the `DStream` type needs to be a `Map` (either a Scala or a Java one), a [`JavaBean`](http://docs.oracle.com/javase/tutorial/javabeans/) or a Scala [case class](http://docs.scala-lang.org/tutorials/tour/case-classes.md). When that is not the case, one can easily *transform* the data in Spark or plug-in their own custom [`ValueWriter`](/reference/configuration.md#configuration-serialization).
+Like `RDD`s, any `DStream` can be saved to {{es}} as long as its content can be translated into documents. In practice this means the `DStream` type needs to be a `Map` (either a Scala or a Java one), a [`JavaBean`](http://docs.oracle.com/javase/tutorial/javabeans/) or a Scala [case class](http://docs.scala-lang.org/tutorials/tour/case-classes.html). When that is not the case, one can easily *transform* the data in Spark or plug-in their own custom [`ValueWriter`](/reference/configuration.md#configuration-serialization).
 
 
 ##### Scala [spark-streaming-write-scala]
@@ -854,7 +854,7 @@ jssc.start();
 
 #### Handling document metadata [spark-streaming-write-meta]
 
-{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.md#working-with-key-value-pairs).
+{{es}} allows each document to have its own [metadata](elasticsearch://reference/elasticsearch/mapping-reference/document-metadata-fields.md). As explained above, through the various [mapping](/reference/configuration.md#cfg-mapping) options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {{es}}. In Spark, elasticsearch-hadoop extends this functionality allowing metadata to be supplied *outside* the document itself through the use of [*pair* `RDD`s](http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs).
 
 This is no different in Spark Streaming. For `DStreams`s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
@@ -1085,7 +1085,7 @@ Spark SQL works with *structured* data - in other words, all entries are expecte
 
 #### Supported Spark SQL versions [spark-sql-versions]
 
-Spark SQL while becoming a mature component, is still going through significant changes between releases. Spark SQL became a stable component in version 1.3, however it is [**not** backwards compatible](https://spark.apache.org/docs/latest/sql-programming-guide.md#migration-guide) with the previous releases. Further more Spark 2.0 introduced significant changed which broke backwards compatibility, through the `Dataset` API. elasticsearch-hadoop supports both version Spark SQL 1.3-1.6 and Spark SQL 2.0 through two different jars: `elasticsearch-spark-1.x-<version>.jar` and `elasticsearch-hadoop-<version>.jar` support Spark SQL 1.3-1.6 (or higher) while `elasticsearch-spark-2.0-<version>.jar` supports Spark SQL 2.0. In other words, unless you are using Spark 2.0, use `elasticsearch-spark-1.x-<version>.jar`
+Spark SQL while becoming a mature component, is still going through significant changes between releases. Spark SQL became a stable component in version 1.3, however it is [**not** backwards compatible](https://spark.apache.org/docs/latest/sql-programming-guide.html#migration-guide) with the previous releases. Further more Spark 2.0 introduced significant changed which broke backwards compatibility, through the `Dataset` API. elasticsearch-hadoop supports both version Spark SQL 1.3-1.6 and Spark SQL 2.0 through two different jars: `elasticsearch-spark-1.x-<version>.jar` and `elasticsearch-hadoop-<version>.jar` support Spark SQL 1.3-1.6 (or higher) while `elasticsearch-spark-2.0-<version>.jar` supports Spark SQL 2.0. In other words, unless you are using Spark 2.0, use `elasticsearch-spark-1.x-<version>.jar`
 
 Spark SQL support is available under `org.elasticsearch.spark.sql` package.
 
@@ -1184,7 +1184,7 @@ For maximum control over the mapping of your `DataFrame` in {{es}}, it is highly
 
 #### Writing existing JSON to {{es}} [spark-sql-json]
 
-When using Spark SQL, if the input data is in JSON format, simply convert it to a `DataFrame` (in Spark SQL 1.3) or a `Dataset` (for Spark SQL 2.0) (as described in Spark [documentation](https://spark.apache.org/docs/latest/sql-programming-guide.md#json-datasets)) through `SQLContext`/`JavaSQLContext` `jsonFile` methods.
+When using Spark SQL, if the input data is in JSON format, simply convert it to a `DataFrame` (in Spark SQL 1.3) or a `Dataset` (for Spark SQL 2.0) (as described in Spark [documentation](https://spark.apache.org/docs/latest/sql-programming-guide.html#json-datasets)) through `SQLContext`/`JavaSQLContext` `jsonFile` methods.
 
 
 #### Using pure SQL to read from {{es}} [spark-sql-read-ds]
@@ -1194,7 +1194,7 @@ The index and its mapping, have to exist prior to creating the temporary table
 ::::
 
 
-Spark SQL 1.2 [introduced](http://spark.apache.org/releases/spark-release-1-2-0.md) a new [API](https://github.com/apache/spark/pull/2475) for reading from external data sources, which is supported by elasticsearch-hadoop simplifying the SQL configured needed for interacting with {{es}}. Further more, behind the scenes it understands the operations executed by Spark and thus can optimize the data and queries made (such as filtering or pruning), improving performance.
+Spark SQL 1.2 [introduced](http://spark.apache.org/releases/spark-release-1-2-0.html) a new [API](https://github.com/apache/spark/pull/2475) for reading from external data sources, which is supported by elasticsearch-hadoop simplifying the SQL configured needed for interacting with {{es}}. Further more, behind the scenes it understands the operations executed by Spark and thus can optimize the data and queries made (such as filtering or pruning), improving performance.
 
 
 #### Data Sources in Spark SQL [spark-data-sources]
@@ -1512,7 +1512,7 @@ When dealing with multi-value/array fields, please see [this](/reference/mapping
 
 elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) (and back) as shown in the table below:
 
-While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.md#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
+While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
 
 | Spark SQL `DataType` | {{es}} type |
 | --- | --- |
@@ -1560,7 +1560,7 @@ Like Spark SQL, Structured Streaming works with *structured* data. All entries a
 
 Spark Structured Streaming is considered *generally available* as of Spark v2.2.0. As such, elasticsearch-hadoop support for Structured Streaming (available in elasticsearch-hadoop 6.0+) is only compatible with Spark versions 2.2.0 and onward. Similar to Spark SQL before it, Structured Streaming may be subject to significant changes between releases before its interfaces are considered *stable*.
 
-Spark Structured Streaming support is available under the `org.elasticsearch.spark.sql` and `org.elasticsearch.spark.sql.streaming` packages. It shares a unified interface with Spark SQL in the form of the `Dataset[_]` api. Clients can interact with streaming `Dataset`s in almost exactly the same way as regular batch `Dataset`s with only a [few exceptions](http://spark.apache.org/docs/latest/structured-streaming-programming-guide.md#unsupported-operations).
+Spark Structured Streaming support is available under the `org.elasticsearch.spark.sql` and `org.elasticsearch.spark.sql.streaming` packages. It shares a unified interface with Spark SQL in the form of the `Dataset[_]` api. Clients can interact with streaming `Dataset`s in almost exactly the same way as regular batch `Dataset`s with only a [few exceptions](http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#unsupported-operations).
 
 
 #### Writing Streaming `Datasets` (Spark SQL 2.0+) to {{es}} [spark-sql-streaming-write]
@@ -1660,7 +1660,7 @@ people.writeStream()
 
 #### Writing existing JSON to {{es}} [spark-sql-streaming-json]
 
-When using Spark SQL, if the input data is in JSON format, simply convert it to a `Dataset` (for Spark SQL 2.0) (as described in Spark [documentation](http://spark.apache.org/docs/latest/structured-streaming-programming-guide.md#input-sources)) through the `DataStreamReader’s `json` format.
+When using Spark SQL, if the input data is in JSON format, simply convert it to a `Dataset` (for Spark SQL 2.0) (as described in Spark [documentation](http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#input-sources)) through the `DataStreamReader’s `json` format.
 
 
 #### Sink commit log in Spark Structured Streaming [spark-sql-streaming-commit-log]
@@ -1718,7 +1718,7 @@ If automatic index creation is used, please review [this](/reference/mapping-typ
 
 elasticsearch-hadoop automatically converts Spark built-in types to {{es}} [types](elasticsearch://reference/elasticsearch/mapping-reference/field-data-types.md) as shown in the table below:
 
-While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.md#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
+While Spark SQL [`DataType`s](https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types) have an equivalent in both Scala and Java and thus the [RDD](#spark-type-conversion) conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
 
 | Spark SQL `DataType` | {{es}} type |
 | --- | --- |
