@@ -1,5 +1,5 @@
 ---
-navigation_title: "Elasticsearch Apache Hadoop"
+navigation_title: "Known issues"
 
 ---
 
