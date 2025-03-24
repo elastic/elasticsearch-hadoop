@@ -1374,7 +1374,7 @@ The connector translates the query into:
 }
 ```
 
-Further more, the pushdown filters can work on `analyzed` terms (the default) or can be configured to be *strict* and provide `exact` matches (work only on `not-analyzed` fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are.  This and other topics are discussed at length in the {{es}} [Reference Documentation](elasticsearch://reference/query-languages/query-dsl-term-query.md).
+Further more, the pushdown filters can work on `analyzed` terms (the default) or can be configured to be *strict* and provide `exact` matches (work only on `not-analyzed` fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are.  This and other topics are discussed at length in the {{es}} [Reference Documentation](elasticsearch://reference/query-languages/query-dsl/query-dsl-term-query.md).
 
 Note that `double.filtering`, available since elasticsearch-hadoop 2.2 for Spark 1.6 or higher, allows filters that are already pushed down to {{es}} to be processed/evaluated by Spark as well (default) or not. Turning this feature off, especially when dealing with large data sizes speed things up. However one should pay attention to the semantics as turning this off, might return different results (depending on how the data is indexed, `analyzed` vs `not_analyzed`). In general, when turning *strict* on, one can disable `double.filtering` as well.
 
