@@ -26,17 +26,5 @@ EOF
       env:
         DRA_WORKFLOW: staging
 EOF
-	else
-		# Pass version qualifier to 9.0 builds
-		cat <<EOF
-  - trigger: elasticsearch-hadoop-dra-workflow
-    label: Trigger DRA staging workflow for $BRANCH
-    async: true
-    build:
-      branch: "$BRANCH"
-      env:
-        DRA_WORKFLOW: staging
-        VERSION_QUALIFIER: rc1
-EOF
 	fi
 done
