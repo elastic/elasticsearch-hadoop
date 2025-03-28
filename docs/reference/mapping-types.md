@@ -135,5 +135,5 @@ In most cases, [templates](docs-content://manage-data/data-store/templates.md) a
 
 ## Limitations [limitations]
 
-{{es}} allows field names to contain dots (*.*). But {{esh}} does not support them, and fails when reading or writing fields with dots. Refer to {{es}} [Dot Expander Processor](elasticsearch://reference/ingestion-tools/enrich-processor/dot-expand-processor.md) for tooling to assist replacing dots in field names.
+{{es}} allows field names to contain dots (*.*). But {{esh}} does not support them, and fails when reading or writing fields with dots. Refer to {{es}} [Dot Expander Processor](elasticsearch://reference/enrich-processor/dot-expand-processor.md) for tooling to assist replacing dots in field names.
 
