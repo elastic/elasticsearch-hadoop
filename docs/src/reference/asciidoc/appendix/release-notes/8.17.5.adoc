@@ -1,0 +1,5 @@
+[[eshadoop-8.17.5]]
+== Elasticsearch for Apache Hadoop version 8.17.5
+
+ES-Hadoop 8.17.5 is a version compatibility release, tested specifically against
+Elasticsearch 8.17.5.
