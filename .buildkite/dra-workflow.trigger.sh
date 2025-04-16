@@ -16,8 +16,8 @@ for BRANCH in "${BRANCHES[@]}"; do
       env:
         DRA_WORKFLOW: snapshot
 EOF
-	if [[ "$BRANCH" != "9.0" ]]; then
-		cat <<EOF
+
+  cat <<EOF
   - trigger: elasticsearch-hadoop-dra-workflow
     label: Trigger DRA staging workflow for $BRANCH
     async: true
@@ -26,5 +26,4 @@ EOF
       env:
         DRA_WORKFLOW: staging
 EOF
-	fi
 done
