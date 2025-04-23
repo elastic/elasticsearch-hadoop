@@ -510,7 +510,11 @@ In case where the results from {{es}} need to be in JSON format (typically to be
 #### Type conversion [spark-type-conversion]
 
 ::::{important}
-When dealing with multi-value/array fields, please see [this](/reference/mapping-types.md#mapping-multi-values) section and in particular [these](/reference/configuration.md#cfg-field-info) configuration options. IMPORTANT: If automatic index creation is used, please review [this](/reference/mapping-types.md#auto-mapping-type-loss) section for more information.
+When dealing with multi-value/array fields, please see [this](/reference/mapping-types.md#mapping-multi-values) section and in particular [these](/reference/configuration.md#cfg-field-info) configuration options.
+::::
+
+::::{important}
+If automatic index creation is used, please review [this](/reference/mapping-types.md#auto-mapping-type-loss) section for more information.
 ::::
 
 
@@ -1210,7 +1214,7 @@ val df = sql.load( <1>
 ```
 
 1. `SQLContext` *experimental* `load` method for arbitrary data sources
-2. path or resource to load - in this case the index/type in {es}
+2. path or resource to load - in this case the index/type in {{es}}
 3. the data source provider - `org.elasticsearch.spark.sql`
 
 
@@ -1225,7 +1229,7 @@ val df = sql.read      <1>
 
 1. `SQLContext` *experimental* `read` method for arbitrary data sources
 2. the data source provider - `org.elasticsearch.spark.sql`
-3. path or resource to load - in this case the index/type in {es}
+3. path or resource to load - in this case the index/type in {{es}}
 
 
 In Spark 1.5, this can be further simplified to:
@@ -1441,8 +1445,8 @@ println(people.schema.treeString)             <4>
 
 1. Spark SQL Scala imports
 2. elasticsearch-hadoop SQL Scala imports
-3. create a `DataFrame` backed by the `spark/people` index in {es}
-4. the `DataFrame` associated schema discovered from {es}
+3. create a `DataFrame` backed by the `spark/people` index in {{es}}
+4. the `DataFrame` associated schema discovered from {{es}}
 5. notice how the `age` field was transformed into a `Long` when using the default {{es}} mapping as discussed in the [*Mapping and Types*](/reference/mapping-types.md) chapter.
 
 
@@ -1506,7 +1510,11 @@ DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"); <1>
 #### Spark SQL Type conversion [spark-sql-type-conversion]
 
 ::::{important}
-When dealing with multi-value/array fields, please see [this](/reference/mapping-types.md#mapping-multi-values) section and in particular [these](/reference/configuration.md#cfg-field-info) configuration options. IMPORTANT: If automatic index creation is used, please review [this](/reference/mapping-types.md#auto-mapping-type-loss) section for more information.
+When dealing with multi-value/array fields, please see [this](/reference/mapping-types.md#mapping-multi-values) section and in particular [these](/reference/configuration.md#cfg-field-info) configuration options.
+::::
+
+::::{important}
+If automatic index creation is used, please review [this](/reference/mapping-types.md#auto-mapping-type-loss) section for more information.
 ::::
 
 
@@ -1601,7 +1609,7 @@ people.writeStream
 3. Instead of calling `read`, call `readStream` to get instance of `DataStreamReader`
 4. Read a directory of text files continuously and convert them into `Person` objects
 5. Provide a location to save the offsets and commit logs for the streaming query
-6. Start the stream using the `"es"` format to index the contents of the `Dataset` continuously to {es}
+6. Start the stream using the `"es"` format to index the contents of the `Dataset` continuously to {{es}}
 
 
 ::::{warning}
