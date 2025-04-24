@@ -566,7 +566,7 @@ Added in 5.0.
 ::::
 
 
-[TBC: FANCY QUOTE]
+% [TBC: FANCY QUOTE]
 Spark Streaming is an extension on top of the core Spark functionality that allows near real time processing of stream data. Spark Streaming works around the idea of `DStream`s, or *Discretized Streams*. `DStreams` operate by collecting newly arrived records into a small `RDD` and executing it. This repeats every few seconds with a new `RDD` in a process called *microbatching*. The `DStream` api includes many of the same processing operations as the `RDD` api, plus a few other streaming specific methods. elasticsearch-hadoop provides native integration with Spark Streaming as of version 5.0.
 
 When using the elasticsearch-hadoop Spark Streaming support, {{es}} can be targeted as an output location to index data into from a Spark Streaming job in the same way that one might persist the results from an `RDD`. Though, unlike `RDD`s, you are unable to read data out of {{es}} using a `DStream` due to the continuous nature of it.
@@ -1078,7 +1078,7 @@ Added in 2.1.
 ::::
 
 
-[TBC: FANCY QUOTE]
+% [TBC: FANCY QUOTE]
 On top of the core Spark support, elasticsearch-hadoop also provides integration with Spark SQL. In other words, {{es}} becomes a *native* source for Spark SQL so that data can be indexed and queried from Spark SQL *transparently*.
 
 ::::{important}
@@ -1555,7 +1555,7 @@ Added in 6.0.
 ::::
 
 
-[TBC: FANCY QUOTE]
+% [TBC: FANCY QUOTE]
 Released as an experimental feature in Spark 2.0, Spark Structured Streaming provides a unified streaming and batch interface built into the Spark SQL integration. As of elasticsearch-hadoop 6.0, we provide native functionality to index streaming data into {{es}}.
 
 ::::{important}
