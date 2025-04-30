@@ -2,68 +2,61 @@
 Elasticsearch real-time search and analytics natively integrated with Hadoop.
 Supports [Map/Reduce](#mapreduce), [Apache Hive](#apache-hive), and [Apache Spark](#apache-spark).
 
-See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
+See  [project page](https://www.elastic.co/elasticsearch/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
 ## Requirements
-Elasticsearch (__1.x__ or higher (2.x _highly_ recommended)) cluster accessible through [REST][]. That's it!
-Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
+Elasticsearch cluster accessible through [REST][]. That's it!
+Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded andput to use without any dependencies. Simply make it available to your job classpath and you're set.
 For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html).
 
-ES-Hadoop 6.x and higher are compatible with Elasticsearch __1.X__, __2.X__, __5.X__, and __6.X__
-
-ES-Hadoop 5.x and higher are compatible with Elasticsearch __1.X__, __2.X__ and __5.X__
-
-ES-Hadoop 2.2.x and higher are compatible with Elasticsearch __1.X__ and __2.X__
-
-ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
+While an effort has been made to keep ES-Hadoop backwards compatible with older versions of Elasticsearch, it is best
+to use the version of ES-Hadoop that is the same as the Elasticsearch version. See the
+[product compatibility support matrix](https://www.elastic.co/support/matrix#matrix_compatibility) for more information. 
 
 ## Installation
 
-### Stable Release (currently `8.15.1`)
-Available through any Maven-compatible tool:
+### Stable Release (`9.0.0` used in the examples below)
+Support for Hadoop is available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>8.15.1</version>
+  <version>9.0.0</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
 
-### Development Snapshot
-Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) again through Maven:
-
+Spark support depends on the versions of Spark and Scala your cluster uses. For Scala 2.12 and Spark 3.0, 3.1, 3.2, 3.3, or 3.4, use:
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
-  <version>9.1.0-SNAPSHOT</version>
+  <artifactId>elasticsearch-spark-30_2.12</artifactId>
+  <version>9.0.0</version>
+</dependency>
+```
+For Scala 2.13 and Spark 3.2, 3.3, or 3.4, use:
+```xml
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-spark-30_2.13</artifactId>
+  <version>9.0.0</version>
 </dependency>
 ```
 
-```xml
-<repositories>
-  <repository>
-    <id>sonatype-oss</id>
-    <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-    <snapshots><enabled>true</enabled></snapshots>
-  </repository>
-</repositories>
-```
-
-or [build](#building-the-source) the project yourself.
-
-We do build and test the code on _each_ commit.
 
 ### Supported Hadoop Versions
 
-Running against Hadoop 1.x is deprecated in 5.5 and will no longer be tested against in 6.0.
-ES-Hadoop is developed for and tested against Hadoop 2.x and YARN.
+ES-Hadoop is developed for and tested against Hadoop 2.x and 3.x on YARN.
 More information in this [section](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/install.html).
 
+### Supported Spark Versions
+
+Spark 3.0 through 3.4 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
+are supported for Spark 3.2 and higher.  
+
 ## Feedback / Q&A
-We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elastic.co/community) page.
+We're interested in your feedback! You can find us on the [Elastic forum](https://discuss.elastic.co/).
 
 
 ## Online Documentation
@@ -96,30 +89,7 @@ For basic, low-level or performance-sensitive environments, ES-Hadoop provides d
 (either by bundling the library along - it's ~300kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
 See the [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for more information.
 
-Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `EsInputFormat` and `EsOutputFormat` classes.
-
-### 'Old' (`org.apache.hadoop.mapred`) API
-
-### Reading
-To read data from ES, configure the `EsInputFormat` on your job configuration along with the relevant [properties](#configuration-properties):
-```java
-JobConf conf = new JobConf();
-conf.setInputFormat(EsInputFormat.class);
-conf.set("es.resource", "radio/artists");
-conf.set("es.query", "?q=me*");             // replace this with the relevant query
-...
-JobClient.runJob(conf);
-```
-### Writing
-Same configuration template can be used for writing but using `EsOuputFormat`:
-```java
-JobConf conf = new JobConf();
-conf.setOutputFormat(EsOutputFormat.class);
-conf.set("es.resource", "radio/artists"); // index or indices used for storing data
-...
-JobClient.runJob(conf);
-```
-### 'New' (`org.apache.hadoop.mapreduce`) API
+Note that es-hadoop supports the Hadoop API through its `EsInputFormat` and `EsOutputFormat` classes.
 
 ### Reading
 ```java
@@ -186,8 +156,6 @@ As one can note, currently the reading and writing are treated separately but we
 
 ## [Apache Spark][]
 ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for writing, methods that work on any `RDD`. Spark SQL is also supported
-
-### Scala
 
 ### Reading
 To read data from ES, create a dedicated `RDD` and specify the query as an argument:
