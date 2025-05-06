@@ -1,0 +1,7 @@
+[[eshadoop-8.18.0]]
+== Elasticsearch for Apache Hadoop version 8.18.0
+
+[[deprecation-8.18.0]]
+=== Deprecations
+* Deprecate Spark 2.x
+http://github.com/elastic/elasticsearch-hadoop/issues/2305[#2305]
