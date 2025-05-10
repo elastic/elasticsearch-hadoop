@@ -54,11 +54,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
@@ -300,7 +296,7 @@ public class RestRepository implements Closeable, StatsAware {
         return client.getMappings(resources.getResourceRead());
     }
 
-    public MappingSet getMappings(List<String> includeFields) {
+    public MappingSet getMappings(Collection<String> includeFields) {
         return client.getMappings(resources.getResourceRead(), includeFields);
     }
 

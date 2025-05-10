@@ -80,6 +80,8 @@ import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 
+import scala.jdk.CollectionConverters.SeqHasAsJava
+
 private[sql] object SchemaUtils {
   case class Schema(struct: StructType)
 
@@ -96,7 +98,7 @@ private[sql] object SchemaUtils {
     val repo = new RestRepository(cfg)
     try {
       if (repo.resourceExists(true)) {
-        val mappingSet = repo.getMappings
+        val mappingSet = repo.getMappings(includeFields.asJava)
         if (mappingSet == null || mappingSet.isEmpty) {
           throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
         }
