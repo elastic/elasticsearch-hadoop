@@ -19,10 +19,7 @@
 
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
@@ -52,13 +49,25 @@ public final class FieldParser {
      * @return MappingSet for that response.
      */
     public static MappingSet parseMappings(Map<String, Object> content, boolean includeTypeName) {
+        return parseMappings(content, includeTypeName, Collections.emptyList());
+    }
+
+    /**
+     * Convert the deserialized mapping request body into an object
+     * @param content entire mapping request body for all indices and types
+     * @param includeTypeName true if the given content to be parsed includes type names within the structure,
+     *                        or false if it is in the typeless format
+     * @param includeFields list of field that should have mapping checked
+     * @return MappingSet for that response.
+     */
+    public static MappingSet parseMappings(Map<String, Object> content, boolean includeTypeName, Collection<String> includeFields) {
         Iterator<Map.Entry<String, Object>> indices = content.entrySet().iterator();
         List<Mapping> indexMappings = new ArrayList<Mapping>();
         while(indices.hasNext()) {
             // These mappings are ordered by index, then optionally type.
             parseIndexMappings(indices.next(), indexMappings, includeTypeName);
         }
-        return new MappingSet(indexMappings);
+        return new MappingSet(indexMappings, includeFields);
     }
 
     private static void parseIndexMappings(Map.Entry<String, Object> indexToMappings, List<Mapping> collector, boolean includeTypeName) {

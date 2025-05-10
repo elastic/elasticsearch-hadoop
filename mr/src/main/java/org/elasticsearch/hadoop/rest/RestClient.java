@@ -311,14 +311,22 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public MappingSet getMappings(Resource indexResource) {
+        return getMappings(indexResource, Collections.emptyList());
+    }
+
+    public MappingSet getMappings(Resource indexResource, Collection<String> includeFields) {
         if (indexResource.isTyped()) {
-            return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true);
+            return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true, includeFields);
         } else {
-            return getMappings(indexResource.index() + "/_mapping" + (indexReadMissingAsEmpty ? "?ignore_unavailable=true" : ""), false);
+            return getMappings(indexResource.index() + "/_mapping" + (indexReadMissingAsEmpty ? "?ignore_unavailable=true" : ""), false, includeFields);
         }
     }
 
     public MappingSet getMappings(String query, boolean includeTypeName) {
+        return getMappings(query, includeTypeName, Collections.emptyList());
+    }
+
+    public MappingSet getMappings(String query, boolean includeTypeName, Collection<String> includeFields) {
         // If the version is not at least 7, then the property isn't guaranteed to exist. If it is, then defer to the flag.
         boolean requestTypeNameInResponse = clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X) && includeTypeName;
         // Response will always have the type name in it if node version is before 7, and if it is not, defer to the flag.

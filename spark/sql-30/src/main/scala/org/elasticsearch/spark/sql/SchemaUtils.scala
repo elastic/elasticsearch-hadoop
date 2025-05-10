@@ -23,7 +23,6 @@ import java.util.{LinkedHashSet => JHashSet}
 import java.util.{List => JList}
 import java.util.{Map => JMap}
 import java.util.Properties
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
@@ -70,12 +69,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.FieldType.TEXT
 import org.elasticsearch.hadoop.serialization.FieldType.WILDCARD
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field
-import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField
-import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
-import org.elasticsearch.hadoop.serialization.dto.mapping.GeoShapeType
-import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping
-import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
+import org.elasticsearch.hadoop.serialization.dto.mapping.{Field, GeoField, GeoPointType, GeoShapeType, Mapping, MappingSet, MappingUtils}
 import org.elasticsearch.hadoop.serialization.field.FieldFilter
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.Assert
@@ -87,22 +81,22 @@ import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 
 private[sql] object SchemaUtils {
-  case class Schema(mapping: Mapping, struct: StructType)
+  case class Schema(struct: StructType)
 
-  def discoverMapping(cfg: Settings): Schema = {
-    val (mapping, geoInfo) = discoverMappingAndGeoFields(cfg)
+  def discoverMapping(cfg: Settings, includeFields: Seq[String] = Seq.empty[String]): Schema = {
+    val (mapping, geoInfo) = discoverMappingAndGeoFields(cfg, includeFields)
     val struct = convertToStruct(mapping, geoInfo, cfg)
-    Schema(mapping, struct)
+    Schema(struct)
   }
 
-  def discoverMappingAndGeoFields(cfg: Settings): (Mapping, JMap[String, GeoField]) = {
+  def discoverMappingAndGeoFields(cfg: Settings, includeFields: Seq[String]): (Mapping, JMap[String, GeoField]) = {
     InitializationUtils.validateSettings(cfg)
     InitializationUtils.discoverClusterInfo(cfg, Utils.LOGGER)
 
     val repo = new RestRepository(cfg)
     try {
       if (repo.resourceExists(true)) {
-        var mappingSet = repo.getMappings
+        val mappingSet = repo.getMappings
         if (mappingSet == null || mappingSet.isEmpty) {
           throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
         }

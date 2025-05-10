@@ -300,6 +300,10 @@ public class RestRepository implements Closeable, StatsAware {
         return client.getMappings(resources.getResourceRead());
     }
 
+    public MappingSet getMappings(List<String> includeFields) {
+        return client.getMappings(resources.getResourceRead(), includeFields);
+    }
+
     public Map<String, GeoField> sampleGeoFields(Mapping mapping) {
         Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
         Map<String, Object> geoMapping = client.sampleForFields(resources.getResourceRead(), fields.keySet());
