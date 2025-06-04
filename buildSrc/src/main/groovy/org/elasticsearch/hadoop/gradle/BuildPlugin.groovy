@@ -567,7 +567,7 @@ class BuildPlugin implements Plugin<Project>  {
 
     private void configureMaven(Project project) {
         project.getPluginManager().apply("maven-publish")
-
+        project.getPluginManager().apply("com.gradleup.nmcp")
         // Configure Maven publication
         project.publishing {
             publications {
