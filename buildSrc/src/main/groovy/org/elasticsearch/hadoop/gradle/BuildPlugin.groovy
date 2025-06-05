@@ -676,6 +676,7 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configurePom(Project project, MavenPublication publication) {
+        // TODO fix _old_ dra generation
         // Set the pom's destination to the distribution directory
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
