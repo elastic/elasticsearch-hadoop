@@ -568,6 +568,7 @@ class BuildPlugin implements Plugin<Project>  {
     private void configureMaven(Project project) {
         project.getPluginManager().apply("maven-publish")
         project.getPluginManager().apply("com.gradleup.nmcp")
+
         // Configure Maven publication
         project.publishing {
             publications {
@@ -590,8 +591,9 @@ class BuildPlugin implements Plugin<Project>  {
         // Disable the publishing tasks since we only need the pom generation tasks.
         // If we are working with a project that has a scala variant (see below), we need to modify the pom's
         // artifact id which the publish task does not like (it fails validation when run).
+
         project.getTasks().withType(PublishToMavenRepository) { PublishToMavenRepository m ->
-            m.enabled = false
+//            m.enabled = false
         }
 
         // Configure Scala Variants if present
@@ -608,6 +610,8 @@ class BuildPlugin implements Plugin<Project>  {
 
             // Main variant needs the least configuration on its own, since it is the default publication created above.
             sparkVariants.defaultVariant { SparkVariant variant ->
+                println "variant = ${variant.scalaVersion}"
+                project.publishing.publications.main.setAlias(true)
                 updateVariantPomLocationAndArtifactId(project, project.publishing.publications.main, variant)
             }
 
@@ -676,7 +680,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
                 BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
-                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName.get()}-${project.getVersion()}.pom"})
+//                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName.get()}-${project.getVersion()}.pom"})
             }
         }
 
@@ -738,17 +742,19 @@ class BuildPlugin implements Plugin<Project>  {
         BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
         String filename = "${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
         // Fix the pom name
-        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
-            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                pom.destination = project.provider({"${project.buildDir}/distributions/${filename}.pom"})
-            }
-        }
-        // Fix the artifactId. Note: The publishing task does not like this happening. Hence it is disabled.
-        publication.getPom().withXml { XmlProvider xml ->
-            Node root = xml.asNode()
-            Node artifactId = (root.get('artifactId') as NodeList).get(0) as Node
-            artifactId.setValue("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
-        }
+        publication.setArtifactId("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
+//        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
+//            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
+//                pom.destination = project.provider({"${project.buildDir}/distributions/${filename}.pom"})
+//            }
+//        }
+//
+//        // Fix the artifactId. Note: The publishing task does not like this happening. Hence it is disabled.
+//        publication.getPom().withXml { XmlProvider xml ->
+//            Node root = xml.asNode()
+//            Node artifactId = (root.get('artifactId') as NodeList).get(0) as Node
+//            artifactId.setValue("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
+//        }
     }
 
     /**

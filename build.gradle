@@ -11,8 +11,25 @@ import java.time.LocalDateTime
 description = 'Elasticsearch for Apache Hadoop'
 
 apply plugin: 'es.hadoop.build.root'
+apply plugin: 'com.gradleup.nmcp.aggregation'
 
 defaultTasks 'build'
+
+
+nmcpAggregation {
+    centralPortal {
+        username = 'blubb' // TODO("Create a token username at https://central.sonatype.com/account")
+        password = 'blubb' // TODO("Create a token password at https://central.sonatype.com/account")
+        // publish manually from the portal
+        publishingType = "USER_MANAGED"
+    }
+}
+
+dependencies {
+    nmcpAggregation(project(":elasticsearch-hadoop-mr"))
+    nmcpAggregation(project(":elasticsearch-hadoop-hive"))
+    nmcpAggregation(project(":elasticsearch-spark-30"))
+}
 
 allprojects {
     group = "org.elasticsearch"
