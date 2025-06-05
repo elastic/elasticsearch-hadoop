@@ -1,3 +1,4 @@
+import jdk.internal.foreign.abi.Binding
 import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
@@ -159,13 +160,13 @@ task('distZip', type: Zip) {
 
 distribution {
     dependsOn(distZip)
+
 }
 
 
 publishing {
     publications {
         main {
-
             artifact tasks.named('distZip')
             BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class)
             artifactId = baseExtension.archivesName.get()
@@ -201,4 +202,17 @@ task generateDependenciesReport(type: ConcatFilesTask) { concatDepsTask ->
 
 project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
     it.dependencies = project.configurations.licenseChecks
+}
+
+
+
+tasks.register('copyPoms', Copy) {
+    BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
+    from(tasks.named('generatePomFileForMainPublication'))
+    into(new File(project.buildDir, 'distributions'))
+    rename 'pom-default.xml', "${baseExtension.archivesName.get()}-${project.getVersion()}.pom"
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
 }
