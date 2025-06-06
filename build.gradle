@@ -15,16 +15,6 @@ apply plugin: 'com.gradleup.nmcp.aggregation'
 
 defaultTasks 'build'
 
-
-nmcpAggregation {
-    centralPortal {
-        username = 'blubb' // TODO("Create a token username at https://central.sonatype.com/account")
-        password = 'blubb' // TODO("Create a token password at https://central.sonatype.com/account")
-        // publish manually from the portal
-        publishingType = "USER_MANAGED"
-    }
-}
-
 dependencies {
     nmcpAggregation(project(":dist"))
     nmcpAggregation(project(":elasticsearch-hadoop-mr"))

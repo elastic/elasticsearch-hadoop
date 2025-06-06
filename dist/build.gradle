@@ -168,8 +168,6 @@ publishing {
     publications {
         main {
             artifact tasks.named('distZip')
-            BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class)
-            artifactId = baseExtension.archivesName.get()
             getPom().withXml { XmlProvider xml ->
                 Node root = xml.asNode()
 
@@ -178,9 +176,6 @@ publishing {
                 Node repository = repositories.appendNode('repository')
                 repository.appendNode('id', 'clojars.org')
                 repository.appendNode('url', 'https://clojars.org/repo')
-
-//                // Correct the artifact Id, otherwise it is listed as 'dist'
-//                root.get('artifactId').get(0).setValue(baseExtension.archivesName.get())
             }
         }
     }
@@ -203,7 +198,6 @@ task generateDependenciesReport(type: ConcatFilesTask) { concatDepsTask ->
 project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
     it.dependencies = project.configurations.licenseChecks
 }
-
 
 
 tasks.register('copyPoms', Copy) {
