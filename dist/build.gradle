@@ -1,3 +1,4 @@
+import jdk.internal.foreign.abi.Binding
 import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
@@ -132,26 +133,6 @@ javadoc {
     }
 }
 
-publishing {
-    publications {
-        main {
-            getPom().withXml { XmlProvider xml ->
-                Node root = xml.asNode()
-
-                // add clojars repo to pom
-                Node repositories = root.appendNode('repositories')
-                Node repository = repositories.appendNode('repository')
-                repository.appendNode('id', 'clojars.org')
-                repository.appendNode('url', 'https://clojars.org/repo')
-                BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class)
-
-                // Correct the artifact Id, otherwise it is listed as 'dist'
-                root.get('artifactId').get(0).setValue(baseExtension.archivesName.get())
-            }
-        }
-    }
-}
-
 // Name of the directory under the root of the zip file that will contain the zip contents
 String zipContentDir = "elasticsearch-hadoop-${project.version}"
 
@@ -179,7 +160,27 @@ task('distZip', type: Zip) {
 
 distribution {
     dependsOn(distZip)
+
 }
+
+
+publishing {
+    publications {
+        main {
+            artifact tasks.named('distZip')
+            getPom().withXml { XmlProvider xml ->
+                Node root = xml.asNode()
+
+                // add clojars repo to pom
+                Node repositories = root.appendNode('repositories')
+                Node repository = repositories.appendNode('repository')
+                repository.appendNode('id', 'clojars.org')
+                repository.appendNode('url', 'https://clojars.org/repo')
+            }
+        }
+    }
+}
+
 
 // Add a task in the root project that collects all the dependencyReport data for each project
 // Concatenates the dependencies CSV files into a single file
@@ -196,4 +197,16 @@ task generateDependenciesReport(type: ConcatFilesTask) { concatDepsTask ->
 
 project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
     it.dependencies = project.configurations.licenseChecks
+}
+
+
+tasks.register('copyPoms', Copy) {
+    BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
+    from(tasks.named('generatePomFileForMainPublication'))
+    into(new File(project.buildDir, 'distributions'))
+    rename 'pom-default.xml', "${baseExtension.archivesName.get()}-${project.getVersion()}.pom"
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
 }

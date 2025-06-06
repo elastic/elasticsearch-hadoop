@@ -72,6 +72,7 @@ dependencies {
     // Required for dependency licenses task
     implementation 'org.apache.rat:apache-rat:0.11'
     implementation 'commons-codec:commons-codec:1.12'
+    implementation 'com.gradleup.nmcp:nmcp:0.1.4'
 
     if (localRepo) {
         implementation name: "build-tools-${buildToolsVersion}"

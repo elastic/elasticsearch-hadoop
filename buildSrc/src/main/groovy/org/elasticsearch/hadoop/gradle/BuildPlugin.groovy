@@ -567,6 +567,7 @@ class BuildPlugin implements Plugin<Project>  {
 
     private void configureMaven(Project project) {
         project.getPluginManager().apply("maven-publish")
+        project.getPluginManager().apply("com.gradleup.nmcp")
 
         // Configure Maven publication
         project.publishing {
@@ -587,13 +588,6 @@ class BuildPlugin implements Plugin<Project>  {
         // Configure Maven Pom
         configurePom(project, project.publishing.publications.main)
 
-        // Disable the publishing tasks since we only need the pom generation tasks.
-        // If we are working with a project that has a scala variant (see below), we need to modify the pom's
-        // artifact id which the publish task does not like (it fails validation when run).
-        project.getTasks().withType(PublishToMavenRepository) { PublishToMavenRepository m ->
-            m.enabled = false
-        }
-
         // Configure Scala Variants if present
         project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
             // Publishing gets weird when you introduce variants into the project.
@@ -608,7 +602,8 @@ class BuildPlugin implements Plugin<Project>  {
 
             // Main variant needs the least configuration on its own, since it is the default publication created above.
             sparkVariants.defaultVariant { SparkVariant variant ->
-                updateVariantPomLocationAndArtifactId(project, project.publishing.publications.main, variant)
+                project.publishing.publications.main.setAlias(true)
+                updateVariantArtifactId(project, project.publishing.publications.main, variant)
             }
 
             // For each spark variant added, we need to do a few things:
@@ -659,7 +654,7 @@ class BuildPlugin implements Plugin<Project>  {
                             suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                         }
                         configurePom(project, variantPublication)
-                        updateVariantPomLocationAndArtifactId(project, variantPublication, variant)
+                        updateVariantArtifactId(project, variantPublication, variant)
                     }
                 }
             }
@@ -672,14 +667,6 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configurePom(Project project, MavenPublication publication) {
-        // Set the pom's destination to the distribution directory
-        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
-            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
-                pom.destination = project.provider({"${project.buildDir}/distributions/${baseExtension.archivesName.get()}-${project.getVersion()}.pom"})
-            }
-        }
-
         // add all items necessary for publication
         Provider<String> descriptionProvider = project.provider({ project.getDescription() })
         MavenPom pom = publication.getPom()
@@ -722,7 +709,8 @@ class BuildPlugin implements Plugin<Project>  {
                     while (dependenciesIterator.hasNext()) {
                         Node dependencyNode = dependenciesIterator.next()
                         String artifact = dependencyNode.get("artifactId").text()
-                        if (artifact == dependency.getName()) {
+                        // handle scala variants by splitting via "_" and checking the first part
+                        if (artifact =~ dependency.getName().split('_')[0]) {
                             dependenciesIterator.remove()
                             break
                         }
@@ -732,23 +720,11 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
-    private static void updateVariantPomLocationAndArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
+    private static void updateVariantArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
-        String classifier = variant.shouldClassifySparkVersion() && variant.isDefaultVariant() == false ? "-${variant.getName()}" : ''
         BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
-        String filename = "${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}-${project.getVersion()}${classifier}"
-        // Fix the pom name
-        project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
-            if (pom.name == "generatePomFileFor${publication.name.capitalize()}Publication") {
-                pom.destination = project.provider({"${project.buildDir}/distributions/${filename}.pom"})
-            }
-        }
-        // Fix the artifactId. Note: The publishing task does not like this happening. Hence it is disabled.
-        publication.getPom().withXml { XmlProvider xml ->
-            Node root = xml.asNode()
-            Node artifactId = (root.get('artifactId') as NodeList).get(0) as Node
-            artifactId.setValue("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
-        }
+        // Fix the artifact id
+        publication.setArtifactId("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
     }
 
     /**
