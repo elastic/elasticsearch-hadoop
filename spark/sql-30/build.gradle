@@ -189,3 +189,18 @@ sparkVariants {
         }
     }
 }
+
+
+tasks.register('copyPoms', Copy) {
+    from(tasks.named('generatePomFileForMainPublication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-30_2.12-${project.getVersion()}.pom"
+    }
+    from(tasks.named('generatePomFileForSpark30scala213Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-30_2.13-${project.getVersion()}.pom"
+    }
+    into(new File(project.buildDir, 'distributions'))
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
+}
