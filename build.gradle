@@ -26,7 +26,8 @@ dependencies {
 
 tasks.named('zipAggregation').configure {
     archiveFileName.unset();
-    archiveBaseName.set("elasticsearch-maven-aggregration")
+    archiveBaseName.set("elasticsearch-hadoop-maven-aggregation")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"));
     archiveVersion.set(VersionProperties.elasticsearch)
 }
 
