@@ -28,6 +28,13 @@ configurations {
         transitive = false
         canBeResolved = true
     }
+    nmcp {
+        canBeConsumed = true
+        canBeResolved = false
+//        attributes {
+//            attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, "nmcp"))
+//        }
+    }
     implementation {
         extendsFrom shaded
     }
@@ -46,3 +53,5 @@ shadowJar {
     relocate 'org.apache.commons.httpclient', 'org.elasticsearch.hadoop.thirdparty.apache.commons.httpclient'
     relocate 'org.codehaus.jackson', 'org.elasticsearch.hadoop.thirdparty.codehaus.jackson'
 }
+
+artifacts.add("nmcp", shadowJar)

@@ -56,7 +56,7 @@ dependencies {
         exclude group: 'com.fasterxml.jackson.core'
     }
     
-    embedded(project(path: ":thirdparty", configuration: "shadow"))
+    embedded(project(path: ":thirdparty", configuration: "nmcp"))
     implementation("commons-logging:commons-logging:1.1.1")
     implementation("commons-codec:commons-codec:1.4")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
