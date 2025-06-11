@@ -602,7 +602,6 @@ class BuildPlugin implements Plugin<Project>  {
 
             // Main variant needs the least configuration on its own, since it is the default publication created above.
             sparkVariants.defaultVariant { SparkVariant variant ->
-                project.publishing.publications.main.setAlias(true)
                 updateVariantArtifactId(project, project.publishing.publications.main, variant)
             }
 
@@ -653,6 +652,7 @@ class BuildPlugin implements Plugin<Project>  {
                             from variantComponent
                             suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                         }
+                        variantPublication.setAlias(true)
                         configurePom(project, variantPublication)
                         updateVariantArtifactId(project, variantPublication, variant)
                     }
