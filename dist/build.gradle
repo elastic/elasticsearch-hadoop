@@ -199,12 +199,19 @@ project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
     it.dependencies = project.configurations.licenseChecks
 }
 
-
 tasks.register('copyPoms', Copy) {
     BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
     from(tasks.named('generatePomFileForMainPublication'))
     into(new File(project.buildDir, 'distributions'))
     rename 'pom-default.xml', "${baseExtension.archivesName.get()}-${project.getVersion()}.pom"
+}
+
+tasks.named('collectArtifacts') {
+    mustRunAfter 'publishMainPublicationToNmcpMainRepository'
+}
+
+tasks.named('publishMainPublicationToNmcpMainRepository') {
+    mustRunAfter 'copyPoms'
 }
 
 tasks.named('distribution').configure {
