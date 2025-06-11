@@ -20,6 +20,7 @@ dependencies {
     nmcpAggregation(project(":dist"))
     nmcpAggregation(project(":elasticsearch-hadoop-mr"))
     nmcpAggregation(project(":elasticsearch-hadoop-hive"))
+    nmcpAggregation(project(":elasticsearch-spark-20"))
     nmcpAggregation(project(":elasticsearch-spark-30"))
 }
 
