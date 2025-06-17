@@ -140,6 +140,7 @@ javadoc {
 publishing {
     publications {
         main {
+            artifactId = "elasticsearch-hadoop"
             getPom().withXml { XmlProvider xml ->
                 Node root = xml.asNode()
 
@@ -148,10 +149,6 @@ publishing {
                 Node repository = repositories.appendNode('repository')
                 repository.appendNode('id', 'clojars.org')
                 repository.appendNode('url', 'https://clojars.org/repo')
-                BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class)
-
-                // Correct the artifact Id, otherwise it is listed as 'dist'
-                root.get('artifactId').get(0).setValue(baseExtension.archivesName.get())
             }
         }
     }

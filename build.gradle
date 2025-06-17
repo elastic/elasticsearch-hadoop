@@ -1,10 +1,35 @@
 import org.elasticsearch.hadoop.gradle.buildtools.ConcatFilesTask
+import java.lang.management.ManagementFactory;
+import java.time.LocalDateTime;
+import org.elasticsearch.gradle.VersionProperties
 
 description = 'Elasticsearch for Apache Hadoop'
 
 apply plugin: 'es.hadoop.build.root'
+apply plugin: 'com.gradleup.nmcp.aggregation'
 
 defaultTasks 'build'
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    nmcpAggregation(project(":dist"))
+    nmcpAggregation(project(":elasticsearch-hadoop-mr"))
+    nmcpAggregation(project(":elasticsearch-hadoop-pig"))
+    nmcpAggregation(project(":elasticsearch-hadoop-hive"))
+    nmcpAggregation(project(":elasticsearch-spark-20"))
+    nmcpAggregation(project(":elasticsearch-spark-13"))
+    nmcpAggregation(project(":elasticsearch-spark-30"))
+    nmcpAggregation(project(":elasticsearch-storm"))
+}
+
+tasks.named('zipAggregation').configure {
+    archiveFileName.unset();
+    archiveBaseName.set("elasticsearch-hadoop-maven-aggregation")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"));
+    archiveVersion.set(VersionProperties.elasticsearch)
+}
 
 allprojects {
     group = "org.elasticsearch"
