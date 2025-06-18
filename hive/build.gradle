@@ -89,3 +89,15 @@ itestJar {
         include "META-INF/services/*"
     }
 }
+
+
+tasks.register('copyPoms', Copy) {
+    BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
+    from(tasks.named('generatePomFileForMainPublication'))
+    into(new File(project.buildDir, 'distributions'))
+    rename 'pom-default.xml', "${baseExtension.archivesName.get()}-${project.getVersion()}.pom"
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
+}
