@@ -226,6 +226,9 @@ tasks.register('copyPoms', Copy) {
     from(tasks.named('generatePomFileForSpark20scala210Publication')) {
         rename 'pom-default.xml', "elasticsearch-spark-20_2.10-${project.getVersion()}.pom"
     }
+    from(tasks.named('generatePomFileForMainPublication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-20_2.12-${project.getVersion()}.pom"
+    }
     into(new File(project.buildDir, 'distributions'))
 }
 
