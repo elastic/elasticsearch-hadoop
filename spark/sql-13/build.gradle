@@ -200,7 +200,7 @@ sparkVariants {
 
 tasks.register('copyPoms', Copy) {
     from(tasks.named('generatePomFileForMainPublication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-20_2.11-${project.getVersion()}.pom"
+        rename 'pom-default.xml', "elasticsearch-spark-13_2.11-${project.getVersion()}.pom"
     }
     from(tasks.named('generatePomFileForSpark13scala210Publication')) {
         rename 'pom-default.xml', "elasticsearch-spark-13_2.10-${project.getVersion()}.pom"
