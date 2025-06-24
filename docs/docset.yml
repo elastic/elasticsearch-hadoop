@@ -6,6 +6,7 @@ toc:
   - toc: reference
   - toc: release-notes
 subs:
+  version: "9.0.0"
   es:   "Elasticsearch"
   esh:   "ES-Hadoop"
   esh-full: "Elasticsearch for Apache Hadoop"
