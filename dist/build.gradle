@@ -214,6 +214,10 @@ tasks.named('publishMainPublicationToNmcpMainRepository') {
     mustRunAfter 'copyPoms'
 }
 
+tasks.named('signMainPublication') {
+    mustRunAfter 'copyPoms'
+}
+
 tasks.named('distribution').configure {
     dependsOn 'copyPoms'
 }

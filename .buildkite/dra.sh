@@ -45,6 +45,19 @@ mkdir localRepo
 wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
   -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
 
+## Resolve GPG keys for maven artifacts signing
+mkdir -p /tmp/secured
+keyring_file="/tmp/secured/keyring.gpg"
+vault_path="kv/ci-shared/release-eng/team-release-secrets/es-delivery"
+vault kv get --field="keyring" $vault_path/gpg | base64 -d > $keyring_file
+signing_password=$(vault kv get --field="passphase" $vault_path/gpg)
+signing_key=$(vault kv get --field="key_id" $vault_path/gpg)
+cat >> gradle.properties <<EOF
+signing.keyId=${signing_key: -8}
+signing.password=${signing_password}
+signing.secretKeyRingFile=${keyring_file}
+EOF
+
 ./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation
 
 # Allow other users access to read the artifacts so they are readable in the container

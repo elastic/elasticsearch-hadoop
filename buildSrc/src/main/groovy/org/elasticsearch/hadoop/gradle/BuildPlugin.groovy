@@ -19,10 +19,10 @@
 
 package org.elasticsearch.hadoop.gradle
 
+import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.hadoop.gradle.buildtools.DependenciesInfoPlugin
 import org.elasticsearch.hadoop.gradle.buildtools.DependencyLicensesTask
 import org.elasticsearch.hadoop.gradle.buildtools.LicenseHeadersTask
-import org.elasticsearch.gradle.testclusters.StandaloneRestIntegTestTask
 import org.elasticsearch.hadoop.gradle.buildtools.UpdateShasTask
 import org.elasticsearch.hadoop.gradle.buildtools.info.BuildParams
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
@@ -30,18 +30,15 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.XmlProvider
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.DependencyResolveDetails
-import org.gradle.api.artifacts.ModuleDependency
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.ResolutionStrategy
+import org.gradle.api.artifacts.*
+
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
+import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.scala.ScalaPlugin
@@ -49,7 +46,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom
-import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
@@ -62,25 +58,14 @@ import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
-import org.gradle.api.plugins.BasePluginExtension
-
 import org.w3c.dom.NodeList
-
+import org.gradle.api.component.ConfigurationVariantDetails
 import javax.inject.Inject
 
-import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
 import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariant
-import org.gradle.api.artifacts.ResolvableDependencies;
-import org.gradle.api.artifacts.component.ComponentIdentifier;
-import org.gradle.api.artifacts.result.ResolvedComponentResult;
-import org.gradle.api.artifacts.result.ResolvedDependencyResult;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.specs.AndSpec;
-import org.gradle.api.specs.Spec;
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
-import java.util.stream.Collectors;
+import static org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin.SparkVariantPluginExtension
 
-class BuildPlugin implements Plugin<Project>  {
+class BuildPlugin implements Plugin<Project> {
 
     public static final String SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedTestImplementation"
     public static final String SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedItestImplementation"
@@ -568,6 +553,7 @@ class BuildPlugin implements Plugin<Project>  {
     private void configureMaven(Project project) {
         project.getPluginManager().apply("maven-publish")
         project.getPluginManager().apply("com.gradleup.nmcp")
+        project.getPluginManager().apply("signing")
 
         // Configure Maven publication
         project.publishing {
@@ -583,6 +569,10 @@ class BuildPlugin implements Plugin<Project>  {
                     url = "file://${project.buildDir}/repo"
                 }
             }
+        }
+
+        project.signing {
+            sign(project.publishing.publications.main)
         }
 
         // Configure Maven Pom
@@ -634,16 +624,20 @@ class BuildPlugin implements Plugin<Project>  {
                 project.components.add(variantComponent)
                 // Register the variant's outgoing configurations for publication
                 variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("apiElements"))) {
+                    filterNonJarArtifacts(it)
                     it.mapToMavenScope("compile")
                 }
                 variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("runtimeElements"))) {
+                    filterNonJarArtifacts(it)
                     it.mapToMavenScope("runtime")
                 }
                 variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("javadocElements"))) {
+                    filterNonJarArtifacts(it)
                     it.mapToMavenScope("runtime")
                 }
                 variantComponent.addVariantsFromConfiguration(project.configurations.getByName(variant.configuration("sourcesElements"))) {
                     it.mapToMavenScope("runtime")
+                    filterNonJarArtifacts(it)
                 }
 
                 // Create a publication for this adhoc component to create pom generation and publishing tasks
@@ -657,12 +651,22 @@ class BuildPlugin implements Plugin<Project>  {
                         updateVariantArtifactId(project, variantPublication, variant)
                     }
                 }
+                project.signing {
+                    sign(project.publishing.publications.getByName(variant.getName()));
+                }
             }
         }
 
         // Set the pom generation tasks as required for the distribution task.
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             project.getTasks().getByName('distribution').dependsOn(pom)
+        }
+    }
+
+    private void filterNonJarArtifacts(ConfigurationVariantDetails details) {
+        def attribute = details.getConfigurationVariant().getAttributes().getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)
+        if (attribute != null && attribute.name != LibraryElements.JAR) {
+            details.skip()
         }
     }
 
@@ -830,7 +834,7 @@ class BuildPlugin implements Plugin<Project>  {
         precommitTasks.add(licenseHeaders)
 
         if (!project.path.startsWith(":qa")) {
-            TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {                
+            TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
                 dependencies = project.configurations.runtimeClasspath
                 mapping from: /hadoop-.*/, to: 'hadoop'
                 mapping from: /hive-.*/, to: 'hive'
