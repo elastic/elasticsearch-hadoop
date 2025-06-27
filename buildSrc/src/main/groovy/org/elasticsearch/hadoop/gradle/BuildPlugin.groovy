@@ -571,8 +571,10 @@ class BuildPlugin implements Plugin<Project> {
             }
         }
 
-        project.signing {
-            sign(project.publishing.publications.main)
+        Provider<String> signingKey = project.getProviders().gradleProperty("signingKey");
+        if (signingKey.isPresent()) {
+            project.signing.useInMemoryPgpKeys(signingKey.get(), project.getProviders().gradleProperty("signingPassword").get());
+            project.signing.sign(project.publishing.publications.main);
         }
 
         // Configure Maven Pom
@@ -651,8 +653,10 @@ class BuildPlugin implements Plugin<Project> {
                         updateVariantArtifactId(project, variantPublication, variant)
                     }
                 }
-                project.signing {
-                    sign(project.publishing.publications.getByName(variant.getName()));
+                if (signingKey.isPresent()) {
+                    project.signing {
+                        sign(project.publishing.publications.getByName(variant.getName()));
+                    }
                 }
             }
         }
