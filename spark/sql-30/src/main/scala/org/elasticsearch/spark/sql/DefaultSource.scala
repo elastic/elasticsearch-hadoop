@@ -80,6 +80,7 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+import org.elasticsearch.spark.sql.SchemaUtils.{Schema, discoverMapping}
 import org.elasticsearch.spark.sql.streaming.EsSparkSqlStreamingSink
 import org.elasticsearch.spark.sql.streaming.SparkSqlStreamingConfigs
 import org.elasticsearch.spark.sql.streaming.StructuredStreamingVersionLock
@@ -235,11 +236,15 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     conf
   }
 
-  @transient lazy val lazySchema = { SchemaUtils.discoverMapping(cfg) }
+  @transient lazy val lazySchema = userSchema match {
+    case None => SchemaUtils.discoverMapping(cfg)
+    //TODO: properly flatten the schema so we can selectively check mapping of nested field as well
+    case Some(s) => SchemaUtils.discoverMapping(cfg, s.names) // Or we just take the user specified schema as it is: Schema(s)
+  }
 
   @transient lazy val valueWriter = { new ScalaValueWriter }
 
-  override def schema = userSchema.getOrElse(lazySchema.struct)
+    override def schema: StructType = lazySchema.struct
 
   // TableScan
   def buildScan(): RDD[Row] = buildScan(Array.empty)
