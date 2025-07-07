@@ -37,7 +37,7 @@ for match in matches:
 pipeline = {
     "agents": {
         "provider": "gcp",
-        "image": "family/elasticsearch-ubuntu-2004",
+        "image": "family/elasticsearch-ubuntu-2404",
         "machineType": "n2-standard-8",
         "diskType": "pd-ssd",
         "diskSizeGb": "100",
