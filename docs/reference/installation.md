@@ -7,11 +7,11 @@ navigation_title: Installation
 
 elasticsearch-hadoop binaries can be obtained either by downloading them from the [elastic.co](http://elastic.co) site as a ZIP (containing project jars, sources and documentation) or by using any [Maven](http://maven.apache.org/)-compatible tool with the following dependency:
 
-```xml
+```xml subs=true
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>9.0.0-beta1</version>
+  <version>{{version}}</version>
 </dependency>
 ```
 
@@ -24,33 +24,33 @@ elasticsearch-hadoop binary is suitable for Hadoop 2.x (also known as YARN) envi
 
 In addition to the *uber* jar, elasticsearch-hadoop provides minimalistic jars for each integration, tailored for those who use just *one* module (in all other situations the `uber` jar is recommended); the jars are smaller in size and use a dedicated pom, covering only the needed dependencies. These are available under the same `groupId`, using an `artifactId` with the pattern `elasticsearch-hadoop-{{integration}}`:
 
-```xml
+```xml subs=true
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-mr</artifactId> <1>
-  <version>9.0.0-beta1</version>
+  <version>{{version}}</version>
 </dependency>
 ```
 
 1. *mr* artifact
 
 
-```xml
+```xml subs=true
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-hive</artifactId> <1>
-  <version>9.0.0-beta1</version>
+  <version>{{version}}</version>
 </dependency>
 ```
 
 1. *hive* artifact
 
 
-```xml
+```xml subs=true
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-spark-30_2.12</artifactId> <1>
-  <version>9.0.0-beta1</version>
+  <version>{{version}}</version>
 </dependency>
 ```
 
