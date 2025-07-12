@@ -20,12 +20,7 @@
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
@@ -46,7 +41,7 @@ public class MappingSet implements Serializable {
     private final Map<String, Map<String, Mapping>> indexTypeMap = new HashMap<String, Map<String, Mapping>>();
     private final Mapping resolvedSchema;
 
-    public MappingSet(List<Mapping> mappings) {
+    public MappingSet(List<Mapping> mappings, Collection<String> includeFields) {
         if (mappings.isEmpty()) {
             this.empty = true;
             this.resolvedSchema = new Mapping(RESOLVED_INDEX_NAME, RESOLVED_MAPPING_NAME, Field.NO_FIELDS);
@@ -78,15 +73,15 @@ public class MappingSet implements Serializable {
 
                 mappingsToSchema.put(typeName, mapping);
             }
-            this.resolvedSchema = mergeMappings(mappings);
+            this.resolvedSchema = mergeMappings(mappings, includeFields);
         }
     }
 
-    private static Mapping mergeMappings(List<Mapping> mappings) {
+    private static Mapping mergeMappings(List<Mapping> mappings, Collection<String> includeFields) {
         Map<String, Object[]> fieldMap = new LinkedHashMap<String, Object[]>();
         for (Mapping mapping: mappings) {
             for (Field field : mapping.getFields()) {
-                addToFieldTable(field, "", fieldMap);
+                addToFieldTable(field, "", fieldMap, includeFields);
             }
         }
         Field[] collapsed = collapseFields(fieldMap);
@@ -94,10 +89,13 @@ public class MappingSet implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private static void addToFieldTable(Field field, String parent, Map<String, Object[]> fieldTable) {
+    private static void addToFieldTable(Field field, String parent, Map<String, Object[]> fieldTable, Collection<String> includeFields) {
         String fullName = parent + field.name();
         Object[] entry = fieldTable.get(fullName);
-        if (entry == null) {
+        if (!includeFields.isEmpty() && !includeFields.contains(fullName)) {
+            return;
+        }
+        else if (entry == null) {
             // Haven't seen field yet.
             if (FieldType.isCompound(field.type())) {
                 // visit its children
@@ -105,7 +103,7 @@ public class MappingSet implements Serializable {
                 entry = new Object[]{field, subTable};
                 String prefix = fullName + ".";
                 for (Field subField : field.properties()) {
-                    addToFieldTable(subField, prefix, subTable);
+                    addToFieldTable(subField, prefix, subTable, includeFields);
                 }
             } else {
                 // note that we saw it
@@ -130,7 +128,7 @@ public class MappingSet implements Serializable {
                 Map<String, Object[]> subTable = (Map<String, Object[]>)entry[1];
                 String prefix = fullName + ".";
                 for (Field subField : field.properties()) {
-                    addToFieldTable(subField, prefix, subTable);
+                    addToFieldTable(subField, prefix, subTable, includeFields);
                 }
             }
         }
