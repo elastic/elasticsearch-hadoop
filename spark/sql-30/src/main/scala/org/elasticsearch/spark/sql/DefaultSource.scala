@@ -653,7 +653,9 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       ConfigurationOptions.ES_NET_PROXY_HTTP_USER,
       ConfigurationOptions.ES_NET_PROXY_HTTP_PASS,
       ConfigurationOptions.ES_NET_PROXY_SOCKS_USER,
-      ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS
+      ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS,
+      ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS,
+      ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS,
     )
     val maskedParam = parameters.map { case (k, v) =>
         if (sensitiveParams.contains(k))
