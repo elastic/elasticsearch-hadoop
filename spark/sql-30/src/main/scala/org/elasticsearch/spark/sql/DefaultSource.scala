@@ -655,13 +655,13 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       ConfigurationOptions.ES_NET_PROXY_SOCKS_USER,
       ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS
     )
-    val partitioningInfo = parameters.map { case (k, v) =>
+    val maskedParam = parameters.map { case (k, v) =>
         if (sensitiveParams.contains(k))
           s"$k=****"
         else
           s"$k=$v"
       }
       .mkString(", ")
-    s"${getClass.getName}($partitioningInfo)"
+    s"${getClass.getName}(parameters=Map($maskedParam), userSchema=$userSchema)"
   }
 }
