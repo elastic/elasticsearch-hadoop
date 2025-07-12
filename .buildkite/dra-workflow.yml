@@ -4,9 +4,10 @@ steps:
     timeout_in_minutes: 60
     env:
       USE_DRA_CREDENTIALS: true
+      USE_MAVEN_GPG: true
     agents:
       provider: gcp
-      image: family/elasticsearch-ubuntu-2004
+      image: family/elasticsearch-ubuntu-2404
       machineType: n2-standard-8
       diskType: pd-ssd
       diskSizeGb: 100
