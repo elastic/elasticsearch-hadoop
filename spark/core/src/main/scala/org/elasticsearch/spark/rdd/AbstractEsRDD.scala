@@ -35,7 +35,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.{Mapping, MappingSet}
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @(transient @param) sc: SparkContext,
   val params: scala.collection.Map[String, String] = Map.empty,
-  @(transient @param) mapping: Mapping)
+  @(transient @param) mapping: Mapping = null)
   extends RDD[T](sc, Nil) {
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
