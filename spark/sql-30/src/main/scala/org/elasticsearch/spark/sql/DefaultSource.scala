@@ -236,11 +236,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     conf
   }
 
-  @transient lazy val lazySchema = userSchema match {
-    case None => SchemaUtils.discoverMapping(cfg)
-    //TODO: properly flatten the schema so we can selectively check mapping of nested field as well
-    case Some(s) => SchemaUtils.discoverMapping(cfg, s.names) // Or we just take the user specified schema as it is: Schema(s)
-  }
+  @transient lazy val lazySchema = SchemaUtils.discoverMapping(cfg, userSchema)
 
   @transient lazy val valueWriter = { new ScalaValueWriter }
 

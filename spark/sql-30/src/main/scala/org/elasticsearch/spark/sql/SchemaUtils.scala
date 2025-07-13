@@ -23,25 +23,7 @@ import java.util.{LinkedHashSet => JHashSet}
 import java.util.{List => JList}
 import java.util.{Map => JMap}
 import java.util.Properties
-import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.JavaConverters.propertiesAsScalaMapConverter
-import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.sql.types.ArrayType
-import org.apache.spark.sql.types.BinaryType
-import org.apache.spark.sql.types.BooleanType
-import org.apache.spark.sql.types.ByteType
-import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.types.DoubleType
-import org.apache.spark.sql.types.FloatType
-import org.apache.spark.sql.types.IntegerType
-import org.apache.spark.sql.types.LongType
-import org.apache.spark.sql.types.NullType
-import org.apache.spark.sql.types.ShortType
-import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.sql.types._
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
@@ -79,16 +61,42 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
-
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.annotation.tailrec
 
 private[sql] object SchemaUtils {
-  case class Schema(struct: StructType)
+  case class Schema(struct: StructType, mapping: Mapping)
 
-  def discoverMapping(cfg: Settings, includeFields: Seq[String] = Seq.empty[String]): Schema = {
+  def discoverMapping(cfg: Settings, userSchema: Option[StructType] = None): Schema = {
+    val includeFields = structToColumnsNames(userSchema)
     val (mapping, geoInfo) = discoverMappingAndGeoFields(cfg, includeFields)
     val struct = convertToStruct(mapping, geoInfo, cfg)
-    Schema(struct)
+    Schema(struct, mapping)
+  }
+
+  def structToColumnsNames(struct: Option[StructType]): Seq[String] = {
+    @tailrec
+    def getInnerMostType(dType: DataType): DataType = dType match {
+      case at: ArrayType => getInnerMostType(at.elementType)
+      case t             => t
+    }
+
+    @tailrec
+    def flattenFields(remaining: Seq[(String, DataType)], acc: Seq[String]): Seq[String] = remaining match {
+      case Nil => acc
+      case (name, dataType) :: tail =>
+        getInnerMostType(dataType) match {
+          case s: StructType =>
+            val nestedFields = s.fields.map(f => (s"$name.${f.name}", f.dataType))
+            flattenFields(nestedFields ++ tail, acc :+ name)
+          case _ =>
+            flattenFields(tail, name +: acc)
+        }
+    }
+
+    struct match {
+      case None => Seq.empty
+      case Some(s) => flattenFields(s.fields.map(f => (f.name, f.dataType)), Seq.empty)
+    }
   }
 
   def discoverMappingAndGeoFields(cfg: Settings, includeFields: Seq[String]): (Mapping, JMap[String, GeoField]) = {

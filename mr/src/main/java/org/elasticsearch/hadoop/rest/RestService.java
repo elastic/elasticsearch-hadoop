@@ -212,7 +212,7 @@ public abstract class RestService implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
+    public static List<PartitionDefinition> findPartitions(Settings settings, Log log, Mapping resolvedMapping) {
         Version.logVersion();
 
         InitializationUtils.validateSettings(settings);
@@ -244,16 +244,18 @@ public abstract class RestService implements Serializable {
 
             log.info(String.format("Reading from [%s]", settings.getResourceRead()));
 
-            MappingSet mapping = null;
+            Mapping mapping = resolvedMapping;
             if (!shards.isEmpty()) {
-                mapping = client.getMappings();
+                if (mapping == null) {
+                    mapping = client.getMappings().getResolvedView();
+                }
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Discovered resolved mapping {%s} for [%s]", mapping.getResolvedView(), settings.getResourceRead()));
+                    log.debug(String.format("Discovered resolved mapping {%s} for [%s]", mapping, settings.getResourceRead()));
                 }
                 // validate if possible
                 FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
                 if (validation.isRequired()) {
-                    MappingUtils.validateMapping(SettingsUtils.determineSourceFields(settings), mapping.getResolvedView(), validation, log);
+                    MappingUtils.validateMapping(SettingsUtils.determineSourceFields(settings), mapping, validation, log);
                 }
             }
             final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
@@ -278,9 +280,8 @@ public abstract class RestService implements Serializable {
     /**
      * Create one {@link PartitionDefinition} per shard for each requested index.
      */
-    static List<PartitionDefinition> findShardPartitions(Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
+    static List<PartitionDefinition> findShardPartitions(Settings settings, Mapping resolvedMapping, Map<String, NodeInfo> nodes,
                                                          List<List<Map<String, Object>>> shards, Log log) {
-        Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         PartitionDefinition.PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(settings, resolvedMapping);
         for (List<Map<String, Object>> group : shards) {
@@ -316,13 +317,12 @@ public abstract class RestService implements Serializable {
     /**
      * Partitions the query based on the max number of documents allowed per partition {@link Settings#getMaxDocsPerPartition()}.
      */
-    static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, MappingSet mappingSet,
+    static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, Mapping resolvedMapping,
                                                          Map<String, NodeInfo> nodes, List<List<Map<String, Object>>> shards, Log log) {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
         Integer maxDocsPerPartition = settings.getMaxDocsPerPartition();
         Assert.notNull(maxDocsPerPartition, "Attempting to find slice partitions but maximum documents per partition is not set.");
         Resource readResource = new Resource(settings, true);
-        Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         PartitionDefinition.PartitionDefinitionBuilder partitionBuilder = PartitionDefinition.builder(settings, resolvedMapping);
 
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());

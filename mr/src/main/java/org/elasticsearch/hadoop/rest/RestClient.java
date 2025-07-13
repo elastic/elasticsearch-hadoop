@@ -336,7 +336,7 @@ public class RestClient implements Closeable, StatsAware {
         }
         Map<String, Object> result = get(query, null);
         if (result != null && !result.isEmpty()) {
-            return FieldParser.parseMappings(result, typeNameInResponse);
+            return FieldParser.parseMappings(result, typeNameInResponse, includeFields);
         }
         return null;
     }
