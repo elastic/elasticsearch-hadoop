@@ -64,13 +64,13 @@ import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 import scala.annotation.tailrec
 
 private[sql] object SchemaUtils {
-  case class Schema(struct: StructType, mapping: Mapping)
+  case class Schema(mapping: Mapping, struct: StructType)
 
   def discoverMapping(cfg: Settings, userSchema: Option[StructType] = None): Schema = {
     val includeFields = structToColumnsNames(userSchema)
     val (mapping, geoInfo) = discoverMappingAndGeoFields(cfg, includeFields)
     val struct = convertToStruct(mapping, geoInfo, cfg)
-    Schema(struct, mapping)
+    Schema(mapping, struct)
   }
 
   def structToColumnsNames(struct: Option[StructType]): Seq[String] = {
