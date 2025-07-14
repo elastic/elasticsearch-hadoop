@@ -19,7 +19,6 @@
 package org.elasticsearch.spark.rdd;
 
 import JDKCollectionConvertersCompat.Converters._
-import scala.reflect.ClassTag
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
@@ -31,12 +30,12 @@ import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.RestRepository
-
-import scala.annotation.meta.param
+import org.elasticsearch.hadoop.serialization.dto.mapping.{Mapping, MappingSet}
 
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @(transient @param) sc: SparkContext,
-  val params: scala.collection.Map[String, String] = Map.empty)
+  val params: scala.collection.Map[String, String] = Map.empty,
+  @(transient @param) mapping: Mapping = null)
   extends RDD[T](sc, Nil) {
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
@@ -75,7 +74,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   }
 
   @transient private[spark] lazy val esPartitions = {
-    RestService.findPartitions(esCfg, logger)
+    RestService.findPartitions(esCfg, logger, mapping)
   }
 }
 

@@ -41,7 +41,7 @@ private[spark] class ScalaEsRowRDD(
   @(transient @param) sc: SparkContext,
   params: Map[String, String] = Map.empty,
   schema: SchemaUtils.Schema)
-  extends AbstractEsRDD[Row](sc, params) {
+  extends AbstractEsRDD[Row](sc, params, schema.mapping) {
 
   override def compute(split: Partition, context: TaskContext): ScalaEsRowRDDIterator = {
     new ScalaEsRowRDDIterator(context, split.asInstanceOf[EsPartition].esPartition, schema)
