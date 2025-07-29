@@ -22,7 +22,7 @@ Support for Hadoop is available through any Maven-compatible tool:
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>9.0.0</version>
+  <version>9.1.0</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
