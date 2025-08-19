@@ -1,4 +1,6 @@
 project: 'ES Hadoop'
+products:
+  - id: elasticsearch
 cross_links:
   - docs-content
   - elasticsearch
