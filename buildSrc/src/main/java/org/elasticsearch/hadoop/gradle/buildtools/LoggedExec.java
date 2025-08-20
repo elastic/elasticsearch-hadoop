@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
  * A wrapper around gradle's Exec task to capture output and log on error.
  */
 @SuppressWarnings("unchecked")
-public class LoggedExec extends Exec implements FileSystemOperationsAware {
+public abstract class LoggedExec extends Exec implements FileSystemOperationsAware {
 
     private static final Logger LOGGER = Logging.getLogger(LoggedExec.class);
     private Consumer<Logger> outputLogger;
