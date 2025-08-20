@@ -23,6 +23,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskProvider
+import groovy.ant.AntBuilder;
 
 /**
  * A fixture for integration tests which runs in a separate process launched by Ant.
