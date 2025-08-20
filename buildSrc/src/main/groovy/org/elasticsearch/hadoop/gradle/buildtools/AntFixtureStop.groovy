@@ -25,7 +25,7 @@ import org.gradle.api.tasks.Internal
 
 import javax.inject.Inject
 
-class AntFixtureStop extends LoggedExec {
+abstract class AntFixtureStop extends LoggedExec {
 
     @Internal
     AntFixture fixture

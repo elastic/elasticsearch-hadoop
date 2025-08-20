@@ -30,6 +30,7 @@ import org.gradle.api.tasks.TaskAction
 
 import javax.inject.Inject
 import java.nio.charset.Charset
+import groovy.ant.AntBuilder
 
 /**
  * A task which will run ant commands.
