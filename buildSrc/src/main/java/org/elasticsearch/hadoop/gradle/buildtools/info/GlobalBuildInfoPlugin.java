@@ -27,6 +27,7 @@ import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.Provider;
+import org.gradle.process.ExecOperations;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.internal.jvm.Jvm;
 import org.gradle.internal.jvm.inspection.JavaInstallationRegistry;
@@ -75,13 +76,16 @@ public class GlobalBuildInfoPlugin implements Plugin<Project> {
     private final JavaInstallationRegistry javaInstallationRegistry;
     private final JvmMetadataDetector metadataDetector;
     private final ProviderFactory providers;
+    private final ExecOperations execOperations;
 
     @Inject
     public GlobalBuildInfoPlugin(
+            ExecOperations execOperations,
         JavaInstallationRegistry javaInstallationRegistry,
         JvmMetadataDetector metadataDetector,
         ProviderFactory providers
     ) {
+        this.execOperations = execOperations;
         this.javaInstallationRegistry = javaInstallationRegistry;
         this.metadataDetector = metadataDetector;
         this.providers = providers;
@@ -249,7 +253,7 @@ public class GlobalBuildInfoPlugin implements Plugin<Project> {
     }
 
     private String findJavaHome(String version) {
-        Provider<String> javaHomeNames = providers.gradleProperty("org.gradle.java.installations.fromEnv").forUseAtConfigurationTime();
+        Provider<String> javaHomeNames = providers.gradleProperty("org.gradle.java.installations.fromEnv");
         String javaHomeEnvVar = getJavaHomeEnvVarName(version);
 
         // Provide a useful error if we're looking for a Java home version that we haven't told Gradle about yet
@@ -318,21 +322,38 @@ public class GlobalBuildInfoPlugin implements Plugin<Project> {
                 }
                 _defaultParallel = socketToCore.values().stream().mapToInt(i -> i).sum();
             } else if (OS.current() == OS.MAC) {
-                // Ask macOS to count physical CPUs for us
-                ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-                project.exec(spec -> {
-                    spec.setExecutable("sysctl");
-                    spec.args("-n", "hw.physicalcpu");
-                    spec.setStandardOutput(stdout);
-                });
+                // On Apple silicon, we only want to use the performance cores
+                boolean isAppleSilicon = project.getProviders().systemProperty("os.arch").getOrElse("").equals("aarch64");
+                String query = isAppleSilicon && isMontereyOrNewer(project.getProviders())
+                        ? "hw.perflevel0.physicalcpu"
+                        : "hw.physicalcpu";
 
-                _defaultParallel = Integer.parseInt(stdout.toString().trim());
+                String stdout = project.getProviders().exec(execSpec ->
+                        execSpec.commandLine("sysctl", "-n", query)
+                ).getStandardOutput().getAsText().get();
+
+
+                _defaultParallel = Integer.parseInt(stdout.trim());
             }
 
             _defaultParallel = Runtime.getRuntime().availableProcessors() / 2;
         }
 
         return _defaultParallel;
+    }
+
+    private final static int MACOS_MONTEREY_MAJOR_VERSION = 12;
+
+    private static boolean isMontereyOrNewer(ProviderFactory providers) {
+        String rawVersion = providers.systemProperty("os.version").getOrElse("").trim();
+        if (rawVersion.isEmpty()) {
+            LOGGER.warn("Failed to validate MacOs version.");
+            return false;
+        }
+
+        String majorVersion = rawVersion.split("\\.")[0];
+
+        return Integer.parseInt(majorVersion) >= MACOS_MONTEREY_MAJOR_VERSION;
     }
 
     public static GitInfo gitInfo(File rootDir) {

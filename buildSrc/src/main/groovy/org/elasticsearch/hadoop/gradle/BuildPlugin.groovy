@@ -839,6 +839,8 @@ class BuildPlugin implements Plugin<Project> {
 
         if (!project.path.startsWith(":qa")) {
             TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
+                licensesDir = project.file("licenses")
+                outputMarker = new File(project.getBuildDir(), "dependencyLicense")
                 dependencies = project.configurations.runtimeClasspath
                 mapping from: /hadoop-.*/, to: 'hadoop'
                 mapping from: /hive-.*/, to: 'hive'
