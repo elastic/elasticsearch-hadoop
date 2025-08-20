@@ -1,25 +1,9 @@
 import org.elasticsearch.hadoop.gradle.BuildPlugin
 
-
-
-buildscript {
-  repositories {
-    maven {
-      url = 'https://jitpack.io'
-    }
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'com.github.breskeby:shadow:3b035f2'
-  }
-}
-
 plugins {
     id 'es.hadoop.build'
+    id 'com.gradleup.shadow' version "9.0.1"
 }
-
-apply plugin: 'com.github.johnrengelman.shadow'
-
 
 description = "Elasticsearch Hadoop Shaded Third-Party Libraries"
 
