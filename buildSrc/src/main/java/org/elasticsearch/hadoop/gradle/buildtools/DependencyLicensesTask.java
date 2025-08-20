@@ -122,7 +122,7 @@ public abstract class DependencyLicensesTask extends DefaultTask {
     /**
      * The directory to find the license and sha files in.
      */
-    private File licensesDir = new File(getProject().getProjectDir(), "licenses");
+    private File licensesDir;
 
     /**
      * A map of patterns to prefix, used to find the LICENSE and NOTICE file.
@@ -133,6 +133,13 @@ public abstract class DependencyLicensesTask extends DefaultTask {
      * Names of dependencies whose shas should not exist.
      */
     private Set<String> ignoreShas = new HashSet<>();
+
+    /**
+     * A marker output directory to allow this task being up-to-date.
+     * The check logic is exception driven so a failed tasks will not be defined
+     * by this output but when successful we can safely mark the task as up-to-date.
+     */
+    private File outputMarker;
 
     /**
      * Add a mapping from a regex pattern for the jar name, to a prefix to find
@@ -257,12 +264,13 @@ public abstract class DependencyLicensesTask extends DefaultTask {
 
     }
 
-    // This is just a marker output folder to allow this task being up-to-date.
-    // The check logic is exception driven so a failed tasks will not be defined
-    // by this output but when successful we can safely mark the task as up-to-date.
     @OutputDirectory
     public File getOutputMarker() {
-        return new File(getProject().getBuildDir(), "dependencyLicense");
+        return outputMarker;
+    }
+
+    public void setOutputMarker(File outputMarker) {
+        this.outputMarker = outputMarker;
     }
 
     private void failIfAnyMissing(String item, Boolean exists, String type) {
