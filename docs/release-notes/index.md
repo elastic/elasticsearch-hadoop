@@ -20,8 +20,8 @@ To check for security updates, go to [Security announcements for the Elastic sta
 % ### Fixes [elasticsearch-apache-hadoop-next-fixes]
 % * 
 
-## 9.0.0 [elasticsearch-apache-hadoop-900-release-notes]
+## 9.1.0 [elasticsearch-apache-hadoop-900-release-notes]
 
 ### Features and enhancements [elasticsearch-apache-hadoop-900-features-enhancements]
 
-### Fixes [elasticsearch-apache-hadoop-900-fixes]
+* Set Spark 3.x support now defaults to Scala 2.13 ([PR #2328](https://github.com/elastic/elasticsearch-hadoop/pull/2328))
