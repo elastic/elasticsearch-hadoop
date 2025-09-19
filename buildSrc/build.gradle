@@ -77,7 +77,7 @@ dependencies {
     if (localRepo) {
         implementation name: "build-tools-${buildToolsVersion}"
     } else {
-        implementation group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
+        implementation "org.elasticsearch.gradle:build-tools:$buildToolsVersion"
     }
 }
 
