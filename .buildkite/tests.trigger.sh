@@ -12,7 +12,7 @@ for BRANCH in "${BRANCHES[@]}"; do
     label: Trigger tests pipeline for $BRANCH
     async: true
     build:
-      branch: $BRANCH
+      branch: "$BRANCH"
 EOF
 done
 
