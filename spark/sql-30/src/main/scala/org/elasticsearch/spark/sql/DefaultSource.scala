@@ -645,4 +645,25 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
     version.onOrAfter(EsMajorVersion.V_5_X)
   }
+
+  override def toString: String = {
+    val sensitiveParams = Set(
+      ConfigurationOptions.ES_NET_HTTP_AUTH_USER,
+      ConfigurationOptions.ES_NET_HTTP_AUTH_PASS,
+      ConfigurationOptions.ES_NET_PROXY_HTTP_USER,
+      ConfigurationOptions.ES_NET_PROXY_HTTP_PASS,
+      ConfigurationOptions.ES_NET_PROXY_SOCKS_USER,
+      ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS,
+      ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS,
+      ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS,
+    )
+    val maskedParam = parameters.map { case (k, v) =>
+        if (sensitiveParams.contains(k))
+          s"$k=****"
+        else
+          s"$k=$v"
+      }
+      .mkString(", ")
+    s"${getClass.getName}(parameters=Map($maskedParam), userSchema=$userSchema)"
+  }
 }
