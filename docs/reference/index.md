@@ -4,6 +4,9 @@ mapped_pages:
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/doc-sections.html
   - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/reference.html
+applies_to:
+  stack: ga
+  serverless: unavailable
 ---
 # {{esh-full}}
 
