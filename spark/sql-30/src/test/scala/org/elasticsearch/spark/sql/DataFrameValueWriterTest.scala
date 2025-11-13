@@ -156,4 +156,31 @@ class DataFrameValueWriterTest {
     }
   }
 
+  @Test
+  def testNullStructInArray(): Unit = {
+    val schema = StructType(Seq(StructField("s", ArrayType(StructType(Seq(StructField("a", StringType)))))))
+    val row = Row(Array(null))
+    assertEquals("""{"s":[null]}""", serialize(row, schema))
+  }
+
+  @Test
+  def testNullStructInMap(): Unit = {
+    val schema = StructType(Seq(StructField("s", MapType(StringType, StructType(Seq(StructField("b", StringType)))))))
+    val row = Row(Map("a" -> null))
+    assertEquals("""{"s":{"a":null}}""", serialize(row, schema))
+  }
+
+  @Test
+  def testNullNestedArray(): Unit = {
+    val schema = StructType(Seq(StructField("s", ArrayType(ArrayType(StringType)))))
+    val row = Row(Array(null))
+    assertEquals("""{"s":[null]}""", serialize(row, schema))   
+  }
+
+  @Test
+  def testNullNestedMap(): Unit = {
+    val schema = StructType(Seq(StructField("s", ArrayType(MapType(StringType, StringType)))))
+    val row = Row(Array(null))
+    assertEquals("""{"s":[null]}""", serialize(row, schema))   
+  }
 }
