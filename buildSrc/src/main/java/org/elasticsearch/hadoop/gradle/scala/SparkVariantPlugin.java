@@ -72,6 +72,8 @@ import org.elasticsearch.hadoop.gradle.util.ConfigureUtil;
 
 public class SparkVariantPlugin implements Plugin<Project> {
 
+    public static final String ITEST_SOURCE_SET_NAME = "itest";
+
     public static class SparkVariant {
 
         private final CharSequence name;
@@ -311,6 +313,23 @@ public class SparkVariantPlugin implements Plugin<Project> {
         runtimeElements.getOutgoing().capability(capability);
 
         configureScalaJarClassifiers(project, sparkVariant);
+        // Extend main and test source set for the main variant - this enables the possibility of having diverging code between variants
+        SourceSetContainer sourceSets = javaPluginExtension.getSourceSets();
+        ScalaSourceDirectorySet scalaSourceSet = getScalaSourceSet(sourceSets.getByName(MAIN_SOURCE_SET_NAME));
+        scalaSourceSet.setSrcDirs(Arrays.asList(
+                "src/" + MAIN_SOURCE_SET_NAME + "/scala",
+                "src/" + MAIN_SOURCE_SET_NAME + "/" + sparkVariant.getName()
+        ));
+        ScalaSourceDirectorySet scalaTestSourceSet = getScalaSourceSet(sourceSets.getByName(TEST_SOURCE_SET_NAME));
+        scalaTestSourceSet.setSrcDirs(Arrays.asList(
+                "src/" + TEST_SOURCE_SET_NAME + "/scala",
+                "src/" + TEST_SOURCE_SET_NAME + "/" + sparkVariant.getName()
+        ));
+        ScalaSourceDirectorySet scalaITestSourceSet = getScalaSourceSet(sourceSets.getByName(ITEST_SOURCE_SET_NAME));
+        scalaITestSourceSet.setSrcDirs(Arrays.asList(
+                "src/" + ITEST_SOURCE_SET_NAME + "/scala",
+                "src/" + ITEST_SOURCE_SET_NAME + "/" + sparkVariant.getName()
+        ));
     }
 
     private static void configureVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension) {

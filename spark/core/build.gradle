@@ -14,6 +14,8 @@ sparkVariants {
     // We should maybe move these to a separate config file that can be read from both this file and the pipeline script in the future if it creates issues
     setCoreDefaultVariant "spark30scala213", spark30Version, scala213Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
+    addCoreFeatureVariant "spark35scala212", spark35Version, scala212Version
+    addCoreFeatureVariant "spark35scala213", spark35Version, scala213Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -43,6 +45,11 @@ sparkVariants {
             add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'org.apache.hadoop'
+            }
+            if (variant.sparkVersion >= "3.5.0") {
+                add(variant.configuration('implementation'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                    exclude group: 'org.apache.hadoop'
+                }
             }
 
             add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
@@ -125,4 +132,24 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.sourceCompatibility = project.ext.minimumRuntimeVersion
     task.targetCompatibility = project.ext.minimumRuntimeVersion
     task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
+}
+
+tasks.register('copyPoms', Copy) {
+    from(tasks.named('generatePomFileForMainPublication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-30_2.13-${project.getVersion()}.pom"
+    }
+    from(tasks.named('generatePomFileForSpark30scala212Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-30_2.12-${project.getVersion()}.pom"
+    }
+    from(tasks.named('generatePomFileForSpark35scala212Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-35_2.12-${project.getVersion()}.pom"
+    }
+    from(tasks.named('generatePomFileForSpark35scala213Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-35_2.13-${project.getVersion()}.pom"
+    }
+    into(new File(project.buildDir, 'distributions'))
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
 }
