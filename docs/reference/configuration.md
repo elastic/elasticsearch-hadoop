@@ -730,7 +730,11 @@ Added in 2.2.
 :   Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
 
 ::::{note}
-elasticsearch-hadoop allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior. IMPORTANT: The semantics of these properties are described in the JVM [docs](http://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.md#Proxies). In some cases, setting up the JVM property `java.net.useSystemProxies` to `true` works better then setting these properties manually.
+elasticsearch-hadoop allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
+::::
+
+::::{important}
+The semantics of these properties are described in the JVM [docs](http://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.md#Proxies). In some cases, setting up the JVM property `java.net.useSystemProxies` to `true` works better then setting these properties manually.
 ::::
 
 
