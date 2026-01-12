@@ -38,15 +38,22 @@ PKI/X.509
 Authentication header
 :   {{es}} accepts authentication types via custom HTTP headers, which can be used to send an API key. elasticsearch-hadoop allows [setting custom HTTP request headers](/reference/configuration.md#_setting_http_request_headers) using `es.net.http.header.[HEADER-NAME]`.
 
-    For example, you can use these options in your elasticsearch-hadoop config:
+    To authenticate using an API key, set the `Authorization` header with your Base64-encoded API key (the `encoded` value returned when you [create an API key](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-security-create-api-key)):
+
+    ```ini
+    es.net.http.header.Authorization = ApiKey VnVhQ2ZHY0JDZGJr...
     ```
+
+    Here's an example using PySpark:
+
+    ```python
     es_options = {
-    "es.nodes": es_host,
-    "es.port": es_port,
-    "es.net.ssl": "true",
-    "es.nodes.wan.only": "true",
-    "es.net.http.header.authorization": f'ApiKey {es_api_key}',
-    "es.resource": es_index,
+        "es.nodes": es_host,
+        "es.port": es_port,
+        "es.net.ssl": "true",
+        "es.nodes.wan.only": "true",
+        "es.net.http.header.Authorization": f"ApiKey {es_api_key}",
+        "es.resource": es_index,
     }
     ```
 
