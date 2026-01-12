@@ -36,7 +36,7 @@ PKI/X.509
 :   Use X.509 certificates to authenticate elasticsearch-hadoop to elasticsearch-hadoop. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {{es}}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {{es}} cluster. That is one setup the key to authenticate elasticsearch-hadoop and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
 Authentication header
-:   {{es}} accepts authentication types via custom HTTP headers, which can be used to send an API key. elasticsearch-hadoop allows [setting custom HTTP request headers](elasticsearch-hadoop://reference/index.md) using `es.net.http.header.[HEADER-NAME]`.
+:   {{es}} accepts authentication types via custom HTTP headers, which can be used to send an API key. elasticsearch-hadoop allows [setting custom HTTP request headers](/reference/configuration.md#_setting_http_request_headers) using `es.net.http.header.[HEADER-NAME]`.
 
     For example, you can use these options in your elasticsearch-hadoop config:
     ```
