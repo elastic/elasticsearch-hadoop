@@ -49,11 +49,11 @@ API key authentication
         "es.port": es_port,
         "es.net.ssl": "true",
         "es.nodes.wan.only": "true",
-        "es.net.http.header.Authorization": f"ApiKey {es_api_key}",
+        "es.net.http.header.Authorization": f"ApiKey <es_api_key>", <1>
         "es.resource": es_index,
     }
     ```
-
+    1. Substitute `<es_api_key>` with your API key.
 
 PKI/X.509
 :   Use X.509 certificates to authenticate elasticsearch-hadoop to elasticsearch-hadoop. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {{es}}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {{es}} cluster. That is one setup the key to authenticate elasticsearch-hadoop and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
