@@ -1,0 +1,132 @@
+import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
+
+description = "Elasticsearch Spark Core (for Spark 4.1)"
+
+apply plugin: 'java-library'
+apply plugin: 'scala'
+apply plugin: 'es.hadoop.build'
+apply plugin: 'spark.variants'
+
+sparkVariants {
+    capabilityGroup 'org.elasticsearch.spark41.variant'
+
+    // Spark 4.1 only supports Scala 2.13 - single variant
+    setCoreDefaultVariant "spark41scala213", spark41Version, scala213Version
+
+    all { SparkVariantPlugin.SparkVariant variant ->
+
+        String scalaCompileTaskName = project.sourceSets
+                .getByName(variant.getSourceSetName("main"))
+                .getCompileTaskName("scala")
+
+        // Configure main compile task
+        project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
+            configure(compileScala.scalaCompileOptions.forkOptions) {
+                memoryMaximumSize = '1g'
+            }
+            compileScala.scalaCompileOptions.additionalParameters = [
+                    "-feature",
+                    "-unchecked",
+                    "-deprecation",
+                    "-Ywarn-dead-code",
+                    "-Ywarn-numeric-widen",
+                    "-Xfatal-warnings"
+            ]
+        }
+
+        dependencies {
+            add(variant.configuration('api'), "org.scala-lang:scala-library:${variant.scalaVersion}")
+            add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
+            // Order matters - spark-common-utils should come before spark-core to ensure Logging/LogKey are resolved together
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+            // Spark 4.1 has LogKey in spark-common-utils-java
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils-java_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+            add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
+                exclude group: 'org.apache.hadoop'
+            }
+            // Spark 4.1+ has LogKey and other internal logging symbols - ensure spark-tags is available
+            add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+
+            add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
+
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.15.2")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.15.2")
+            add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
+            add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
+
+            add(variant.configuration('test', 'implementation'), project(":test:shared"))
+            add(variant.configuration('test', 'implementation'), "com.esotericsoftware:kryo:4.0.2")
+            add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
+                exclude group: 'org.apache.hadoop'
+            }
+
+            add(variant.configuration('itest', 'implementation'), project(":test:shared"))
+            add(variant.configuration('test', 'implementation'), "org.elasticsearch:securemock:1.2")
+            add(variant.configuration('additionalSources'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('javadocSources'), project(":elasticsearch-hadoop-mr"))
+        }
+
+        def javaFilesOnly = { FileTreeElement spec ->
+            spec.file.name.endsWith('.java') || spec.isDirectory()
+        }
+
+        // Add java files from scala source set to javadocSourceElements.
+        project.fileTree("src/main/scala").include(javaFilesOnly).each {
+            project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+        }
+
+        // Configure java source generation for javadoc purposes
+        String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
+        Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
+        scalaCompilerPlugin.defaultDependencies { dependencies ->
+            dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.18"))
+        }
+
+        ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
+        compileScala.scalaCompileOptions.with {
+            additionalParameters = [
+                    "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
+                    "-P:genjavadoc:out=$generatedJavaDirectory".toString()
+            ]
+        }
+        // Export generated Java code from the genjavadoc compiler plugin
+        artifacts {
+            add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
+                builtBy compileScala
+            }
+        }
+        tasks.getByName(variant.taskName('javadoc')) {
+            dependsOn compileScala
+            source(generatedJavaDirectory)
+        }
+
+        scaladoc {
+            title = "${rootProject.description} ${version} API"
+        }
+    }
+}
+
+// Spark 4.1 requires Java 17+
+if (JavaVersion.current() >= JavaVersion.VERSION_17) {
+    tasks.withType(Test) { Test task ->
+        if (task.getName().startsWith("test"))
+            task.configure {
+                jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+                jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+                jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+                jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
+                jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+            }
+    }
+}
+
+// Set minimum compatibility and java home for compiler task
+// Spark 4.1 requires Java 17+, so we use -release 17 instead of targeting Java 8
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = JavaVersion.VERSION_17
+    task.targetCompatibility = JavaVersion.VERSION_17
+    // Use -release 17 flag for Scala compiler to target Java 17
+    task.scalaCompileOptions.additionalParameters = ["-release", "17"]
+}
+
