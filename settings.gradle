@@ -33,7 +33,6 @@ include 'sql-40'
 project(":sql-40").projectDir = new File(settingsDir, "spark/sql-40")
 project(":sql-40").name = "elasticsearch-spark-40"
 
-
 include 'sql-41'
 project(":sql-41").projectDir = new File(settingsDir, "spark/sql-41")
 project(":sql-41").name = "elasticsearch-spark-41"
