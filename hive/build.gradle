@@ -64,6 +64,18 @@ tasks.named("test").configure {
     jvmArgs "--add-opens=java.base/java.net=ALL-UNNAMED" // Needed for org.apache.hadoop.hive.common.StringInternUtils
 }
 
+// Configure integration tests to use Java 8
+// Hive 3.1.3 requires Java 8 because it casts the classloader to URLClassLoader,
+// which only works in Java 8 (Java 9+ uses a different classloader implementation)
+project.tasks.withType(Test).configureEach { Test testTask ->
+    if (testTask.name.contains('integrationTest') || testTask.name.contains('itest')) {
+        def java8Home = project.ext.javaVersions?.find { it.version == 8 }?.javaHome?.get()
+        if (java8Home != null) {
+            testTask.executable = "${java8Home}/bin/java"
+        }
+    }
+}
+
 jar {
     dependsOn(project.configurations.embedded)
     from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
