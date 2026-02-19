@@ -1,4 +1,5 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 description = "Elasticsearch Spark Core"
 
@@ -6,6 +7,9 @@ apply plugin: 'java-library'
 apply plugin: 'scala'
 apply plugin: 'es.hadoop.build'
 apply plugin: 'spark.variants'
+
+// Get the Java toolchains service for test JVM configuration
+def javaToolchains = project.extensions.getByType(JavaToolchainService)
 
 // Helper to determine Spark major version from version string
 def getSparkMajorMinor(String sparkVersion) {
@@ -110,27 +114,45 @@ sparkVariants {
         }
 
         // Configure test JVM based on Spark version
-        project.tasks.withType(Test) { Test testTask ->
-            if (testTask.getName().contains(variant.name) && testTask.getName().startsWith("test")) {
-                testTask.configure {
-                    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
-                    jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
-                    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+        // This applies to both unit tests (testXxx) and integration tests (integrationTestXxx)
+        project.tasks.withType(Test).configureEach { Test testTask ->
+            def taskName = testTask.getName()
+            def isVariantTest = taskName.toLowerCase().contains(variant.name.toLowerCase())
+            if (isVariantTest) {
+                // Common JVM args for all Spark versions on Java 9+
+                def openModuleArgs = [
+                    "--add-opens=java.base/java.io=ALL-UNNAMED",
+                    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+                    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+                    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+                    "--add-opens=java.base/java.util=ALL-UNNAMED",
+                    "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+                    "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+                    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+                    "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+                    "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+                    "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+                    "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+                ]
+                testTask.jvmArgs(openModuleArgs)
 
-                    if (sparkMajor >= 4) {
-                        jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
-                        jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
-                        def java21Home = System.getenv('JAVA21_HOME')
-                        if (java21Home != null) {
-                            executable = "${java21Home}/bin/java"
-                        }
-                    } else {
-                        def java17Home = System.getenv('JAVA17_HOME')
-                        if (java17Home != null) {
-                            executable = "${java17Home}/bin/java"
-                        }
-                    }
+                // Determine the Java version for tests
+                def javaVersion
+                if (sparkMajorMinor == "4.1") {
+                    javaVersion = 21
+                } else if (sparkMajor >= 4) {
+                    javaVersion = 17
+                } else if (sparkMajorMinor == "3.5" || sparkMajorMinor == "3.4" || sparkMajorMinor == "3.3") {
+                    javaVersion = 17
+                } else {
+                    javaVersion = 11
                 }
+
+                // Use javaLauncher to set the Java version (preferred Gradle 8+ approach)
+                testTask.javaLauncher.set(javaToolchains.launcherFor {
+                    languageVersion = JavaLanguageVersion.of(javaVersion)
+                })
             }
         }
 

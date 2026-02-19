@@ -813,7 +813,13 @@ class BuildPlugin implements Plugin<Project> {
 
         integrationTest.ignoreFailures = false
 
-        integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+        // Only set executable if javaLauncher has not been configured
+        // Spark modules use javaLauncher for version-specific Java requirements
+        project.afterEvaluate {
+            if (!integrationTest.javaLauncher.isPresent()) {
+                integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+            }
+        }
         integrationTest.minHeapSize = "256m"
         integrationTest.maxHeapSize = "2g"
 
