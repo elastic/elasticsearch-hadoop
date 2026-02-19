@@ -25,25 +25,14 @@ include 'sql-30'
 project(":sql-30").projectDir = new File(settingsDir, "spark/sql-30")
 project(":sql-30").name = "elasticsearch-spark-30"
 
-include 'spark-core-35'
-project(":spark-core-35").projectDir = new File(settingsDir, "spark/core-35")
-project(":spark-core-35").name = "elasticsearch-spark-35-core"
-
 include 'sql-35'
 project(":sql-35").projectDir = new File(settingsDir, "spark/sql-35")
 project(":sql-35").name = "elasticsearch-spark-35"
-
-include 'spark-core-40'
-project(":spark-core-40").projectDir = new File(settingsDir, "spark/core-40")
-project(":spark-core-40").name = "elasticsearch-spark-40-core"
 
 include 'sql-40'
 project(":sql-40").projectDir = new File(settingsDir, "spark/sql-40")
 project(":sql-40").name = "elasticsearch-spark-40"
 
-include 'spark-core-41'
-project(":spark-core-41").projectDir = new File(settingsDir, "spark/core-41")
-project(":spark-core-41").name = "elasticsearch-spark-41-core"
 
 include 'sql-41'
 project(":sql-41").projectDir = new File(settingsDir, "spark/sql-41")

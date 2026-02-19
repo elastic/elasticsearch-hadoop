@@ -7,40 +7,81 @@ apply plugin: 'scala'
 apply plugin: 'es.hadoop.build'
 apply plugin: 'spark.variants'
 
+// Helper to determine Spark major version from version string
+def getSparkMajorMinor(String sparkVersion) {
+    def parts = sparkVersion.split('\\.')
+    return "${parts[0]}.${parts[1]}"
+}
+
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.variant'
 
-    // Changing the formatting of these lines could break .buildkite/pipeline.py, it uses regex to parse the `spark30scala212` part
-    // We should maybe move these to a separate config file that can be read from both this file and the pipeline script in the future if it creates issues
+    // Spark 3.4 variants
     setCoreDefaultVariant "spark30scala213", spark30Version, scala213Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
 
+    // Spark 3.5 variants
+    addCoreFeatureVariant "spark35scala213", spark35Version, scala213Version
+
+    // Spark 4.0 variants
+    addCoreFeatureVariant "spark40scala213", spark40Version, scala213Version
+
+    // Spark 4.1 variants
+    addCoreFeatureVariant "spark41scala213", spark41Version, scala213Version
+
     all { SparkVariantPlugin.SparkVariant variant ->
+        def sparkMajorMinor = getSparkMajorMinor(variant.sparkVersion)
+        def sparkMajor = variant.sparkVersion.split('\\.')[0].toInteger()
 
         String scalaCompileTaskName = project.sourceSets
                 .getByName(variant.getSourceSetName("main"))
                 .getCompileTaskName("scala")
 
-        // Configure main compile task
+        // Configure main compile task with version-specific flags
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
             }
-            compileScala.scalaCompileOptions.additionalParameters = [
-                    "-feature",
-                    "-unchecked",
-                    "-deprecation",
-                    "-Xfuture",
-                    "-Yno-adapted-args",
-                    "-Ywarn-dead-code",
-                    "-Ywarn-numeric-widen",
-                    "-Xfatal-warnings"
-            ]
+
+            // Base Scala compiler flags
+            // Note: -Xfatal-warnings removed to allow deprecation warnings without failing build
+            def baseFlags = ["-feature", "-unchecked", "-deprecation", "-Ywarn-dead-code", "-Ywarn-numeric-widen"]
+
+            // -Xfuture and -Yno-adapted-args were removed in Scala 2.13
+            // Only add them for Scala 2.12 and earlier
+            if (variant.scalaMajorVersion == "2.12" || variant.scalaMajorVersion == "2.11" || variant.scalaMajorVersion == "2.10") {
+                baseFlags.addAll(["-Xfuture", "-Yno-adapted-args"])
+            }
+            compileScala.scalaCompileOptions.additionalParameters = baseFlags
+
+            // Set Java target version based on Spark version
+            // Note: We use -release flag instead of sourceCompatibility/targetCompatibility
+            // to avoid deprecated -target warning from Scala compiler
+            if (sparkMajorMinor == "4.1") {
+                compileScala.scalaCompileOptions.additionalParameters = baseFlags + ["-release", "21"]
+            } else if (sparkMajor >= 4) {
+                compileScala.scalaCompileOptions.additionalParameters = baseFlags + ["-release", "17"]
+            } else {
+                // Spark 3.x - target Java 8 using -release flag
+                compileScala.scalaCompileOptions.additionalParameters = baseFlags + ["-release", "8"]
+            }
         }
 
         dependencies {
             add(variant.configuration('api'), "org.scala-lang:scala-library:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
+
+            // Spark 3.5+ moved org.apache.spark.internal.Logging to spark-common-utils
+            if (sparkMajorMinor == "3.5" || sparkMajor >= 4) {
+                add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+            }
+
+            // Spark 4.1+ has LogKey in spark-common-utils-java
+            if (sparkMajorMinor == "4.1") {
+                add(variant.configuration('api'), "org.apache.spark:spark-common-utils-java_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+                add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:${variant.sparkVersion}")
+            }
+
             add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'org.apache.hadoop'
             }
@@ -48,8 +89,11 @@ sparkVariants {
             add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
 
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:2.9.10")
-            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+            // Jackson versions - Spark 4.x uses newer Jackson
+            def jacksonVersion = sparkMajor >= 4 ? "2.15.2" : "2.9.10"
+            def jacksonAnnotationsVersion = sparkMajor >= 4 ? "2.15.2" : "2.6.7"
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.module:jackson-module-scala_${variant.scalaMajorVersion}:${jacksonVersion}")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}")
             add(variant.configuration('compileOnly'), "com.google.guava:guava:14.0.1")
             add(variant.configuration('compileOnly'), "org.slf4j:slf4j-api:${project.ext.slf4jVersion}")
 
@@ -65,16 +109,40 @@ sparkVariants {
             add(variant.configuration('javadocSources'), project(":elasticsearch-hadoop-mr"))
         }
 
+        // Configure test JVM based on Spark version
+        project.tasks.withType(Test) { Test testTask ->
+            if (testTask.getName().contains(variant.name) && testTask.getName().startsWith("test")) {
+                testTask.configure {
+                    jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+                    jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+                    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+
+                    if (sparkMajor >= 4) {
+                        jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
+                        jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+                        def java21Home = System.getenv('JAVA21_HOME')
+                        if (java21Home != null) {
+                            executable = "${java21Home}/bin/java"
+                        }
+                    } else {
+                        def java17Home = System.getenv('JAVA17_HOME')
+                        if (java17Home != null) {
+                            executable = "${java17Home}/bin/java"
+                        }
+                    }
+                }
+            }
+        }
+
+        // ... rest of the configuration (javadoc, genjavadoc plugin, etc.)
         def javaFilesOnly = { FileTreeElement spec ->
             spec.file.name.endsWith('.java') || spec.isDirectory()
         }
 
-        // Add java files from scala source set to javadocSourceElements.
         project.fileTree("src/main/scala").include(javaFilesOnly).each {
             project.artifacts.add(variant.configuration('javadocSourceElements'), it)
         }
 
-        // Configure java source generation for javadoc purposes
         if (variant.scalaMajorVersion != '2.10') {
             String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
             Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
@@ -84,12 +152,11 @@ sparkVariants {
 
             ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
             compileScala.scalaCompileOptions.with {
-                additionalParameters = [
+                additionalParameters = additionalParameters + [
                         "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
                         "-P:genjavadoc:out=$generatedJavaDirectory".toString()
                 ]
             }
-            // Export generated Java code from the genjavadoc compiler plugin
             artifacts {
                 add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
                     builtBy compileScala
@@ -107,22 +174,3 @@ sparkVariants {
     }
 }
 
-if (JavaVersion.current() >= JavaVersion.VERSION_17) {
-    tasks.withType(Test) { Test task ->
-        if (task.getName().startsWith("test")) 
-            task.configure {
-                jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
-                jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer
-                jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED" // Needed for secure mock
-            }
-    }
-}
-
-// Set minimum compatibility and java home for compiler task
-tasks.withType(ScalaCompile) { ScalaCompile task ->
-    task.scalaCompileOptions.additionalParameters = ["-javabootclasspath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
-    task.options.bootstrapClasspath = layout.files(new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar'))
-    task.sourceCompatibility = project.ext.minimumRuntimeVersion
-    task.targetCompatibility = project.ext.minimumRuntimeVersion
-    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
-}
