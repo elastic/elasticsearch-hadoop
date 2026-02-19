@@ -144,8 +144,8 @@ sparkVariants {
                 } else if (sparkMajor >= 4) {
                     javaVersion = 17
                 } else {
-                    // Spark 3.x - use Java 11 for Hadoop compatibility
-                    javaVersion = 11
+                    // Spark 3.x - use Java 8 for Hadoop compatibility
+                    javaVersion = 8
                 }
 
                 // Find the Java installation from BuildParams.javaVersions

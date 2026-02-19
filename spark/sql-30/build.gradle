@@ -157,31 +157,14 @@ sparkVariants {
     }
 }
 
-// Configure test JVM for Spark 3.x - use Java 11 for Hadoop compatibility
+// Configure test JVM for Spark 3.x - use Java 8 for Hadoop compatibility
 // Hadoop's Subject.getSubject() requires a security manager which is deprecated in Java 17 and removed in Java 21+
 project.tasks.withType(Test).configureEach { Test testTask ->
-    // Common JVM args for Java 9+
-    def openModuleArgs = [
-        "--add-opens=java.base/java.io=ALL-UNNAMED",
-        "--add-opens=java.base/java.nio=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-        "--add-opens=java.base/java.util=ALL-UNNAMED",
-        "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
-        "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
-        "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
-        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
-    ]
-    testTask.jvmArgs(openModuleArgs)
-
-    // Use Java 11 from BuildParams.javaVersions for Spark 3.x tests
-    def java11Home = project.ext.javaVersions?.find { it.version == 11 }?.javaHome?.get()
-    if (java11Home != null) {
-        testTask.executable = "${java11Home}/bin/java"
+    // Use Java 8 from BuildParams.javaVersions for Spark 3.x tests
+    // because Spark 3 uses a hadoop library that requires a java security manager
+    def java8Home = project.ext.javaVersions?.find { it.version == 8 }?.javaHome?.get()
+    if (java8Home != null) {
+        testTask.executable = "${java8Home}/bin/java"
     }
 }
 
