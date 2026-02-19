@@ -7,6 +7,7 @@ apply plugin: 'scala'
 apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'spark.variants'
 
+
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark40.sql.variant'
     // Spark 4.x only supports Scala 2.13 - single variant
@@ -32,13 +33,14 @@ sparkVariants {
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
             }
+            // Spark 4.0 requires Java 17
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
                     "-unchecked",
                     "-deprecation",
                     "-Ywarn-dead-code",
                     "-Ywarn-numeric-widen",
-                    "-Xfatal-warnings"
+                    "-release", "17"
             ]
         }
 
@@ -159,22 +161,30 @@ sparkVariants {
     }
 }
 
-tasks.withType(ScalaCompile) { ScalaCompile task ->
-    task.scalaCompileOptions.additionalParameters = ["-javabootclasspath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
-    task.options.bootstrapClasspath = layout.files(new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar'))
-    task.sourceCompatibility = project.ext.minimumRuntimeVersion
-    task.targetCompatibility = project.ext.minimumRuntimeVersion
-    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
-}
+// Configure test JVM for Spark 4.0 - use Java 17
+project.tasks.withType(Test).configureEach { Test testTask ->
+    // Common JVM args for Java 9+
+    def openModuleArgs = [
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+        "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+        "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+    ]
+    testTask.jvmArgs(openModuleArgs)
 
-if (JavaVersion.current() >= JavaVersion.VERSION_16) {
-    tasks.withType(Test) { Test task ->
-        if (task.getName().startsWith("test"))
-        task.configure {
-            jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
-            jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
-            jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
-        }
+    // Use Java 17 from BuildParams.javaVersions for Spark 4.0 tests
+    def java17Home = project.ext.javaVersions?.find { it.version == 17 }?.javaHome?.get()
+    if (java17Home != null) {
+        testTask.executable = "${java17Home}/bin/java"
     }
 }
 

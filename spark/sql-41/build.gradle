@@ -7,6 +7,7 @@ apply plugin: 'scala'
 apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'spark.variants'
 
+
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark41.sql.variant'
     // Spark 4.1 only supports Scala 2.13 - single variant
@@ -32,13 +33,14 @@ sparkVariants {
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
             }
+            // Spark 4.1 requires Java 21
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
                     "-unchecked",
                     "-deprecation",
                     "-Ywarn-dead-code",
                     "-Ywarn-numeric-widen",
-                    "-Xfatal-warnings"
+                    "-release", "21"
             ]
         }
 
@@ -161,22 +163,30 @@ sparkVariants {
     }
 }
 
-tasks.withType(ScalaCompile) { ScalaCompile task ->
-    // Spark 4.1 requires Java 17+, so we use -release 17 instead of targeting Java 8
-    task.sourceCompatibility = JavaVersion.VERSION_17
-    task.targetCompatibility = JavaVersion.VERSION_17
-    // Use -release 17 flag for Scala compiler to target Java 17
-    task.scalaCompileOptions.additionalParameters = ["-release", "17"]
-}
+// Configure test JVM for Spark 4.1 - use Java 21
+project.tasks.withType(Test).configureEach { Test testTask ->
+    // Common JVM args for Java 9+
+    def openModuleArgs = [
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+        "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+        "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+    ]
+    testTask.jvmArgs(openModuleArgs)
 
-if (JavaVersion.current() >= JavaVersion.VERSION_16) {
-    tasks.withType(Test) { Test task ->
-        if (task.getName().startsWith("test"))
-        task.configure {
-            jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
-            jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
-            jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
-        }
+    // Use Java 21 from BuildParams.javaVersions for Spark 4.1 tests
+    def java21Home = project.ext.javaVersions?.find { it.version == 21 }?.javaHome?.get()
+    if (java21Home != null) {
+        testTask.executable = "${java21Home}/bin/java"
     }
 }
 

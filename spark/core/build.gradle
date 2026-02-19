@@ -1,5 +1,4 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
-import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 description = "Elasticsearch Spark Core"
 
@@ -8,8 +7,6 @@ apply plugin: 'scala'
 apply plugin: 'es.hadoop.build'
 apply plugin: 'spark.variants'
 
-// Get the Java toolchains service for test JVM configuration
-def javaToolchains = project.extensions.getByType(JavaToolchainService)
 
 // Helper to determine Spark major version from version string
 def getSparkMajorMinor(String sparkVersion) {
@@ -138,21 +135,26 @@ sparkVariants {
                 testTask.jvmArgs(openModuleArgs)
 
                 // Determine the Java version for tests
+                // Note: Spark 3.5 could support Java 17, but Hadoop's Subject.getSubject()
+                // requires a security manager which is deprecated in Java 17 and removed in Java 21+
+                // So we use Java 11 for Spark 3.x tests to ensure compatibility with Hadoop
                 def javaVersion
                 if (sparkMajorMinor == "4.1") {
                     javaVersion = 21
                 } else if (sparkMajor >= 4) {
                     javaVersion = 17
-                } else if (sparkMajorMinor == "3.5" || sparkMajorMinor == "3.4" || sparkMajorMinor == "3.3") {
-                    javaVersion = 17
                 } else {
+                    // Spark 3.x - use Java 11 for Hadoop compatibility
                     javaVersion = 11
                 }
 
-                // Use javaLauncher to set the Java version (preferred Gradle 8+ approach)
-                testTask.javaLauncher.set(javaToolchains.launcherFor {
-                    languageVersion = JavaLanguageVersion.of(javaVersion)
-                })
+                // Find the Java installation from BuildParams.javaVersions
+                def javaHome = project.ext.javaVersions?.find { it.version == javaVersion }?.javaHome?.get()
+                if (javaHome != null) {
+                    testTask.executable = "${javaHome}/bin/java"
+                }
+                // If the required Java version is not found, use the default JVM
+                // Tests may fail due to Java version incompatibilities
             }
         }
 
