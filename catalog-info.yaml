@@ -220,8 +220,6 @@ spec:
     spec:
       pipeline_file: ".buildkite/version-bump-pipeline.yml"
       provider_settings:
-        build_branches: false
-        build_pull_requests: false
         trigger_mode: none
       repository: elastic/elasticsearch-hadoop
       teams:
