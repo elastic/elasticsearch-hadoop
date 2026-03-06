@@ -120,6 +120,16 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
       }
     }
 
+    override def onQueryIdle(event: StreamingQueryListener.QueryIdleEvent): Unit = {
+      captureQueryID(event.id)
+      // In Spark 3.5+, idle events are fired instead of progress events when there are 0 input rows.
+      // If we've already seen all required inputs, this is equivalent to the 0-row progress event
+      // that signals completion.
+      if (inputsSeen == inputsRequired) {
+        latch.countDown()
+      }
+    }
+
     override def onQueryTerminated(event: StreamingQueryListener.QueryTerminatedEvent): Unit = {
       try {
         captureQueryID(event.id)
