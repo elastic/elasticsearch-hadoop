@@ -813,11 +813,17 @@ class BuildPlugin implements Plugin<Project> {
 
         integrationTest.ignoreFailures = false
 
-        // Only set executable if javaLauncher has not been configured
-        // Spark modules use javaLauncher for version-specific Java requirements
+        // Default to runtimeJavaHome (Java 8) now, but allow Spark modules to
+        // override the executable in their build.gradle (e.g. to Java 17) since various Spark versions require
+        // different Java versions.
+        // We use afterEvaluate to check: if the executable was changed by the
+        // subproject, we keep that override; otherwise we ensure runtimeJavaHome is used.
+        String runtimeJavaExecutable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+        integrationTest.executable = runtimeJavaExecutable
         project.afterEvaluate {
-            if (!integrationTest.javaLauncher.isPresent()) {
-                integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+            if (integrationTest.executable == runtimeJavaExecutable) {
+                // No override was applied; ensure runtimeJavaHome (Java 8) is used
+                integrationTest.executable = runtimeJavaExecutable
             }
         }
         integrationTest.minHeapSize = "256m"
