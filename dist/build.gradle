@@ -192,7 +192,7 @@ task generateDependenciesReport(type: ConcatFilesTask) { concatDepsTask ->
         }
     }
     headerLine = "name,version,url,license"
-    target = new File(System.getProperty('csv')?: "${project.buildDir}/reports/dependencies/es-hadoop-dependencies.csv")
+    target = new File(System.getProperty('csv')?: project.layout.buildDirectory.file("reports/dependencies/es-hadoop-dependencies.csv").get().asFile.path)
 }
 
 project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
@@ -202,7 +202,7 @@ project.tasks.named('dependencyLicenses', DependencyLicensesTask) {
 tasks.register('copyPoms', Copy) {
     BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
     from(tasks.named('generatePomFileForMainPublication'))
-    into(new File(project.buildDir, 'distributions'))
+    into(project.layout.buildDirectory.dir('distributions'))
     rename 'pom-default.xml', "${baseExtension.archivesName.get()}-${project.getVersion()}.pom"
 }
 
