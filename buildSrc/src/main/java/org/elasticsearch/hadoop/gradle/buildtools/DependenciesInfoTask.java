@@ -19,25 +19,38 @@
 
 package org.elasticsearch.hadoop.gradle.buildtools;
 
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.DefaultTask;
+import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.ProjectDependency;
-import org.gradle.api.internal.ConventionTask;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.internal.component.external.model.ModuleComponentArtifactIdentifier;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,42 +66,77 @@ import java.util.stream.Collectors;
  *     <li>license: <a href="https://spdx.org/licenses/">SPDX license</a> identifier, custom license or UNKNOWN.</li>
  * </ul>
  */
-public class DependenciesInfoTask extends ConventionTask {
+@CacheableTask
+public abstract class DependenciesInfoTask extends DefaultTask {
+
+    @Inject
+    public abstract ProviderFactory getProviderFactory();
+
+    /**
+     * We have to use ArtifactCollection instead of ResolvedArtifactResult here as we're running
+     * into an issue in Gradle: https://github.com/gradle/gradle/issues/27582
+     */
+    @Internal
+    abstract Property<ArtifactCollection> getRuntimeArtifacts();
+
+    @Input
+    public Provider<Set<ModuleComponentIdentifier>> getRuntimeModules() {
+        return mapToModuleComponentIdentifiers(getRuntimeArtifacts().get());
+    }
+
+    @Internal
+    abstract Property<ArtifactCollection> getCompileOnlyArtifacts();
+
+    @Input
+    public Provider<Set<ModuleComponentIdentifier>> getCompileOnlyModules() {
+        return mapToModuleComponentIdentifiers(getCompileOnlyArtifacts().get());
+    }
+
+    /**
+     * We need to track file inputs here from the configurations we inspect to ensure we don't miss any
+     * artifact transforms that might be applied and fail due to missing task dependency to jar
+     * generating tasks.
+     */
+    @Classpath
+    abstract ConfigurableFileCollection getClasspath();
+
+    private Provider<Set<ModuleComponentIdentifier>> mapToModuleComponentIdentifiers(ArtifactCollection artifacts) {
+        return getProviderFactory().provider(
+            () -> artifacts.getArtifacts()
+                .stream()
+                .map(r -> r.getId())
+                .filter(mcaId -> mcaId instanceof ModuleComponentArtifactIdentifier)
+                .map(mcaId -> (ModuleComponentArtifactIdentifier) mcaId)
+                .map(it -> it.getComponentIdentifier())
+                .collect(Collectors.toSet())
+        );
+    }
+
+    private final DirectoryProperty licensesDir;
+
+    @OutputFile
+    private File outputFile;
+
+    @Input
+    @Optional
+    public abstract MapProperty<String, String> getMappings();
+
     /**
      * Directory to read license files
      */
     @Optional
+    @PathSensitive(PathSensitivity.RELATIVE)
     @InputDirectory
-    private File licensesDir = new File(getProject().getProjectDir(), "licenses").exists()
-        ? new File(getProject().getProjectDir(), "licenses")
-        : null;
-
-    @OutputFile
-    private File outputFile = new File(getProject().getBuildDir(), "reports/dependencies/dependencies.csv");
-    private LinkedHashMap<String, String> mappings;
-
-    public Configuration getRuntimeConfiguration() {
-        return runtimeConfiguration;
-    }
-
-    public void setRuntimeConfiguration(Configuration runtimeConfiguration) {
-        this.runtimeConfiguration = runtimeConfiguration;
-    }
-
-    public Configuration getCompileOnlyConfiguration() {
-        return compileOnlyConfiguration;
-    }
-
-    public void setCompileOnlyConfiguration(Configuration compileOnlyConfiguration) {
-        this.compileOnlyConfiguration = compileOnlyConfiguration;
-    }
-
     public File getLicensesDir() {
-        return licensesDir;
+        File asFile = licensesDir.get().getAsFile();
+        if (asFile.exists()) {
+            return asFile;
+        }
+        return null;
     }
 
     public void setLicensesDir(File licensesDir) {
-        this.licensesDir = licensesDir;
+        this.licensesDir.set(licensesDir);
     }
 
     public File getOutputFile() {
@@ -99,40 +147,28 @@ public class DependenciesInfoTask extends ConventionTask {
         this.outputFile = outputFile;
     }
 
-    /**
-     * Dependencies to gather information from.
-     */
-    @InputFiles
-    private Configuration runtimeConfiguration;
-    /**
-     * We subtract compile-only dependencies.
-     */
-    @InputFiles
-    private Configuration compileOnlyConfiguration;
-
-    public DependenciesInfoTask() {
+    @Inject
+    public DependenciesInfoTask(ProjectLayout projectLayout, ObjectFactory objectFactory, ProviderFactory providerFactory) {
+        this.licensesDir = objectFactory.directoryProperty();
+        this.licensesDir.convention(providerFactory.provider(() -> projectLayout.getProjectDirectory().dir("licenses")));
+        this.outputFile = projectLayout.getBuildDirectory().dir("reports/dependencies").get().file("dependencies.csv").getAsFile();
         setDescription("Create a CSV file with dependencies information.");
     }
 
     @TaskAction
     public void generateDependenciesInfo() throws IOException {
-
-        final DependencySet runtimeDependencies = runtimeConfiguration.getAllDependencies();
-        // we have to resolve the transitive dependencies and create a group:artifactId:version map
-
-        final Set<String> compileOnlyArtifacts = compileOnlyConfiguration.getResolvedConfiguration()
-            .getResolvedArtifacts()
-            .stream()
-            .map(r -> {
-                ModuleVersionIdentifier id = r.getModuleVersion().getId();
-                return id.getGroup() + ":" + id.getName() + ":" + id.getVersion();
-            })
-            .collect(Collectors.toSet());
+        final Set<String> compileOnlyIds = getCompileOnlyModules().map(
+            set -> set.stream()
+                .map(id -> id.getModuleIdentifier().getGroup() + ":" + id.getModuleIdentifier().getName() + ":" + id.getVersion())
+                .collect(Collectors.toSet())
+        ).get();
 
         final StringBuilder output = new StringBuilder();
-        for (final Dependency dep : runtimeDependencies) {
+        Map<String, String> mappings = getMappings().getOrElse(new LinkedHashMap<>());
+        for (final ModuleComponentIdentifier dep : getRuntimeModules().get()) {
+            String moduleName = dep.getModuleIdentifier().getName();
             // we do not need compile-only dependencies here
-            if (compileOnlyArtifacts.contains(dep.getGroup() + ":" + dep.getName() + ":" + dep.getVersion())) {
+            if (compileOnlyIds.contains(dep.getGroup() + ":" + moduleName + ":" + dep.getVersion())) {
                 continue;
             }
 
@@ -141,24 +177,15 @@ public class DependenciesInfoTask extends ConventionTask {
                 continue;
             }
 
-            final String url = createURL(dep.getGroup(), dep.getName(), dep.getVersion());
-            final String dependencyName = DependencyLicensesTask.getDependencyName(getMappings(), dep.getName());
-            getLogger().info("mapped dependency " + dep.getGroup() + ":" + dep.getName() + " to " + dependencyName + " for license info");
+            final String url = createURL(dep.getGroup(), moduleName, dep.getVersion());
+            final String dependencyName = DependencyLicensesTask.getDependencyName(mappings, moduleName);
+            getLogger().info("mapped dependency " + dep.getGroup() + ":" + moduleName + " to " + dependencyName + " for license info");
 
             final String licenseType = getLicenseType(dep.getGroup(), dependencyName);
-            output.append(dep.getGroup() + ":" + dep.getName() + "," + dep.getVersion() + "," + url + "," + licenseType + "\n");
+            output.append(dep.getGroup() + ":" + moduleName + "," + dep.getVersion() + "," + url + "," + licenseType + "\n");
         }
 
-        Files.write(outputFile.toPath(), output.toString().getBytes("UTF-8"), StandardOpenOption.CREATE);
-    }
-
-    @Input
-    public LinkedHashMap<String, String> getMappings() {
-        return mappings;
-    }
-
-    public void setMappings(LinkedHashMap<String, String> mappings) {
-        this.mappings = mappings;
+        Files.writeString(outputFile.toPath(), output.toString(), StandardOpenOption.CREATE);
     }
 
     /**
@@ -167,7 +194,7 @@ public class DependenciesInfoTask extends ConventionTask {
      */
     protected String createURL(final String group, final String name, final String version) {
         final String baseURL = "https://repo1.maven.org/maven2";
-        return baseURL + "/" + group.replaceAll("\\.", "/") + "/" + name + "/" + version;
+        return baseURL + "/" + group.replace('.', '/') + "/" + name + "/" + version;
     }
 
     /**
@@ -211,27 +238,24 @@ public class DependenciesInfoTask extends ConventionTask {
         return licenseType;
     }
 
-    protected File getDependencyInfoFile(final String group, final String name, final String infoFileSuffix) {
-        java.util.Optional<File> license = licensesDir != null
-            ? Arrays.stream(licensesDir.listFiles((dir, fileName) -> Pattern.matches(".*-" + infoFileSuffix + ".*", fileName)))
-                .filter(file -> {
-                    String prefix = file.getName().split("-" + infoFileSuffix + ".*")[0];
-                    return group.contains(prefix) || name.contains(prefix);
-                })
-                .findFirst()
-            : java.util.Optional.empty();
-
-        return license.orElseThrow(
-            () -> new IllegalStateException(
-                "Unable to find "
-                    + infoFileSuffix
-                    + " file for dependency "
-                    + group
-                    + ":"
-                    + name
-                    + " in "
-                    + getLicensesDir().getAbsolutePath()
-            )
+    private IllegalStateException missingInfo(String group, String name, String infoFileSuffix, String reason) {
+        return new IllegalStateException(
+            "Unable to find " + infoFileSuffix + " file for dependency " + group + ":" + name + " " + reason
         );
+    }
+
+    protected File getDependencyInfoFile(final String group, final String name, final String infoFileSuffix) {
+        File dir = getLicensesDir();
+        if (dir == null) {
+            throw missingInfo(group, name, infoFileSuffix, " because license dir is missing at " + licensesDir.getAsFile().get());
+        }
+        java.util.Optional<File> license = Arrays.stream(
+            dir.listFiles((d, fileName) -> Pattern.matches(".*-" + infoFileSuffix + ".*", fileName))
+        ).filter(file -> {
+            String prefix = file.getName().split("-" + infoFileSuffix + ".*")[0];
+            return group.contains(prefix) || name.contains(prefix);
+        }).findFirst();
+
+        return license.orElseThrow(() -> missingInfo(group, name, infoFileSuffix, " in " + dir));
     }
 }
