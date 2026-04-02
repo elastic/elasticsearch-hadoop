@@ -28,6 +28,18 @@ sparkVariants {
             }
         }
 
+        // Include shared source directory alongside this module's version-specific sources
+        def sharedSrcDir = "${rootProject.projectDir}/spark/sql-shared/src"
+        project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
+            srcDir "${sharedSrcDir}/main/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
+            srcDir "${sharedSrcDir}/test/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
+            srcDir "${sharedSrcDir}/itest/scala"
+        }
+
         // Configure main compile task
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
@@ -122,8 +134,10 @@ sparkVariants {
         }
 
         // Add java files from scala source set to javadocSourceElements.
-        project.fileTree("src/main/scala").include(javaFilesOnly).each {
-            project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+        for (def sourceDir in ["src/main/scala", "${rootProject.projectDir}/spark/sql-shared/src/main/scala"]) {
+            project.fileTree(sourceDir).include(javaFilesOnly).each {
+                project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+            }
         }
 
         // Configure java source generation for javadoc purposes
