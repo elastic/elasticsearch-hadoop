@@ -663,8 +663,7 @@ class BuildPlugin implements Plugin<Project> {
 
     private static void configurePom(Project project, MavenPublication publication) {
         // add all items necessary for publication
-        String projectDescription = project.getDescription()
-        Provider<String> descriptionProvider = project.provider({ projectDescription })
+        Provider<String> descriptionProvider = project.provider({ project.getDescription() })
         MavenPom pom = publication.getPom()
         pom.name = descriptionProvider
         pom.description = descriptionProvider
