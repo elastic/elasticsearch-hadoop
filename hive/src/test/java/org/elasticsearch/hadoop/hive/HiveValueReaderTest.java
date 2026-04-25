@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.Text;
-import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
@@ -46,15 +46,16 @@ public class HiveValueReaderTest {
                 .setReadMetadata(false)
                 .setReturnRawJson(false)
                 .setIgnoreUnmappedFields(false);
-        ScrollReader reader = new ScrollReader(scrollCfg);
-        InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
-        List<Object[]> read = reader.read(stream).getHits();
-        assertEquals(1, read.size());
-        Object[] doc = read.get(0);
-        Map map = (Map) doc[1];
-        assertTrue(map.containsKey(new Text("type")));
-        assertTrue(map.containsKey(new Text("&t")));
-        assertThat(map.get(new Text("&t")).toString(), containsString("2014-08-05"));
+        try (ScrollReader reader = new ScrollReader(scrollCfg)) {
+            InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
+            List<Object[]> read = reader.read(stream).getHits();
+            assertEquals(1, read.size());
+            Object[] doc = read.get(0);
+            Map map = (Map) doc[1];
+            assertTrue(map.containsKey(new Text("type")));
+            assertTrue(map.containsKey(new Text("&t")));
+            assertThat(map.get(new Text("&t")).toString(), containsString("2014-08-05"));
+        }
     }
 
     private Mapping mapping(String resource) throws Exception {

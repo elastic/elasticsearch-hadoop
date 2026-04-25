@@ -204,45 +204,45 @@ public class ScrollReaderJsonTest {
 
         {
             String row = (String) read.get(0)[1];
-            assertTrue(row.contains("\"joiner\": \"company\""));
+            assertTrue(row.contains("\"joiner\":\"company\""));
         }
 
         {
             String row = (String) read.get(1)[1];
             assertTrue(row.contains("joiner"));
-            assertTrue(row.contains("\"name\": \"employee\""));
-            assertTrue(row.contains("\"parent\": \"1\""));
+            assertTrue(row.contains("\"name\":\"employee\""));
+            assertTrue(row.contains("\"parent\":\"1\""));
         }
 
         {
             String row = (String) read.get(2)[1];
-            assertTrue(row.contains("\"joiner\": \"company\""));
+            assertTrue(row.contains("\"joiner\":\"company\""));
         }
 
         {
             String row = (String) read.get(3)[1];
             assertTrue(row.contains("joiner"));
-            assertTrue(row.contains("\"name\": \"employee\""));
-            assertTrue(row.contains("\"parent\": \"2\""));
+            assertTrue(row.contains("\"name\":\"employee\""));
+            assertTrue(row.contains("\"parent\":\"2\""));
         }
 
         {
             String row = (String) read.get(4)[1];
             assertTrue(row.contains("joiner"));
-            assertTrue(row.contains("\"name\": \"employee\""));
-            assertTrue(row.contains("\"parent\": \"2\""));
+            assertTrue(row.contains("\"name\":\"employee\""));
+            assertTrue(row.contains("\"parent\":\"2\""));
         }
 
         {
             String row = (String) read.get(5)[1];
-            assertTrue(row.contains("\"joiner\": \"company\""));
+            assertTrue(row.contains("\"joiner\":\"company\""));
         }
 
         {
             String row = (String) read.get(6)[1];
             assertTrue(row.contains("joiner"));
-            assertTrue(row.contains("\"name\": \"employee\""));
-            assertTrue(row.contains("\"parent\": \"3\""));
+            assertTrue(row.contains("\"name\":\"employee\""));
+            assertTrue(row.contains("\"parent\":\"3\""));
         }
     }
 
