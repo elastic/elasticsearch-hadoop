@@ -20,12 +20,14 @@ package org.elasticsearch.hadoop.serialization.json;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Parser;
 import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonFactory;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonLocation;
 import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
 import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonStreamContext;
 import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonToken;
@@ -251,7 +253,10 @@ public class JacksonJsonParser implements Parser {
     @Override
     public byte[] binaryValue() {
         try {
-            return parser.getBinaryValue();
+            // Historically (Jackson 1.x behavior in this project), binary values were treated as their
+            // base64 text representation, not decoded bytes. ValueReaders and tests rely on this.
+            String text = parser.getText();
+            return (text != null ? text.getBytes(StandardCharsets.UTF_8) : null);
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -286,6 +291,19 @@ public class JacksonJsonParser implements Parser {
 
     @Override
     public int tokenCharOffset() {
-        return (int) parser.getTokenLocation().getCharOffset();
+        JsonLocation tokenLoc = parser.getTokenLocation();
+        long charOffset = tokenLoc.getCharOffset();
+        if (charOffset >= 0) {
+            return (int) charOffset;
+        }
+        // For byte[] / InputStream-backed parsers Jackson 2 often leaves charOffset at -1 but still
+        // reports byte offsets. Scroll slicing and BlockAwareJsonParser tests index the raw UTF-8
+        // buffer, so byte offsets are the correct quantity here (and match ASCII "char" indices).
+        long byteOffset = tokenLoc.getByteOffset();
+        if (byteOffset >= 0) {
+            return (int) byteOffset;
+        }
+        long cursor = parser.currentLocation().getByteOffset();
+        return cursor >= 0 ? (int) cursor : 0;
     }
 }
