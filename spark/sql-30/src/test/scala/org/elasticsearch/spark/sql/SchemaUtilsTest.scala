@@ -23,7 +23,7 @@ import java.util.{Map => JMap}
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.DataTypes._
 import org.apache.spark.sql.types.StructType
-import org.codehaus.jackson.map.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.util.TestSettings

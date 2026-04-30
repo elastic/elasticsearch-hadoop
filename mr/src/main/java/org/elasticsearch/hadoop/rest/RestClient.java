@@ -38,10 +38,9 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.MapperFeature;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -96,8 +95,7 @@ public class RestClient implements Closeable, StatsAware {
 
     {
         mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.USE_ANNOTATIONS, false);
-        mapper.configure(SerializationConfig.Feature.USE_ANNOTATIONS, false);
+        mapper.configure(MapperFeature.USE_ANNOTATIONS, false);
     }
 
 
@@ -184,7 +182,7 @@ public class RestClient implements Closeable, StatsAware {
 
         try {
             // create parser manually to lower Jackson requirements
-            JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
+            JsonParser jsonParser = mapper.getFactory().createParser(content);
             try {
                 map = mapper.readValue(jsonParser, Map.class);
             } finally {
@@ -250,7 +248,7 @@ public class RestClient implements Closeable, StatsAware {
         // Check for failed writes
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
-            JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+            JsonParser parser = mapper.getFactory().createParser(content);
             try {
                 if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
                     return Collections.<Map>emptyList().iterator();

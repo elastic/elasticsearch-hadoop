@@ -22,8 +22,8 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.rest.PartitionDefinition.PartitionDefinitionBuilder;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -42,8 +42,8 @@ public class PartitionDefinitionTest {
 
     private Mapping getTestMapping() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonParser jsonParser = mapper.getJsonFactory()
-                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/typeless/basic.json"));
+        JsonParser jsonParser = mapper.getFactory()
+                .createParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/typeless/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
         return FieldParser.parseTypelessMappings(map).getResolvedView();

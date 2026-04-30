@@ -62,12 +62,12 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation(project(":test:shared"))
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
 
     itestEmbedded(project(":test:shared"))
-    itestImplementation("com.fasterxml.jackson.core:jackson-databind:2.7.8")
+    itestImplementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     itestImplementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
         // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
