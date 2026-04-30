@@ -71,7 +71,7 @@ class HadoopFixturePlugin implements Plugin<Project> {
 
     private static configureApacheMirrorRepository(Project project) {
         RepositoryHandler repositoryHandler = project.getRepositories()
-        [APACHE_MIRROR_1, APACHE_MIRROR_2].each { APACHE_MIRROR ->
+        [APACHE_MIRROR_2, APACHE_MIRROR_1].each { APACHE_MIRROR ->
             repositoryHandler.add(repositoryHandler.ivy({IvyArtifactRepository ivyArtifactRepository ->
                 ivyArtifactRepository.setUrl(APACHE_MIRROR)
                 ivyArtifactRepository.patternLayout({IvyPatternRepositoryLayout ivyPatternRepositoryLayout ->
