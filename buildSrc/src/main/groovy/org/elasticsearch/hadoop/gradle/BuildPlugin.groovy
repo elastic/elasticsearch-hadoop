@@ -555,10 +555,14 @@ class BuildPlugin implements Plugin<Project> {
         project.getPluginManager().apply("com.gradleup.nmcp")
         project.getPluginManager().apply("signing")
 
+        // Allow overriding the published groupId via gradle property (e.g., -PpublishGroupId=com.github.zeotuan)
+        String publishGroup = project.findProperty('publishGroupId') ?: project.getGroup()
+
         // Configure Maven publication
         project.publishing {
             publications {
                 main(MavenPublication) {
+                    groupId = publishGroup
                     from project.components.java
                     suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                 }
@@ -653,6 +657,7 @@ class BuildPlugin implements Plugin<Project> {
                 project.publishing {
                     publications {
                         MavenPublication variantPublication = create(variant.getName(), MavenPublication) {
+                            groupId = publishGroup
                             from variantComponent
                             suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                         }

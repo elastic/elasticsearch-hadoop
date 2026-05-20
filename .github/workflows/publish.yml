@@ -26,9 +26,9 @@ jobs:
 
       - name: Publish elasticsearch-spark-30 to GitHub Packages
         run: |
-          ./gradlew :elasticsearch-spark-30:publishToMavenLocal \
-            :elasticsearch-spark-30:publishAllPublicationsToGitHubPackagesRepository \
+          ./gradlew :elasticsearch-spark-30:publishAllPublicationsToGitHubPackagesRepository \
             --no-daemon \
+            -PpublishGroupId=com.github.zeotuan \
             -x javadoc -x spark30scala212Javadoc -x spark30scala212JavadocJar \
             -x spark35scala212Javadoc -x spark35scala212JavadocJar \
             -x spark35scala213Javadoc -x spark35scala213JavadocJar \
