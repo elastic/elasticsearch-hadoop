@@ -568,6 +568,14 @@ class BuildPlugin implements Plugin<Project> {
                     name = 'build'
                     url = "file://${project.buildDir}/repo"
                 }
+                maven {
+                    name = 'GitHubPackages'
+                    url = 'https://maven.pkg.github.com/zeotuan/elasticsearch-hadoop'
+                    credentials {
+                        username = System.getenv('GITHUB_ACTOR') ?: System.getenv('GH_USERNAME') ?: ''
+                        password = System.getenv('GITHUB_TOKEN') ?: System.getenv('GH_TOKEN') ?: ''
+                    }
+                }
             }
         }
 
@@ -731,8 +739,14 @@ class BuildPlugin implements Plugin<Project> {
     private static void updateVariantArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
         BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
-        // Fix the artifact id
-        publication.setArtifactId("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
+        // Fix the artifact id - include spark version prefix for non-default variants to avoid coordinate collisions
+        String baseName = baseExtension.archivesName.get()
+        String variantName = variant.getName()
+        if (variantName.startsWith("spark35")) {
+            // Replace spark-30 with spark-35 in artifact name for Spark 3.5 variants
+            baseName = baseName.replace("spark-30", "spark-35").replace("spark_", "spark-35_")
+        }
+        publication.setArtifactId("${baseName}_${variant.scalaMajorVersion}")
     }
 
     /**
