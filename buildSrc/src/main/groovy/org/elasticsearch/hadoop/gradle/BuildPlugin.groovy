@@ -530,7 +530,6 @@ class BuildPlugin implements Plugin<Project> {
                 }
             }
             jdt {
-                javaRuntimeName = "JavaSE-1.8"
                 sourceCompatibility = 1.8
                 targetCompatibility = 1.8
             }

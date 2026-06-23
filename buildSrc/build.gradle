@@ -20,7 +20,7 @@ if (JavaVersion.current() < JavaVersion.VERSION_11) {
  * Configure Project Versions
  */
 
-boolean localRepo = project.getProperties().containsKey("localRepo")
+boolean localRepo = project.hasProperty("localRepo")
 
 Properties props = new Properties()
 props.load(project.file('esh-version.properties').newDataInputStream())
