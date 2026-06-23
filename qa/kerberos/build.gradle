@@ -45,7 +45,7 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
     task.targetCompatibility = project.ext.minimumRuntimeVersion
 }
 
-boolean localRepo = project.getProperties().containsKey("localRepo")
+boolean localRepo = project.hasProperty("localRepo")
 
 // Gradle's java library plugin adds a variant to each project that offers the classes dir as an artifact that can be 
 // used in other projects instead of requiring a jar operation to happen. Kerberos depends on the spark integration to 
