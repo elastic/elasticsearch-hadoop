@@ -31,7 +31,7 @@ subprojects {
     // all the fixture tasks. Add a build script dependency for it. Be sensitive of pulling it from
     // a local repo if we're currently in the release manager (unlikely, but be future proof).
     buildscript {
-        boolean localRepo = project.getProperties().containsKey("localRepo")
+        boolean localRepo = project.hasProperty("localRepo")
         repositories {
             gradlePluginPortal()
             mavenCentral()
