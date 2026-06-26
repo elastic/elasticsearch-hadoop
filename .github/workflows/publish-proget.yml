@@ -1,0 +1,40 @@
+name: Publish to WTG-Maven (ProGet)
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      publishGroupId:
+        description: "Maven groupId to publish under"
+        required: false
+        default: "com.github.zeotuan"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish elasticsearch-spark-30 to WTG-Maven (ProGet)
+        run: |
+          ./gradlew :elasticsearch-spark-30:publishAllPublicationsToProGetRepository \
+            --no-daemon \
+            -PpublishGroupId=${{ github.event.inputs.publishGroupId || 'com.github.zeotuan' }} \
+            -x javadoc -x spark30scala212Javadoc -x spark30scala212JavadocJar \
+            -x spark35scala212Javadoc -x spark35scala212JavadocJar \
+            -x spark35scala213Javadoc -x spark35scala213JavadocJar \
+            -x javadocJar
+        env:
+          PROGET_USERNAME: ${{ secrets.PROGET_USERNAME }}
+          PROGET_PASSWORD: ${{ secrets.PROGET_PASSWORD }}

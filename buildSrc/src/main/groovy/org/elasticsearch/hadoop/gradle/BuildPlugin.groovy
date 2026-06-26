@@ -580,6 +580,15 @@ class BuildPlugin implements Plugin<Project> {
                         password = System.getenv('GITHUB_TOKEN') ?: System.getenv('GH_TOKEN') ?: ''
                     }
                 }
+                maven {
+                    name = 'ProGet'
+                    // WTG-Maven feed on ProGet. Override with -PprogetUrl=... if needed.
+                    url = project.findProperty('progetUrl') ?: 'https://proget.wtg.zone/maven2/WTG-Maven/'
+                    credentials {
+                        username = System.getenv('PROGET_USERNAME') ?: System.getenv('PROGET_USER') ?: ''
+                        password = System.getenv('PROGET_PASSWORD') ?: System.getenv('PROGET_API_KEY') ?: ''
+                    }
+                }
             }
         }
 
