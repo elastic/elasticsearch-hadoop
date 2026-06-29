@@ -9,10 +9,7 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.sql.variant'
-    setCoreDefaultVariant "spark30scala213", spark30Version, scala213Version
-    addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
-    addCoreFeatureVariant "spark35scala213", spark35Version, scala213Version
-    addCoreFeatureVariant "spark35scala212", spark35Version, scala212Version
+    setCoreDefaultVariant "spark35scala212", spark35Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -203,16 +200,7 @@ sparkVariants {
 
 tasks.register('copyPoms', Copy) {
     from(tasks.named('generatePomFileForMainPublication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-30_2.13-${project.getVersion()}.pom"
-    }
-    from(tasks.named('generatePomFileForSpark30scala212Publication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-30_2.12-${project.getVersion()}.pom"
-    }
-    from(tasks.named('generatePomFileForSpark35scala212Publication')) {
         rename 'pom-default.xml', "elasticsearch-spark-35_2.12-${project.getVersion()}.pom"
-    }
-    from(tasks.named('generatePomFileForSpark35scala213Publication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-35_2.13-${project.getVersion()}.pom"
     }
     into(new File(project.buildDir, 'distributions'))
 }
