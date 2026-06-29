@@ -541,10 +541,14 @@ class BuildPlugin implements Plugin<Project> {
         project.getPluginManager().apply("com.gradleup.nmcp")
         project.getPluginManager().apply("signing")
 
+        // Allow overriding the published groupId via gradle property (e.g., -PpublishGroupId=com.github.zeotuan)
+        String publishGroup = project.findProperty('publishGroupId') ?: project.getGroup()
+
         // Configure Maven publication
         project.publishing {
             publications {
                 main(MavenPublication) {
+                    groupId = publishGroup
                     from project.components.java
                     suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                 }
@@ -553,6 +557,23 @@ class BuildPlugin implements Plugin<Project> {
                 maven {
                     name = 'build'
                     url = "file://${project.buildDir}/repo"
+                }
+                maven {
+                    name = 'GitHubPackages'
+                    url = 'https://maven.pkg.github.com/zeotuan/elasticsearch-hadoop'
+                    credentials {
+                        username = System.getenv('GITHUB_ACTOR') ?: System.getenv('GH_USERNAME') ?: ''
+                        password = System.getenv('GITHUB_TOKEN') ?: System.getenv('GH_TOKEN') ?: ''
+                    }
+                }
+                maven {
+                    name = 'ProGet'
+                    // WTG-Maven feed on ProGet. Override with -PprogetUrl=... if needed.
+                    url = project.findProperty('progetUrl') ?: 'https://proget.wtg.zone/maven2/WTG-Maven/'
+                    credentials {
+                        username = System.getenv('PROGET_USERNAME') ?: System.getenv('PROGET_USER') ?: ''
+                        password = System.getenv('PROGET_PASSWORD') ?: System.getenv('PROGET_API_KEY') ?: ''
+                    }
                 }
             }
         }
@@ -580,7 +601,6 @@ class BuildPlugin implements Plugin<Project> {
 
             // Main variant needs the least configuration on its own, since it is the default publication created above.
             sparkVariants.defaultVariant { SparkVariant variant ->
-                project.publishing.publications.main.setAlias(true)
                 updateVariantArtifactId(project, project.publishing.publications.main, variant)
             }
 
@@ -632,11 +652,13 @@ class BuildPlugin implements Plugin<Project> {
                 project.publishing {
                     publications {
                         MavenPublication variantPublication = create(variant.getName(), MavenPublication) {
+                            groupId = publishGroup
                             from variantComponent
                             suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                         }
                         configurePom(project, variantPublication)
                         updateVariantArtifactId(project, variantPublication, variant)
+                        variantPublication.setAlias(true)
                     }
                 }
                 if (signingKey.isPresent()) {
@@ -720,8 +742,14 @@ class BuildPlugin implements Plugin<Project> {
     private static void updateVariantArtifactId(Project project, MavenPublication publication, SparkVariant variant) {
         // Add variant classifier to the pom file name if required
         BasePluginExtension baseExtension = project.getExtensions().getByType(BasePluginExtension.class);
-        // Fix the artifact id
-        publication.setArtifactId("${baseExtension.archivesName.get()}_${variant.scalaMajorVersion}")
+        // Fix the artifact id - include spark version prefix for non-default variants to avoid coordinate collisions
+        String baseName = baseExtension.archivesName.get()
+        String variantName = variant.getName()
+        if (variantName.startsWith("spark35")) {
+            // Replace spark-30 with spark-35 in artifact name for Spark 3.5 variants
+            baseName = baseName.replace("spark-30", "spark-35").replace("spark_", "spark-35_")
+        }
+        publication.setArtifactId("${baseName}_${variant.scalaMajorVersion}")
     }
 
     /**

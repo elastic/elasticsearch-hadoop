@@ -1,0 +1,52 @@
+name: Publish to WTG-Maven (ProGet)
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      publishGroupId:
+        description: "Maven groupId to publish under"
+        required: false
+        default: "com.github.zeotuan"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDKs
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            8
+            11
+            17
+            21
+
+      - name: Export JDK home env vars
+        run: |
+          echo "JAVA8_HOME=$JAVA_HOME_8_X64" >> "$GITHUB_ENV"
+          echo "JAVA11_HOME=$JAVA_HOME_11_X64" >> "$GITHUB_ENV"
+          echo "JAVA17_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "JAVA21_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish elasticsearch-spark-30 to WTG-Maven (ProGet)
+        run: |
+          ./gradlew :elasticsearch-spark-30:publishAllPublicationsToProGetRepository \
+            --no-daemon \
+            -PpublishGroupId=${{ github.event.inputs.publishGroupId || 'com.github.zeotuan' }} \
+            -x javadoc -x spark30scala212Javadoc -x spark30scala212JavadocJar \
+            -x spark35scala212Javadoc -x spark35scala212JavadocJar \
+            -x spark35scala213Javadoc -x spark35scala213JavadocJar \
+            -x javadocJar
+        env:
+          PROGET_USERNAME: ${{ secrets.PROGET_USERNAME }}
+          PROGET_PASSWORD: ${{ secrets.PROGET_PASSWORD }}
