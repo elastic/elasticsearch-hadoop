@@ -17,11 +17,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDKs
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: |
+            8
+            11
+            17
+            21
+
+      - name: Export JDK home env vars
+        run: |
+          echo "JAVA8_HOME=$JAVA_HOME_8_X64" >> "$GITHUB_ENV"
+          echo "JAVA11_HOME=$JAVA_HOME_11_X64" >> "$GITHUB_ENV"
+          echo "JAVA17_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "JAVA21_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
