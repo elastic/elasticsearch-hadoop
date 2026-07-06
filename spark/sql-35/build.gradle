@@ -182,9 +182,12 @@ sparkVariants {
 project.tasks.withType(Test).configureEach { Test testTask ->
     // Use Java 8 from BuildParams.javaVersions for Spark 3.5 tests
     // because Spark 3 uses a hadoop library that requires a java security manager
-    def java8Home = project.ext.javaVersions?.find { it.version == 8 }?.javaHome?.get()
-    if (java8Home != null) {
-        testTask.executable = "${java8Home}/bin/java"
+    def java8 = project.ext.javaVersions?.find { it.version == 8 }
+    if (java8 != null) {
+        testTask.executable = "${java8.javaHome.get()}/bin/java"
+    } else {
+        project.logger.warn("Spark 3.5 requires Java 8 but no JAVA8_HOME was discovered; " +
+                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA8_HOME.")
     }
 }
 

@@ -196,9 +196,12 @@ project.tasks.withType(Test).configureEach { Test testTask ->
     testTask.jvmArgs(openModuleArgs)
 
     // Use Java 17 from BuildParams.javaVersions for Spark 4.0 tests
-    def java17Home = project.ext.javaVersions?.find { it.version == 17 }?.javaHome?.get()
-    if (java17Home != null) {
-        testTask.executable = "${java17Home}/bin/java"
+    def java17 = project.ext.javaVersions?.find { it.version == 17 }
+    if (java17 != null) {
+        testTask.executable = "${java17.javaHome.get()}/bin/java"
+    } else {
+        project.logger.warn("Spark 4.0 requires Java 17 but no JAVA17_HOME was discovered; " +
+                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA17_HOME.")
     }
 }
 

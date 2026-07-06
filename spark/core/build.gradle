@@ -133,9 +133,13 @@ sparkVariants {
                 def javaHome = project.ext.javaVersions?.find { it.version == javaVersion }?.javaHome?.get()
                 if (javaHome != null) {
                     testTask.executable = "${javaHome}/bin/java"
+                } else {
+                    // Fall back to the Gradle JVM, but make the misconfiguration visible:
+                    // tests may fail due to Java version incompatibilities.
+                    project.logger.warn("Spark ${sparkMajorMinor} requires Java ${javaVersion} but no matching " +
+                            "JAVA${javaVersion}_HOME was discovered; falling back to the Gradle JVM " +
+                            "(${JavaVersion.current()}).")
                 }
-                // If the required Java version is not found, use the default JVM
-                // Tests may fail due to Java version incompatibilities
 
                 // JVM args for Java 9+ (--add-opens is not supported on Java 8)
                 if (javaVersion >= 9) {

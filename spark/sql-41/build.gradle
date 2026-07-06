@@ -198,9 +198,12 @@ project.tasks.withType(Test).configureEach { Test testTask ->
     testTask.jvmArgs(openModuleArgs)
 
     // Use Java 21 from BuildParams.javaVersions for Spark 4.1 tests
-    def java21Home = project.ext.javaVersions?.find { it.version == 21 }?.javaHome?.get()
-    if (java21Home != null) {
-        testTask.executable = "${java21Home}/bin/java"
+    def java21 = project.ext.javaVersions?.find { it.version == 21 }
+    if (java21 != null) {
+        testTask.executable = "${java21.javaHome.get()}/bin/java"
+    } else {
+        project.logger.warn("Spark 4.1 requires Java 21 but no JAVA21_HOME was discovered; " +
+                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA21_HOME.")
     }
 }
 

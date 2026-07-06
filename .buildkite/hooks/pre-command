@@ -36,6 +36,12 @@ export JAVA13_HOME
 JAVA14_HOME="$HOME/.java/openjdk14"
 export JAVA14_HOME
 
+JAVA17_HOME="$HOME/.java/openjdk17"
+export JAVA17_HOME
+
+JAVA21_HOME="$HOME/.java/openjdk21"
+export JAVA21_HOME
+
 if [[ "${USE_MAVEN_GPG:-}" == "true" ]]; then
   vault_path="kv/ci-shared/release-eng/team-release-secrets/es-delivery/gpg"
   ORG_GRADLE_PROJECT_signingKey=$(vault kv get --field="private_key" $vault_path)
