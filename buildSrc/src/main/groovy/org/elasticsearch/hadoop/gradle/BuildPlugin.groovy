@@ -106,28 +106,15 @@ class BuildPlugin implements Plugin<Project> {
         project.getPluginManager().apply(EclipsePlugin.class)
     }
 
-    /** Return the configuration name used for finding transitive deps of the given dependency. */
-    private static String transitiveDepConfigName(String groupId, String artifactId, String version) {
-        return "_transitive_${groupId}_${artifactId}_${version}"
-    }
-
     /**
      * Applies a closure to all dependencies in a configuration (currently or in the future) that disables the
      * resolution of transitive dependencies except for projects in the group <code>org.elasticsearch</code>.
      * @param configuration to disable transitive dependencies on
      */
     static void disableTransitiveDependencies(Project project, Configuration configuration) {
-        configuration.dependencies.all { Dependency dep ->
+        configuration.dependencies.whenObjectAdded { Dependency dep ->
             if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
                 dep.transitive = false
-
-                // also create a configuration just for this dependency version, so that later
-                // we can determine which transitive dependencies it has
-                String depConfig = transitiveDepConfigName(dep.group, dep.name, dep.version)
-                if (project.configurations.findByName(depConfig) == null) {
-                    project.configurations.create(depConfig)
-                    project.dependencies.add(depConfig, "${dep.group}:${dep.name}:${dep.version}")
-                }
             }
         }
     }
@@ -543,7 +530,6 @@ class BuildPlugin implements Plugin<Project> {
                 }
             }
             jdt {
-                javaRuntimeName = "JavaSE-1.8"
                 sourceCompatibility = 1.8
                 targetCompatibility = 1.8
             }
@@ -704,24 +690,27 @@ class BuildPlugin implements Plugin<Project> {
             }
         }
 
+        // Capture embedded dependency names eagerly as plain strings to avoid referencing
+        // Project or Configuration objects inside the withXml closure (configuration cache compatibility).
+        Configuration embedded = project.getConfigurations().findByName('embedded')
+        List<String> embeddedDepNames = embedded != null
+            ? embedded.getAllDependencies().collect { it.getName() }
+            : []
         publication.getPom().withXml { XmlProvider xml ->
             // add all items necessary for publication
             Node root = xml.asNode()
 
             // If we have embedded configuration on the project, remove its dependencies from the dependency nodes
             NodeList dependenciesNode = root.get("dependencies") as NodeList
-            Configuration embedded = project.getConfigurations().findByName('embedded')
-            if (embedded != null) {
-                embedded.getAllDependencies().all { Dependency dependency ->
-                    Iterator<Node> dependenciesIterator = dependenciesNode.get(0).children().iterator()
-                    while (dependenciesIterator.hasNext()) {
-                        Node dependencyNode = dependenciesIterator.next()
-                        String artifact = dependencyNode.get("artifactId").text()
-                        // handle scala variants by splitting via "_" and checking the first part
-                        if (artifact =~ dependency.getName().split('_')[0]) {
-                            dependenciesIterator.remove()
-                            break
-                        }
+            embeddedDepNames.each { String depName ->
+                Iterator<Node> dependenciesIterator = dependenciesNode.get(0).children().iterator()
+                while (dependenciesIterator.hasNext()) {
+                    Node dependencyNode = dependenciesIterator.next()
+                    String artifact = dependencyNode.get("artifactId").text()
+                    // handle scala variants by splitting via "_" and checking the first part
+                    if (artifact =~ depName.split('_')[0]) {
+                        dependenciesIterator.remove()
+                        break
                     }
                 }
             }

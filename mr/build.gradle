@@ -85,12 +85,13 @@ sourceSets {
 }
 
 task generateGitHash {
+    def projectVersion = version
     inputs.property "revision", BuildParams.gitRevision
     outputs.dir generatedResources
 
     doLast {
         Properties props = new Properties()
-        props.put("version", version)
+        props.put("version", projectVersion)
         props.put("hash", BuildParams.gitRevision)
         File output = new File(generatedResources, "esh-build.properties")
         new File(generatedResources).mkdirs()

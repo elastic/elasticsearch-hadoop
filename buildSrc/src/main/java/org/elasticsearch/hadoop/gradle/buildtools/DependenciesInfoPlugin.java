@@ -30,15 +30,26 @@ public class DependenciesInfoPlugin implements Plugin<Project> {
         project.getPlugins().apply(CompileOnlyResolvePlugin.class);
         var depsInfo = project.getTasks().register("dependenciesInfo", DependenciesInfoTask.class);
         depsInfo.configure(t -> {
-            t.setRuntimeConfiguration(project.getConfigurations().getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME));
-            t.setCompileOnlyConfiguration(
-                project.getConfigurations().getByName(CompileOnlyResolvePlugin.RESOLVEABLE_COMPILE_ONLY_CONFIGURATION_NAME)
-            );
-            t.getConventionMapping().map("mappings", () -> {
+            var runtimeConfiguration = project.getConfigurations()
+                .getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME);
+            t.getRuntimeArtifacts()
+                .set(project.getProviders().provider(
+                    () -> DependenciesUtils.createNonTransitiveArtifactsView(runtimeConfiguration).getArtifacts()
+                ));
+            t.getClasspath().from(runtimeConfiguration);
+
+            var compileOnlyConfiguration = project.getConfigurations()
+                .getByName(CompileOnlyResolvePlugin.RESOLVEABLE_COMPILE_ONLY_CONFIGURATION_NAME);
+            t.getCompileOnlyArtifacts()
+                .set(project.getProviders().provider(
+                    () -> compileOnlyConfiguration.getIncoming().getArtifacts()
+                ));
+            t.getClasspath().from(compileOnlyConfiguration);
+
+            t.getMappings().set(project.provider(() -> {
                 var depLic = project.getTasks().named("dependencyLicenses", DependencyLicensesTask.class);
                 return depLic.get().getMappings();
-            });
+            }));
         });
     }
-
 }

@@ -73,7 +73,7 @@ class RootBuildPlugin implements Plugin<Project> {
 
         if (project.logger.isDebugEnabled()) {
             jar.doLast {
-                jar.getInputs().getFiles().each { project.logger.debug(":jar - Adding: $it") }
+                jar.getInputs().getFiles().each { jar.logger.debug(":jar - Adding: $it") }
             }
         }
     }
@@ -93,14 +93,16 @@ class RootBuildPlugin implements Plugin<Project> {
         distribution.dependsOn(distZip)
 
         // Location of the zip dir
-        project.rootProject.ext.folderName = "${distZip.archiveBaseName.get()}" + "-" + "${project.version}"
+        String folderName = "${distZip.archiveBaseName.get()}" + "-" + "${project.version}"
+        project.rootProject.ext.folderName = folderName
 
         // Copy root directory files to zip
-        distZip.from(project.rootDir) { CopySpec spec ->
+        File rootDir = project.rootDir
+        distZip.from(rootDir) { CopySpec spec ->
             spec.include("README.md")
             spec.include("LICENSE.txt")
             spec.include("NOTICE.txt")
-            spec.into("${project.rootProject.ext.folderName}")
+            spec.into("${folderName}")
         }
 
         // Copy master jar, sourceJar, and javadocJar to zip
@@ -108,14 +110,14 @@ class RootBuildPlugin implements Plugin<Project> {
             // Do not copy the hadoop testing jar
             project.getTasks().withType(Jar.class) { Jar jarTask ->
                 distZip.from(jarTask.archiveFile) { CopySpec spec ->
-                    spec.into("${project.rootProject.ext.folderName}/dist")
+                    spec.into("${folderName}/dist")
                 }
             }
         }
 
         // Log dist artifacts
         distZip.doLast {
-            distZip.getInputs().getFiles().each { project.logger.info(":distZip - Adding: $it")}
+            distZip.getInputs().getFiles().each { distZip.logger.info(":distZip - Adding: $it")}
         }
     }
 }
