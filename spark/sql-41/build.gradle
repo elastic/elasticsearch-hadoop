@@ -155,7 +155,7 @@ sparkVariants {
 
         ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
         compileScala.scalaCompileOptions.with {
-            additionalParameters = [
+            additionalParameters = additionalParameters + [
                     "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
                     "-P:genjavadoc:out=$generatedJavaDirectory".toString()
             ]
