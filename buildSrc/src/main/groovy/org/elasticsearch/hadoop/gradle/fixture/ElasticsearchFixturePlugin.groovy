@@ -100,6 +100,10 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             integTestCluster.setting("http.host", "localhost")
             // TODO: Remove this when this is the default in 7
             integTestCluster.systemProperty('es.http.cname_in_publish_address', 'true')
+            // The test fixtures wipe state between suites with `DELETE /_all`. Since ES 9.x
+            // `action.destructive_requires_name` defaults to true, which rejects _all/wildcard
+            // deletes; relax it so LocalEs.clearState() can wipe indices.
+            integTestCluster.setting('action.destructive_requires_name', 'false')
             // Minimal Security
             integTestCluster.setting('xpack.security.enabled', 'true')
             integTestCluster.keystore('bootstrap.password', 'password')
