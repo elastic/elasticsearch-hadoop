@@ -86,6 +86,10 @@ public class LocalEs extends ExternalResource {
 
     private void clearState() throws Exception {
         LogFactory.getLog(getClass()).warn("Wiping all existing indices from the node");
+        // Since ES 9.x, action.destructive_requires_name defaults to true, which rejects the
+        // _all/wildcard delete below. Relax it at runtime (Testclusters bans setting this
+        // statically) so the fixture can continue wiping indices between suites.
+        RestUtils.put("_cluster/settings", "{\"persistent\":{\"action.destructive_requires_name\":false}}".getBytes());
         RestUtils.delete("/_all");
     }
 
