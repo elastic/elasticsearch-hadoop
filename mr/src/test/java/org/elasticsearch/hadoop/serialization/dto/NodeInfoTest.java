@@ -18,8 +18,8 @@
  */
 package org.elasticsearch.hadoop.serialization.dto;
 
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class NodeInfoTest {
 
     static Map<String, NodeInfo> testNodeInfo(InputStream input) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(input);
+        JsonParser jsonParser = mapper.getFactory().createParser(input);
         Map<String, Map<String, Object>> map =
                 (Map<String, Map<String, Object>>) mapper.readValue(jsonParser, Map.class).get("nodes");
         Map<String, NodeInfo> nodeMap = new HashMap<String, NodeInfo>();
