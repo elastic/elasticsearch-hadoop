@@ -15,7 +15,7 @@ Unfortunately, these settings need to be setup **manually** **before** the job /
 
 ## Speculative execution [_speculative_execution]
 
-[TBC: FANCY QUOTE]
+% [TBC: FANCY QUOTE]
 In other words, speculative execution is an **optimization**, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching or reading resources, having duplicate tasks is harmless and means at most a waste of computation resources; however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates. Since the *speculative execution* behavior can be triggered by external factors (such as network or CPU load which in turn cause false positive) even in stable environments (virtualized clusters are particularly prone to this) and has a direct impact on data, elasticsearch-hadoop disables this optimization for data safety.
 
 Please check your library setting and disable this feature. If you encounter more data then expected, double and triple check this setting.
