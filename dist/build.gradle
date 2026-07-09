@@ -48,13 +48,17 @@ configurations {
 
 BuildPlugin.disableTransitiveDependencies(project, project.configurations.thirdPartyShaded)
 
-def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-spark-30"]
+def distProjects = [":elasticsearch-hadoop-mr", ":elasticsearch-hadoop-hive", ":elasticsearch-spark-30", ":elasticsearch-spark-35"]
 
 distProjects.each { distProject ->
     def configureDistDependency = { Dependency dependency ->
         if (distProject == ":elasticsearch-spark-30") {
             dependency.capabilities {
                 requireCapability("org.elasticsearch.spark.sql.variant:$sparkVariantIncluded:$project.version")
+            }
+        } else if (distProject == ":elasticsearch-spark-35") {
+            dependency.capabilities {
+                requireCapability("org.elasticsearch.spark35.sql.variant:spark35scala213:$project.version")
             }
         }
     }
