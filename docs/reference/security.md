@@ -1,7 +1,6 @@
 ---
 mapped_pages:
-  - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/security.html
-  - https://www.elastic.co/guide/en/elasticsearch/reference/current/hadoop.html
+  - https://github.com/elastic/.github/blob/main/SECURITY.md
 navigation_title: Security
 ---
 # {{esh-full}} security
