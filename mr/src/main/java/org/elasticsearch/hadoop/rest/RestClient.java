@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.DELETE;
 import static org.elasticsearch.hadoop.rest.Request.Method.GET;
@@ -311,14 +312,22 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public MappingSet getMappings(Resource indexResource) {
+        return getMappings(indexResource, Collections.emptySet());
+    }
+
+    public MappingSet getMappings(Resource indexResource, Set<String> includeFields) {
         if (indexResource.isTyped()) {
-            return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true);
+            return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true, includeFields);
         } else {
-            return getMappings(indexResource.index() + "/_mapping" + (indexReadMissingAsEmpty ? "?ignore_unavailable=true" : ""), false);
+            return getMappings(indexResource.index() + "/_mapping" + (indexReadMissingAsEmpty ? "?ignore_unavailable=true" : ""), false, includeFields);
         }
     }
 
     public MappingSet getMappings(String query, boolean includeTypeName) {
+        return getMappings(query, includeTypeName, Collections.emptySet());
+    }
+
+    public MappingSet getMappings(String query, boolean includeTypeName, Set<String> includeFields) {
         // If the version is not at least 7, then the property isn't guaranteed to exist. If it is, then defer to the flag.
         boolean requestTypeNameInResponse = clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X) && includeTypeName;
         // Response will always have the type name in it if node version is before 7, and if it is not, defer to the flag.
@@ -328,7 +337,7 @@ public class RestClient implements Closeable, StatsAware {
         }
         Map<String, Object> result = get(query, null);
         if (result != null && !result.isEmpty()) {
-            return FieldParser.parseMappings(result, typeNameInResponse);
+            return FieldParser.parseMappings(result, typeNameInResponse, includeFields);
         }
         return null;
     }

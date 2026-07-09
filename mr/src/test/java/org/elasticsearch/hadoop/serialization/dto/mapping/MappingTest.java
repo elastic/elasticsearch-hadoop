@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
@@ -60,6 +61,7 @@ import static org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils.fi
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -452,5 +454,94 @@ public class MappingTest {
         assertEquals(FLOAT, mapping.getFields()[1].type());
         assertEquals("field4", mapping.getFields()[2].name());
         assertEquals(INTEGER, mapping.getFields()[2].type());
+    }
+
+    @Test
+    public void testIncludeFieldsAvoidsConflict() throws Exception {
+        // Filtering out conflicting field2 (null vs keyword) should prevent the exception
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/multiple-indices-multiple-conflicting-types.json"), Map.class);
+        Set<String> includeFields = new java.util.HashSet<>(java.util.Arrays.asList("field1", "field3"));
+        MappingSet mappings = FieldParser.parseMappings(value, !typeless, includeFields);
+
+        Mapping mapping = mappings.getResolvedView();
+        assertEquals("*", mapping.getIndex());
+        assertEquals("*", mapping.getType());
+        assertEquals(2, mapping.getFields().length);
+        assertEquals("field1", mapping.getFields()[0].name());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
+        assertEquals("field3", mapping.getFields()[1].name());
+        assertEquals(FLOAT, mapping.getFields()[1].type());
+    }
+
+    @Test
+    public void testIncludeFieldsEmptyReturnsAll() throws Exception {
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/basic.json"), Map.class);
+        MappingSet withoutFilter = FieldParser.parseMappings(value, !typeless);
+        value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/basic.json"), Map.class);
+        MappingSet withEmptyFilter = FieldParser.parseMappings(value, !typeless, Collections.emptySet());
+
+        assertEquals(withoutFilter.getResolvedView().getFields().length,
+                withEmptyFilter.getResolvedView().getFields().length);
+    }
+
+    @Test
+    public void testIncludeFieldsFiltersToSubset() throws Exception {
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/basic.json"), Map.class);
+        MappingSet allFields = FieldParser.parseMappings(value, !typeless);
+        int totalFields = allFields.getResolvedView().getFields().length;
+
+        String firstFieldName = allFields.getResolvedView().getFields()[0].name();
+        value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/basic.json"), Map.class);
+        MappingSet filtered = FieldParser.parseMappings(value, !typeless,
+                singleton(firstFieldName));
+
+        assertEquals(1, filtered.getResolvedView().getFields().length);
+        assertEquals(firstFieldName, filtered.getResolvedView().getFields()[0].name());
+    }
+
+    @Test
+    public void testBackwardCompatibleConstructor() throws Exception {
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/basic.json"), Map.class);
+        MappingSet mappings = FieldParser.parseMappings(value, !typeless);
+        assertNotNull(mappings.getResolvedView());
+        assertTrue(mappings.getResolvedView().getFields().length > 0);
+    }
+
+    @Test
+    public void testIncludeFieldsNestedMapping() throws Exception {
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/nested-mapping.json"), Map.class);
+        Set<String> includeFields = new java.util.HashSet<>(java.util.Arrays.asList(
+                "name", "employees", "employees.name"));
+        MappingSet mappings = FieldParser.parseMappings(value, !typeless, includeFields);
+
+        Mapping mapping = mappings.getResolvedView();
+        assertNotNull(mapping);
+        assertEquals(2, mapping.getFields().length);
+        assertEquals("name", mapping.getFields()[0].name());
+        Field employees = mapping.getFields()[1];
+        assertEquals("employees", employees.name());
+        assertTrue(employees.properties().length > 0);
+        assertEquals(1, employees.properties().length);
+        assertEquals("name", employees.properties()[0].name());
+    }
+
+    @Test
+    public void testIncludeFieldsWithoutParentSkipsChildren() throws Exception {
+        // Without parent "employees" in includeFields, child "employees.name" is never visited
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream(mappingDirectory + "/nested-mapping.json"), Map.class);
+        Set<String> includeFields = singleton("employees.name");
+        MappingSet mappings = FieldParser.parseMappings(value, !typeless, includeFields);
+
+        Mapping mapping = mappings.getResolvedView();
+        assertNotNull(mapping);
+        assertEquals(0, mapping.getFields().length);
     }
 }

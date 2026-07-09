@@ -252,4 +252,99 @@ class SchemaUtilsTest {
   private def getStruct(mapping: String) = {
     convertToStruct(fieldFromMapping(mapping), Collections.emptyMap(), cfg)
   }
+
+  @Test
+  def testStructToColumnsNamesNone(): Unit = {
+    val result = structToColumnsNames(None)
+    assertEquals(Seq.empty, result)
+  }
+
+  @Test
+  def testStructToColumnsNamesFlatSchema(): Unit = {
+    val schema = new StructType()
+      .add("name", StringType)
+      .add("age", IntegerType)
+      .add("active", BooleanType)
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("name"))
+    assertTrue(result.contains("age"))
+    assertTrue(result.contains("active"))
+    assertEquals(3, result.size)
+  }
+
+  @Test
+  def testStructToColumnsNamesNestedStruct(): Unit = {
+    val addressType = new StructType()
+      .add("street", StringType)
+      .add("city", StringType)
+    val schema = new StructType()
+      .add("name", StringType)
+      .add("address", addressType)
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("name"))
+    assertTrue(result.contains("address"))
+    assertTrue(result.contains("address.street"))
+    assertTrue(result.contains("address.city"))
+    assertEquals(4, result.size)
+  }
+
+  @Test
+  def testStructToColumnsNamesArrayOfStructs(): Unit = {
+    val itemType = new StructType()
+      .add("id", IntegerType)
+      .add("value", StringType)
+    val schema = new StructType()
+      .add("items", ArrayType(itemType))
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("items"))
+    assertTrue(result.contains("items.id"))
+    assertTrue(result.contains("items.value"))
+    assertEquals(3, result.size)
+  }
+
+  @Test
+  def testStructToColumnsNamesDeeplyNested(): Unit = {
+    val innerType = new StructType().add("zip", StringType)
+    val midType = new StructType()
+      .add("city", StringType)
+      .add("postal", innerType)
+    val schema = new StructType()
+      .add("address", midType)
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("address"))
+    assertTrue(result.contains("address.city"))
+    assertTrue(result.contains("address.postal"))
+    assertTrue(result.contains("address.postal.zip"))
+    assertEquals(4, result.size)
+  }
+
+  @Test
+  def testStructToColumnsNamesEmptyStruct(): Unit = {
+    val schema = new StructType()
+    val result = structToColumnsNames(Some(schema))
+    assertEquals(Seq.empty, result)
+  }
+
+  @Test
+  def testStructToColumnsNamesWithMapType(): Unit = {
+    // MapType is treated as a leaf — no recursion into value type
+    val schema = new StructType()
+      .add("tags", MapType(StringType, StringType))
+      .add("name", StringType)
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("tags"))
+    assertTrue(result.contains("name"))
+    assertEquals(2, result.size)
+  }
+
+  @Test
+  def testStructToColumnsNamesWithMapOfStruct(): Unit = {
+    // MapType with StructType values is still treated as a leaf
+    val innerType = new StructType().add("city", StringType)
+    val schema = new StructType()
+      .add("addresses", MapType(StringType, innerType))
+    val result = structToColumnsNames(Some(schema))
+    assertTrue(result.contains("addresses"))
+    assertEquals(1, result.size)
+  }
 }

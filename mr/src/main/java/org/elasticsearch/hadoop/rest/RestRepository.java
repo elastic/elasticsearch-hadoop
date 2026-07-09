@@ -60,6 +60,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
@@ -298,6 +299,10 @@ public class RestRepository implements Closeable, StatsAware {
 
     public MappingSet getMappings() {
         return client.getMappings(resources.getResourceRead());
+    }
+
+    public MappingSet getMappings(Set<String> includeFields) {
+        return client.getMappings(resources.getResourceRead(), includeFields);
     }
 
     public Map<String, GeoField> sampleGeoFields(Mapping mapping) {
