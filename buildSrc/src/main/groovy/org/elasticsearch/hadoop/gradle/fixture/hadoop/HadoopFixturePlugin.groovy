@@ -34,6 +34,8 @@ class HadoopFixturePlugin implements Plugin<Project> {
 
     private static final String APACHE_MIRROR_1 = "https://dlcdn.apache.org/"
     private static final String APACHE_MIRROR_2 = "https://archive.apache.org/dist/"
+    // Plain HTTP fallback for environments where HTTPS certificate validation fails (e.g. MITM proxy)
+    private static final String APACHE_MIRROR_3 = "http://archive.apache.org/dist/"
 
     static class HadoopFixturePluginExtension {
         private NamedDomainObjectContainer<HadoopClusterConfiguration> clusters
@@ -71,7 +73,7 @@ class HadoopFixturePlugin implements Plugin<Project> {
 
     private static configureApacheMirrorRepository(Project project) {
         RepositoryHandler repositoryHandler = project.getRepositories()
-        [APACHE_MIRROR_1, APACHE_MIRROR_2].each { APACHE_MIRROR ->
+        [APACHE_MIRROR_3, APACHE_MIRROR_2, APACHE_MIRROR_1].each { APACHE_MIRROR ->
             repositoryHandler.add(repositoryHandler.ivy({IvyArtifactRepository ivyArtifactRepository ->
                 ivyArtifactRepository.setUrl(APACHE_MIRROR)
                 ivyArtifactRepository.patternLayout({IvyPatternRepositoryLayout ivyPatternRepositoryLayout ->

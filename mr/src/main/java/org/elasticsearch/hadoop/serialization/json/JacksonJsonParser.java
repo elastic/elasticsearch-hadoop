@@ -25,31 +25,23 @@ import java.util.List;
 
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Parser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonFactory;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonStreamContext;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonToken;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.impl.JsonParserBase;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonFactory;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonStreamContext;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonToken;
 
 public class JacksonJsonParser implements Parser {
 
     private static final JsonFactory JSON_FACTORY;
     private final JsonParser parser;
-    private final JsonParserBase richerParser;
 
     static {
         JSON_FACTORY = new JsonFactory();
-        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-        //JSON_FACTORY.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
-        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
-        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
     }
 
     public JacksonJsonParser(InputStream in) {
         try {
-            this.parser = JSON_FACTORY.createJsonParser(in);
-            richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
+            this.parser = JSON_FACTORY.createParser(in);
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -61,8 +53,7 @@ public class JacksonJsonParser implements Parser {
 
     public JacksonJsonParser(byte[] content, int offset, int length) {
         try {
-            this.parser = JSON_FACTORY.createJsonParser(content, offset, length);
-            richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
+            this.parser = JSON_FACTORY.createParser(content, offset, length);
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -70,7 +61,6 @@ public class JacksonJsonParser implements Parser {
 
     public JacksonJsonParser(JsonParser parser) {
         this.parser = parser;
-        richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
     }
 
     @Override
@@ -291,6 +281,6 @@ public class JacksonJsonParser implements Parser {
 
     @Override
     public int tokenCharOffset() {
-        return (int) (richerParser != null ? richerParser.getTokenCharacterOffset() : parser.getTokenLocation().getCharOffset());
+        return (int) parser.getTokenLocation().getCharOffset();
     }
 }
