@@ -133,9 +133,13 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     generator.writeBeginArray()
     if (value != null) {
       value.foreach { v =>
-        val result = write(schema, v, generator)
-        if (!result.isSuccesful()) {
-          return handleUnknown(value, generator)
+        if (v == null) {
+          generator.writeNull()
+        } else {
+          val result = write(schema, v, generator)
+          if (!result.isSuccesful()) {
+            return handleUnknown(value, generator)
+          }
         }
       }
     }
@@ -159,9 +163,13 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
       for ((k, v) <- value) {
         if (shouldKeep(generator.getParentPath(), k.toString())) {
           generator.writeFieldName(k.toString)
-          val result = write(schema.valueType, v, generator)
-          if (!result.isSuccesful()) {
-            return handleUnknown(v, generator)
+          if (v == null) {
+            generator.writeNull()
+          } else {
+            val result = write(schema.valueType, v, generator)
+            if (!result.isSuccesful()) {
+              return handleUnknown(v, generator)
+            }
           }
         }
       }
