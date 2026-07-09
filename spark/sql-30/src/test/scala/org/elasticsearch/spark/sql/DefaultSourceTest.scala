@@ -19,6 +19,7 @@
 
 package org.elasticsearch.spark.sql
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.junit.Assert._
 import org.junit.Test
 
@@ -37,5 +38,51 @@ class DefaultSourceTest {
     val relation = new DefaultSource().params(settings.toMap)
 
     assertEquals(Map("es.resource" -> "preferred", "es.unrelated" -> "unrelated"), relation)
+  }
+
+  @Test
+  def relationToStringMasksSensitiveSettings(): Unit = {
+    val relation = ElasticsearchRelation(Map(
+      ConfigurationOptions.ES_NET_HTTP_AUTH_USER -> "http-user",
+      ConfigurationOptions.ES_NET_HTTP_AUTH_PASS -> "http-pass",
+      ConfigurationOptions.ES_NET_PROXY_HTTP_USER -> "proxy-http-user",
+      ConfigurationOptions.ES_NET_PROXY_HTTP_PASS -> "proxy-http-pass",
+      ConfigurationOptions.ES_NET_PROXY_HTTPS_USER -> "proxy-https-user",
+      ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS -> "proxy-https-pass",
+      ConfigurationOptions.ES_NET_PROXY_SOCKS_USER -> "proxy-socks-user",
+      ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS -> "proxy-socks-pass",
+      ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS -> "truststore-pass",
+      ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS -> "keystore-pass",
+      "es.nodes" -> "localhost"
+    ), null)
+
+    val rendered = relation.toString
+
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_HTTP_AUTH_USER}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_HTTP_AUTH_PASS}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_HTTP_USER}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_HTTP_PASS}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_HTTPS_USER}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_SOCKS_USER}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS}=****"))
+    assertTrue(rendered.contains(s"${ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS}=****"))
+    assertTrue(rendered.contains("es.nodes=localhost"))
+
+    Seq(
+      "http-user",
+      "http-pass",
+      "proxy-http-user",
+      "proxy-http-pass",
+      "proxy-https-user",
+      "proxy-https-pass",
+      "proxy-socks-user",
+      "proxy-socks-pass",
+      "truststore-pass",
+      "keystore-pass"
+    ).foreach { secret =>
+      assertFalse(rendered.contains(secret))
+    }
   }
 }
