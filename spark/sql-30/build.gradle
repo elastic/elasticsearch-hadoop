@@ -7,6 +7,7 @@ apply plugin: 'scala'
 apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'spark.variants'
 
+
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark.sql.variant'
     setDefaultVariant "spark30scala213", spark30Version, scala213Version
@@ -27,21 +28,31 @@ sparkVariants {
             }
         }
 
+        // Include shared source directory alongside this module's version-specific sources
+        def sharedSrcDir = "${rootProject.projectDir}/spark/sql-shared/src"
+        project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
+            srcDir "${sharedSrcDir}/main/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
+            srcDir "${sharedSrcDir}/test/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
+            srcDir "${sharedSrcDir}/itest/scala"
+        }
+
         // Configure main compile task
         project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
             }
-            compileScala.scalaCompileOptions.additionalParameters = [
-                    "-feature",
-                    "-unchecked",
-                    "-deprecation",
-                    "-Xfuture",
-                    "-Yno-adapted-args",
-                    "-Ywarn-dead-code",
-                    "-Ywarn-numeric-widen",
-                    "-Xfatal-warnings"
-            ]
+            // Base flags for all Scala versions. Note: -Xfuture and -Yno-adapted-args
+            // (Scala 2.12-only) are intentionally omitted -- they were never actually
+            // applied historically (an overwrite downstream discarded them), and enabling
+            // -Yno-adapted-args now breaks the `value == ()` comparison in the shared
+            // DefaultSource.scala under the 2.12 variant.
+            def baseFlags = ["-feature", "-unchecked", "-deprecation", "-Ywarn-dead-code", "-Ywarn-numeric-widen"]
+
+            compileScala.scalaCompileOptions.additionalParameters = baseFlags + ["-release", "8"]
         }
 
         dependencies {
@@ -122,8 +133,10 @@ sparkVariants {
         }
 
         // Add java files from scala source set to javadocSourceElements.
-        project.fileTree("src/main/scala").include(javaFilesOnly).each {
-            project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+        for (def sourceDir in ["src/main/scala", "${rootProject.projectDir}/spark/sql-shared/src/main/scala"]) {
+            project.fileTree(sourceDir).include(javaFilesOnly).each {
+                project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+            }
         }
 
         // Configure java source generation for javadoc purposes
@@ -135,7 +148,7 @@ sparkVariants {
 
         ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
         compileScala.scalaCompileOptions.with {
-            additionalParameters = [
+            additionalParameters = additionalParameters + [
                     "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
                     "-P:genjavadoc:out=$generatedJavaDirectory".toString()
             ]
@@ -157,22 +170,18 @@ sparkVariants {
     }
 }
 
-tasks.withType(ScalaCompile) { ScalaCompile task ->
-    task.scalaCompileOptions.additionalParameters = ["-javabootclasspath", new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar').absolutePath]
-    task.options.bootstrapClasspath = layout.files(new File(project.ext.runtimeJavaHome, 'jre/lib/rt.jar'))
-    task.sourceCompatibility = project.ext.minimumRuntimeVersion
-    task.targetCompatibility = project.ext.minimumRuntimeVersion
-    task.options.forkOptions.executable = new File(project.ext.runtimeJavaHome, 'bin/java').absolutePath
-}
-
-if (JavaVersion.current() >= JavaVersion.VERSION_16) {
-    tasks.withType(Test) { Test task ->
-        if (task.getName().startsWith("test"))
-        task.configure {
-            jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
-            jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer
-            jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED" // Needed for secure mock
-        }}
+// Configure test JVM for Spark 3.x - use Java 8 for Hadoop compatibility
+// Hadoop's Subject.getSubject() requires a security manager which is deprecated in Java 17 and removed in Java 21+
+project.tasks.withType(Test).configureEach { Test testTask ->
+    // Use Java 8 from BuildParams.javaVersions for Spark 3.x tests
+    // because Spark 3 uses a hadoop library that requires a java security manager
+    def java8 = project.ext.javaVersions?.find { it.version == 8 }
+    if (java8 != null) {
+        testTask.executable = "${java8.javaHome.get()}/bin/java"
+    } else {
+        project.logger.warn("Spark 3.x requires Java 8 but no JAVA8_HOME was discovered; " +
+                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA8_HOME.")
+    }
 }
 
 // Embed the embedded dependencies in the final jar after all configuration is complete
