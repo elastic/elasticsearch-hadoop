@@ -118,7 +118,10 @@ public class EsStorageHandler extends DefaultStorageHandler {
         }
         else {
             // replace the default committer when using the old API
-            HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.EsOutputCommitter.class.getName());
+            // The old-API key mapred.output.committer.class must point at an old-API
+            // (org.apache.hadoop.mapred.OutputCommitter) implementation. Newer Tez type-checks
+            // this class during vertex init and rejects a new-API committer (see issue #2533).
+            HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.EsOldAPIOutputCommitter.class.getName());
         }
 
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
