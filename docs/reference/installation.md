@@ -59,14 +59,16 @@ In addition to the *uber* jar, elasticsearch-hadoop provides minimalistic jars f
 
 The Spark connector framework is the most sensitive to version incompatibilities. For your convenience, a version compatibility matrix has been provided below:
 
-| Spark Version | Scala Version | ES-Hadoop Artifact ID |
-| --- | --- | --- |
-| 1.0 - 2.x | 2.10 | <unsupported> |
-| 1.0 - 1.6 | 2.11 | <unsupported> |
-| 2.x | 2.11 | <unsupported> |
-| 2.x | 2.12 | <unsupported> |
-| 3.0+ | 2.12 | elasticsearch-spark-30_2.12 |
-| 3.2+ | 2.13 | elasticsearch-spark-30_2.13 |
+| Spark Version | Scala Version | ES-Hadoop Artifact ID       |
+|---------------| --- |-----------------------------|
+| 1.0 - 2.x     | 2.10 | <unsupported>               |
+| 1.0 - 1.6     | 2.11 | <unsupported>               |
+| 2.x           | 2.11 | <unsupported>               |
+| 2.x           | 2.12 | <unsupported>               |
+| 3.0+          | 2.12 | elasticsearch-spark-30_2.12 |
+| 3.2+          | 2.13 | elasticsearch-spark-30_2.13 |
+| 3.5+          | 2.12 | elasticsearch-spark-35_2.12 |
+| 3.5+          | 2.13 | elasticsearch-spark-35_2.13 |
 
 
 ## Development Builds [download-dev]
