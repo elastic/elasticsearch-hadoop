@@ -10,7 +10,7 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark35.sql.variant'
-    // Spark 3.5+ only supports Scala 2.13 (spark-common-utils/spark-sql-api are not published for Scala 2.12)
+    // Spark 3.5 supports both Scala 2.12 and 2.13, but we only ship the 2.13 variant for now.
     setDefaultVariant "spark35scala213", spark35Version, scala213Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
@@ -33,11 +33,20 @@ sparkVariants {
         project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
             srcDir "${sharedSrcDir}/main/scala"
         }
+        project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
+            srcDir "${sharedSrcDir}/main/resources"
+        }
         project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
             srcDir "${sharedSrcDir}/test/scala"
         }
         project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
             srcDir "${sharedSrcDir}/itest/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).java {
+            srcDir "${sharedSrcDir}/itest/java"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).resources {
+            srcDir "${sharedSrcDir}/itest/resources"
         }
 
         // Configure main compile task

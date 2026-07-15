@@ -372,14 +372,10 @@ class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](val sparkSe
    * waitForCompletion
    */
   def runTest(query: => StreamingQuery): Unit = {
-    try {
-      startTest {
-        query
-      }
-      waitForCompletion()
-    } finally {
-
+    startTest {
+      query
     }
+    waitForCompletion()
   }
 
   private def ensureState[T](states: State*)(block: => T): T = {

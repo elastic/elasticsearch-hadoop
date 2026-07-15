@@ -89,7 +89,7 @@ object EsSparkSQL {
         throw new EsHadoopIllegalArgumentException("Streaming Datasets should not be saved with 'saveToEs()'. Instead, use " +
           "the 'writeStream().format(\"es\").save()' methods.")
       }
-      val sparkCtx = srdd.sqlContext.sparkContext
+      val sparkCtx = srdd.sparkSession.sparkContext
       val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
       val esCfg = new PropertiesSettings().load(sparkCfg.save())
       esCfg.merge(cfg.asJava)
