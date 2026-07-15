@@ -32,10 +32,6 @@ sparkVariants {
         def sharedSrcDir = "${rootProject.projectDir}/spark/sql-shared/src"
         project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
             srcDir "${sharedSrcDir}/main/scala"
-            // sql-30 uses the Spark 3.0 RowEncoder API; exclude the 3.5+ version from sql-shared.
-            filter.exclude { FileTreeElement fte ->
-                fte.file.name == "EsStreamQueryWriter.scala" && fte.file.absolutePath.contains("sql-shared")
-            }
         }
         project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
             srcDir "${sharedSrcDir}/main/resources"

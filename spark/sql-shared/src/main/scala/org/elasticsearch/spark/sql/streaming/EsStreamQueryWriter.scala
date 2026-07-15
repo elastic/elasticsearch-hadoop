@@ -23,7 +23,6 @@ import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.serialization.BytesConverter
@@ -47,8 +46,7 @@ private [sql] class EsStreamQueryWriter(serializedSettings: String,
   override protected def bytesConverter: Class[_ <: BytesConverter] = classOf[JdkBytesConverter]
   override protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[DataFrameFieldExtractor]
 
-  private val agnosticEncoder = RowEncoder.encoderFor(schema, lenient = false)
-  private val encoder: ExpressionEncoder[Row] = ExpressionEncoder(agnosticEncoder).resolveAndBind()
+  private val encoder: ExpressionEncoder[Row] = EsRowEncoder.make(schema)
   private val deserializer: ExpressionEncoder.Deserializer[Row] = encoder.createDeserializer()
 
   override def write(taskContext: TaskContext, data: Iterator[InternalRow]): Unit = {
