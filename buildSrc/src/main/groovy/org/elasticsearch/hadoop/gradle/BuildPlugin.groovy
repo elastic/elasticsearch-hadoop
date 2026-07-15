@@ -580,7 +580,6 @@ class BuildPlugin implements Plugin<Project> {
 
             // Main variant needs the least configuration on its own, since it is the default publication created above.
             sparkVariants.defaultVariant { SparkVariant variant ->
-                project.publishing.publications.main.setAlias(true)
                 updateVariantArtifactId(project, project.publishing.publications.main, variant)
             }
 
@@ -637,6 +636,7 @@ class BuildPlugin implements Plugin<Project> {
                         }
                         configurePom(project, variantPublication)
                         updateVariantArtifactId(project, variantPublication, variant)
+                        variantPublication.setAlias(true)
                     }
                 }
                 if (signingKey.isPresent()) {

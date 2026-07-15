@@ -47,7 +47,7 @@ private [sql] class EsStreamQueryWriter(serializedSettings: String,
   override protected def bytesConverter: Class[_ <: BytesConverter] = classOf[JdkBytesConverter]
   override protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[DataFrameFieldExtractor]
 
-  private val encoder: ExpressionEncoder[Row] = RowEncoder(schema).resolveAndBind()
+  private val encoder: ExpressionEncoder[Row] = ExpressionEncoder(RowEncoder.encoderFor(schema, lenient = false)).resolveAndBind()
   private val deserializer: ExpressionEncoder.Deserializer[Row] = encoder.createDeserializer()
 
   override def write(taskContext: TaskContext, data: Iterator[InternalRow]): Unit = {
