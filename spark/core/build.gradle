@@ -14,7 +14,6 @@ sparkVariants {
     // We should maybe move these to a separate config file that can be read from both this file and the pipeline script in the future if it creates issues
     setCoreDefaultVariant "spark30scala213", spark30Version, scala213Version
     addCoreFeatureVariant "spark30scala212", spark30Version, scala212Version
-    addCoreFeatureVariant "spark35scala213", spark35Version, scala213Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
 
@@ -44,11 +43,6 @@ sparkVariants {
             add(variant.configuration('api'), "org.scala-lang:scala-reflect:${variant.scalaVersion}")
             add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:${variant.sparkVersion}") {
                 exclude group: 'org.apache.hadoop'
-            }
-
-            // Spark 3.5+ moved org.apache.spark.internal.Logging out of spark-core and into spark-common-utils
-            if (variant.name == "spark35scala213") {
-                add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:${variant.sparkVersion}")
             }
 
             add(variant.configuration('implementation'), project(":elasticsearch-hadoop-mr"))

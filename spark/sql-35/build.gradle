@@ -70,7 +70,7 @@ sparkVariants {
             add(variant.configuration('embedded'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('embedded'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
 
@@ -133,12 +133,12 @@ sparkVariants {
 
             add(variant.configuration('additionalSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
             add(variant.configuration('javadocSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
         }
