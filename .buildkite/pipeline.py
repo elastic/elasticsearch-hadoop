@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import glob
 import json
 import os
 import re
@@ -8,18 +9,21 @@ from typing import Dict
 # Note: If you'd like to add any debug info here, make sure to do it on stderr
 # stdout will be fed into `buildkite-agent pipeline upload`
 
-coreFile = open("spark/core/build.gradle", "r")
-core = coreFile.read()
-coreFile.close()
-
-# `Variant "spark20scala212"` => ["20", "212"]
-groupings = re.findall(r'Variant +"spark([0-9]+)scala([0-9]+)"', core)
-
+# Discover variants from SQL module build files (spark/sql-30, spark/sql-35, etc.)
+# Each module declares its own setDefaultVariant / addFeatureVariant lines, which
+# is the authoritative list of what integration-test steps CI should run.
+# New modules (sql-40, sql-41, ...) are picked up automatically when added.
 groupingsBySparkVersion: Dict[str, list[str]] = {}
-for grouping in groupings:
-    if grouping[0] not in groupingsBySparkVersion:
-        groupingsBySparkVersion[grouping[0]] = []
-    groupingsBySparkVersion[grouping[0]].append(grouping[1])
+for buildFile in sorted(glob.glob("spark/sql-*/build.gradle")):
+    with open(buildFile, "r") as f:
+        content = f.read()
+    # `Variant "spark35scala212"` => ["35", "212"]
+    for grouping in re.findall(r'Variant +"spark([0-9]+)scala([0-9]+)"', content):
+        sparkVer, scalaVer = grouping
+        if sparkVer not in groupingsBySparkVersion:
+            groupingsBySparkVersion[sparkVer] = []
+        if scalaVer not in groupingsBySparkVersion[sparkVer]:
+            groupingsBySparkVersion[sparkVer].append(scalaVer)
 
 gradlePropertiesFile = open("gradle.properties", "r")
 gradleProperties = gradlePropertiesFile.read()
