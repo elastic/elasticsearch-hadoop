@@ -185,13 +185,22 @@ project.tasks.withType(Test).configureEach { Test testTask ->
     if (java17Home != null) {
         testTask.executable = "${java17Home}/bin/java"
     }
-    // securemock bundles Mockito 1.x + CGLIB, which calls ClassLoader.defineClass reflectively
-    // to generate proxy classes. That method is sealed in Java 9+ and requires explicit opens.
-    // The Security Manager that securemock was designed to work around was removed in Java 24,
-    // so securemock itself is now obsolete. Long-term fix: replace securemock with mockito-core 5.x
-    // across all modules (it uses ByteBuddy, which works cleanly on Java 17+).
+    // Spark 4.0 on Java 17+ requires several --add-opens flags that the Spark launcher normally
+    // provides but that must be set explicitly when running tests directly:
+    //
+    // java.lang / java.io  — securemock bundles CGLIB, which calls ClassLoader.defineClass
+    //   reflectively (sealed in Java 9+). Long-term fix: replace securemock with mockito-core 5.x.
+    //
+    // java.nio             — Kryo (the Spark serializer) creates FieldSerializers for ByteBuffer
+    //   subclasses (e.g. HeapByteBuffer). FieldSerializer.buildValidFields() calls Field.setAccessible
+    //   on the private 'hb' byte[] field, which is blocked without this open. Affects every test
+    //   that runs a Spark job (TorrentBroadcast serializes tasks via Kryo on each job submission).
+    //
+    // sun.nio.ch           — related NIO channel internals accessed by Kryo/Netty.
     testTask.jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
     testTask.jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
 }
 
 // Embed the embedded dependencies in the final jar after all configuration is complete
