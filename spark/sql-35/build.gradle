@@ -10,8 +10,8 @@ apply plugin: 'spark.variants'
 
 sparkVariants {
     capabilityGroup 'org.elasticsearch.spark35.sql.variant'
-    // Spark 3.5+ only supports Scala 2.13 (spark-common module not available for Scala 2.12)
     setDefaultVariant "spark35scala213", spark35Version, scala213Version
+    addFeatureVariant "spark35scala212", spark35Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -33,11 +33,20 @@ sparkVariants {
         project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
             srcDir "${sharedSrcDir}/main/scala"
         }
+        project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
+            srcDir "${sharedSrcDir}/main/resources"
+        }
         project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
             srcDir "${sharedSrcDir}/test/scala"
         }
         project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
             srcDir "${sharedSrcDir}/itest/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).java {
+            srcDir "${sharedSrcDir}/itest/java"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).resources {
+            srcDir "${sharedSrcDir}/itest/resources"
         }
 
         // Configure main compile task
@@ -46,7 +55,8 @@ sparkVariants {
                 memoryMaximumSize = '1g'
             }
             // Note: -Xfuture, -Yno-adapted-args removed as they are not supported in Scala 2.13
-            // -Xfatal-warnings removed to allow deprecation warnings without failing build
+            // Base flags for Scala 2.13. Note: -Xfatal-warnings removed to allow
+            // deprecation warnings without failing the build.
             compileScala.scalaCompileOptions.additionalParameters = [
                     "-feature",
                     "-unchecked",
@@ -61,7 +71,7 @@ sparkVariants {
             add(variant.configuration('embedded'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('embedded'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
 
@@ -124,12 +134,12 @@ sparkVariants {
 
             add(variant.configuration('additionalSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
             add(variant.configuration('javadocSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark35scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
         }
@@ -176,7 +186,6 @@ sparkVariants {
     }
 }
 
-
 // Configure test JVM for Spark 3.5 - use Java 8 for Hadoop compatibility
 // Hadoop's Subject.getSubject() requires a security manager which is deprecated in Java 17 and removed in Java 21+
 project.tasks.withType(Test).configureEach { Test testTask ->
@@ -210,10 +219,12 @@ tasks.register('copyPoms', Copy) {
     from(tasks.named('generatePomFileForMainPublication')) {
         rename 'pom-default.xml', "elasticsearch-spark-35_2.13-${project.getVersion()}.pom"
     }
+    from(tasks.named('generatePomFileForSpark35scala212Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-35_2.12-${project.getVersion()}.pom"
+    }
     into(new File(project.buildDir, 'distributions'))
 }
 
 tasks.named('distribution').configure {
     dependsOn 'copyPoms'
 }
-

@@ -86,11 +86,16 @@ public class LocalEs extends ExternalResource {
 
     private void clearState() throws Exception {
         LogFactory.getLog(getClass()).warn("Wiping all existing indices from the node");
-        // Since ES 9.x, action.destructive_requires_name defaults to true, which rejects the
-        // _all/wildcard delete below. Relax it at runtime (Testclusters bans setting this
-        // statically) so the fixture can continue wiping indices between suites.
-        RestUtils.put("_cluster/settings", "{\"persistent\":{\"action.destructive_requires_name\":false}}".getBytes());
-        RestUtils.delete("/_all");
+        // action.destructive_requires_name defaults to true since Elasticsearch 8.0, which rejects
+        // the _all wildcard delete below. Use a transient override so it is automatically reverted
+        // after the cluster is shut down, and always reset it in a finally block so it does not
+        // persist beyond this call even when pointing at a long-lived external cluster.
+        RestUtils.put("_cluster/settings", "{\"transient\":{\"action.destructive_requires_name\":false}}".getBytes());
+        try {
+            RestUtils.delete("/_all");
+        } finally {
+            RestUtils.put("_cluster/settings", "{\"transient\":{\"action.destructive_requires_name\":null}}".getBytes());
+        }
     }
 
     @Override
