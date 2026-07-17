@@ -105,15 +105,28 @@ sparkVariants {
     }
 }
 
-if (JavaVersion.current() >= JavaVersion.VERSION_17) {
-    tasks.withType(Test) { Test task ->
-        if (task.getName().startsWith("test")) 
-            task.configure {
-                jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED" // Needed for IOUtils's BYTE_ARRAY_BUFFER reflection
-                jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED" // Needed for org.apache.spark.SparkConf, which indirectly uses java.nio.DirectByteBuffer
-                jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED" // Needed for secure mock
-            }
+// Spark core tests use Hadoop UGI which requires a security manager removed in Java 21+.
+// Run tests on Java 8 when available; fall back to Gradle JVM with --add-opens if not.
+project.tasks.withType(Test).configureEach { Test testTask ->
+    def java8 = project.ext.javaVersions?.find { it.version == 8 }
+    if (java8 != null) {
+        testTask.executable = "${java8.javaHome.get()}/bin/java"
+    } else {
+        project.logger.warn("Spark core tests require Java 8 but no JAVA8_HOME was discovered; " +
+                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA8_HOME.")
+        if (JavaVersion.current() >= JavaVersion.VERSION_17) {
+            testTask.jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+            testTask.jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+            testTask.jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+        }
     }
+}
+
+tasks.withType(Javadoc).configureEach { Javadoc javadocTask ->
+    javadocTask.options.links(
+        "https://docs.oracle.com/javase/8/docs/api/",
+        "https://spark.apache.org/docs/${spark30Version}/api/java/"
+    )
 }
 
 // Set minimum compatibility and java home for compiler task
