@@ -43,6 +43,14 @@ For Scala 2.13 and Spark 3.2, 3.3, 3.4 or 3.5, use:
   <version>9.0.0</version>
 </dependency>
 ```
+For Scala 2.13 and Spark 4.0, use:
+```xml
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-spark-40_2.13</artifactId>
+  <version>9.0.0</version>
+</dependency>
+```
 
 
 ### Supported Hadoop Versions
@@ -52,8 +60,8 @@ More information in this [section](http://www.elastic.co/guide/en/elasticsearch/
 
 ### Supported Spark Versions
 
-Spark 3.0 through 3.5 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
-are supported for Spark 3.2 and higher.  
+Spark 3.0 through 4.0 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
+are supported for Spark 3.2 through 3.5. Only Scala 2.13 is supported for Spark 4.0.
 
 ## Feedback / Q&A
 We're interested in your feedback! You can find us on the [Elastic forum](https://discuss.elastic.co/).
