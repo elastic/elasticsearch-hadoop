@@ -1,6 +1,6 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
-description = "Elasticsearch Spark (for Spark 3.X)"
+description = "Elasticsearch Spark (for Spark 3.5)"
 
 apply plugin: 'java-library'
 apply plugin: 'scala'
@@ -9,9 +9,9 @@ apply plugin: 'spark.variants'
 
 
 sparkVariants {
-    capabilityGroup 'org.elasticsearch.spark.sql.variant'
-    setDefaultVariant "spark30scala213", spark30Version, scala213Version
-    addFeatureVariant "spark30scala212", spark30Version, scala212Version
+    capabilityGroup 'org.elasticsearch.spark35.sql.variant'
+    setDefaultVariant "spark35scala213", spark35Version, scala213Version
+    addFeatureVariant "spark35scala212", spark35Version, scala212Version
 
     all { SparkVariantPlugin.SparkVariant variant ->
         String scalaCompileTaskName = project.sourceSets
@@ -54,21 +54,23 @@ sparkVariants {
             configure(compileScala.scalaCompileOptions.forkOptions) {
                 memoryMaximumSize = '1g'
             }
-            // Base flags for all Scala versions. Note: -Xfuture and -Yno-adapted-args
-            // (Scala 2.12-only) are intentionally omitted -- they were never actually
-            // applied historically (an overwrite downstream discarded them), and enabling
-            // -Yno-adapted-args now breaks the `value == ()` comparison in the shared
-            // DefaultSource.scala under the 2.12 variant.
-            def baseFlags = ["-feature", "-unchecked", "-deprecation", "-Ywarn-dead-code", "-Ywarn-numeric-widen"]
-
-            compileScala.scalaCompileOptions.additionalParameters = baseFlags + ["-release", "8"]
+            // Base flags for Scala 2.13. Note: -Xfatal-warnings removed to allow
+            // deprecation warnings without failing the build.
+            compileScala.scalaCompileOptions.additionalParameters = [
+                    "-feature",
+                    "-unchecked",
+                    "-deprecation",
+                    "-Ywarn-dead-code",
+                    "-Ywarn-numeric-widen",
+                    "-release", "8"
+            ]
         }
 
         dependencies {
             add(variant.configuration('embedded'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('embedded'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:$variant.name:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
 
@@ -78,6 +80,10 @@ sparkVariants {
                 exclude group: 'javax.servlet'
                 exclude group: 'org.apache.hadoop'
             }
+            // Spark 3.5+ moved org.apache.spark.internal.Logging to spark-common-utils
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion")
+            // Spark 3.5+ moved Row, StructType etc. to spark-sql-api
+            add(variant.configuration('api'), "org.apache.spark:spark-sql-api_${variant.scalaMajorVersion}:$variant.sparkVersion")
 
             add(variant.configuration('implementation'), "org.apache.spark:spark-sql_${variant.scalaMajorVersion}:$variant.sparkVersion") {
                 exclude group: 'org.apache.hadoop'
@@ -127,12 +133,12 @@ sparkVariants {
 
             add(variant.configuration('additionalSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:$variant.name:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
             add(variant.configuration('javadocSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:$variant.name:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala${variant.scalaMajorVersion.replace('.', '')}:$project.version")
                 }
             }
         }
@@ -179,16 +185,14 @@ sparkVariants {
     }
 }
 
-// Configure test JVM for Spark 3.x - use Java 8 for Hadoop compatibility
+// Configure test JVM for Spark 3.5 - use Java 8 for Hadoop compatibility
 // Hadoop's Subject.getSubject() requires a security manager which is deprecated in Java 17 and removed in Java 21+
 project.tasks.withType(Test).configureEach { Test testTask ->
-    // Use Java 8 from BuildParams.javaVersions for Spark 3.x tests
-    // because Spark 3 uses a hadoop library that requires a java security manager
     def java8 = project.ext.javaVersions?.find { it.version == 8 }
     if (java8 != null) {
         testTask.executable = "${java8.javaHome.get()}/bin/java"
     } else {
-        project.logger.warn("Spark 3.x requires Java 8 but no JAVA8_HOME was discovered; " +
+        project.logger.warn("Spark 3.5 requires Java 8 but no JAVA8_HOME was discovered; " +
                 "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA8_HOME.")
     }
 }
@@ -198,7 +202,6 @@ sparkVariants {
     all { SparkVariantPlugin.SparkVariant variant ->
         tasks.getByName(variant.taskName('jar')) {
             dependsOn(project.configurations.getByName(variant.configuration('embedded')))
-            // TODO: Is there a way to do this lazily? This looks like it resolves the configuration.
             from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
                 include "org/elasticsearch/**"
                 include "esh-build.properties"
@@ -211,10 +214,10 @@ sparkVariants {
 
 tasks.register('copyPoms', Copy) {
     from(tasks.named('generatePomFileForMainPublication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-30_2.13-${project.getVersion()}.pom"
+        rename 'pom-default.xml', "elasticsearch-spark-35_2.13-${project.getVersion()}.pom"
     }
-    from(tasks.named('generatePomFileForSpark30scala212Publication')) {
-        rename 'pom-default.xml', "elasticsearch-spark-30_2.12-${project.getVersion()}.pom"
+    from(tasks.named('generatePomFileForSpark35scala212Publication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-35_2.12-${project.getVersion()}.pom"
     }
     into(new File(project.buildDir, 'distributions'))
 }

@@ -132,7 +132,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
     }
 
     private String checkpoint(String target) {
-        return commitLogDir + "/$target";
+        return commitLogDir + "/" + target;
     }
 
     /**

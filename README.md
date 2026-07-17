@@ -27,7 +27,7 @@ Support for Hadoop is available through any Maven-compatible tool:
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
 
-Spark support depends on the versions of Spark and Scala your cluster uses. For Scala 2.12 and Spark 3.0, 3.1, 3.2, 3.3, or 3.4, use:
+Spark support depends on the versions of Spark and Scala your cluster uses. For Scala 2.12 and Spark 3.0, 3.1, 3.2, 3.3, 3.4 or 3.5, use:
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
@@ -35,7 +35,7 @@ Spark support depends on the versions of Spark and Scala your cluster uses. For 
   <version>9.0.0</version>
 </dependency>
 ```
-For Scala 2.13 and Spark 3.2, 3.3, or 3.4, use:
+For Scala 2.13 and Spark 3.2, 3.3, 3.4 or 3.5, use:
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
@@ -52,7 +52,7 @@ More information in this [section](http://www.elastic.co/guide/en/elasticsearch/
 
 ### Supported Spark Versions
 
-Spark 3.0 through 3.4 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
+Spark 3.0 through 3.5 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
 are supported for Spark 3.2 and higher.  
 
 ## Feedback / Q&A

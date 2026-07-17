@@ -86,8 +86,8 @@ public class NetcatTestServer {
      * Closes the streaming server by signaling the server thread to close with a kill token.
      * Will wait up to the specified timeout for the server to close. This is safe to call multiple
      * times, as it simply enqueues another kill token and waits, but there is no guarantee that this
-     * will complete with a true output. In those cases, terminate the server immediatly with
-     * "closeImmediately()".
+     * will complete with a true output. In those cases, terminate the server immediately with
+     * {@link #shutdownNow()}.
      *
      * @return true if server is closed in provided timeout period, false if the server has not closed
      * before the timeout expires.
