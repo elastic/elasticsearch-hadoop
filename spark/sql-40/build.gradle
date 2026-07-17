@@ -185,22 +185,23 @@ project.tasks.withType(Test).configureEach { Test testTask ->
     if (java17Home != null) {
         testTask.executable = "${java17Home}/bin/java"
     }
-    // Spark 4.0 on Java 17+ requires several --add-opens flags that the Spark launcher normally
-    // provides but that must be set explicitly when running tests directly:
-    //
-    // java.lang / java.io  — securemock bundles CGLIB, which calls ClassLoader.defineClass
-    //   reflectively (sealed in Java 9+). Long-term fix: replace securemock with mockito-core 5.x.
-    //
-    // java.nio             — Kryo (the Spark serializer) creates FieldSerializers for ByteBuffer
-    //   subclasses (e.g. HeapByteBuffer). FieldSerializer.buildValidFields() calls Field.setAccessible
-    //   on the private 'hb' byte[] field, which is blocked without this open. Affects every test
-    //   that runs a Spark job (TorrentBroadcast serializes tasks via Kryo on each job submission).
-    //
-    // sun.nio.ch           — related NIO channel internals accessed by Kryo/Netty.
+    // Spark 4.0 on Java 17+ requires the same --add-opens flags that spark-submit normally passes
+    // (see SPARK-29060 / spark-class script). Without them, Kryo's FieldSerializer cannot
+    // reflectively access sealed JDK internals and every Spark job fails at task broadcast time.
+    // securemock/CGLIB also needs java.lang to call ClassLoader.defineClass reflectively.
     testTask.jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
     testTask.jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.net=ALL-UNNAMED"
     testTask.jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"
     testTask.jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.security.action=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
 }
 
 // Embed the embedded dependencies in the final jar after all configuration is complete
