@@ -19,20 +19,11 @@
 
 package org.elasticsearch.spark.sql.streaming
 
-import org.apache.spark.sql.Encoder
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.streaming.StreamingQueryListener
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
+import org.apache.spark.sql.types.StructType
 
-// Spark 4.0+: same idle-event behaviour as Spark 3.5+. See StreamingQueryTestHarnessBase for details.
-class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](sparkSession: SparkSession)
-    extends StreamingQueryTestHarnessBase[S](sparkSession) {
-
-  override protected def newListener(): LifecycleListener = new LifecycleListener {
-    override def onQueryIdle(event: StreamingQueryListener.QueryIdleEvent): Unit = {
-      captureQueryID(event.id)
-      if (inputsSeen == inputsRequired) {
-        latch.countDown()
-      }
-    }
-  }
+private[streaming] object EsRowEncoder {
+  def make(schema: StructType): ExpressionEncoder[Row] =
+    ExpressionEncoder(schema, false).resolveAndBind()
 }

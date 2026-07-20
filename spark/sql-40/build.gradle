@@ -1,6 +1,6 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
-description = "Elasticsearch Spark (for Spark 4.X)"
+description = "Elasticsearch Spark (for Spark 4.0)"
 
 apply plugin: 'java-library'
 apply plugin: 'scala'
@@ -33,11 +33,20 @@ sparkVariants {
         project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
             srcDir "${sharedSrcDir}/main/scala"
         }
+        project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
+            srcDir "${sharedSrcDir}/main/resources"
+        }
         project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
             srcDir "${sharedSrcDir}/test/scala"
         }
         project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
             srcDir "${sharedSrcDir}/itest/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).java {
+            srcDir "${sharedSrcDir}/itest/java"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).resources {
+            srcDir "${sharedSrcDir}/itest/resources"
         }
 
         // Configure main compile task
@@ -60,7 +69,7 @@ sparkVariants {
             add(variant.configuration('embedded'), project(":elasticsearch-hadoop-mr"))
             add(variant.configuration('embedded'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark40scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
 
@@ -71,8 +80,8 @@ sparkVariants {
                 exclude group: 'org.apache.hadoop'
             }
             // Spark 3.5+ moved org.apache.spark.internal.Logging to spark-common-utils
-            add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion")
             // Spark 3.5+ moved Row, StructType etc. to spark-sql-api
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion")
             add(variant.configuration('api'), "org.apache.spark:spark-sql-api_${variant.scalaMajorVersion}:$variant.sparkVersion")
 
             add(variant.configuration('implementation'), "org.apache.spark:spark-sql_${variant.scalaMajorVersion}:$variant.sparkVersion") {
@@ -123,12 +132,12 @@ sparkVariants {
 
             add(variant.configuration('additionalSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark40scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
             add(variant.configuration('javadocSources'), project(":elasticsearch-spark")) {
                 capabilities {
-                    requireCapability("org.elasticsearch.spark.variant:spark40scala213:$project.version")
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
                 }
             }
         }
@@ -144,30 +153,9 @@ sparkVariants {
             }
         }
 
-        // Configure java source generation for javadoc purposes
-        String generatedJavaDirectory = "$buildDir/generated/java/${variant.name}"
-        Configuration scalaCompilerPlugin = project.configurations.maybeCreate(variant.configuration('scalaCompilerPlugin'))
-        scalaCompilerPlugin.defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${variant.scalaVersion}:0.18"))
-        }
-
-        ScalaCompile compileScala = tasks.getByName(scalaCompileTaskName) as ScalaCompile
-        compileScala.scalaCompileOptions.with {
-            additionalParameters = additionalParameters + [
-                    "-Xplugin:" + configurations.getByName(variant.configuration('scalaCompilerPlugin')).asPath,
-                    "-P:genjavadoc:out=$generatedJavaDirectory".toString()
-            ]
-        }
-        // Export generated Java code from the genjavadoc compiler plugin
-        artifacts {
-            add(variant.configuration('javadocSourceElements'), project.file(generatedJavaDirectory)) {
-                builtBy compileScala
-            }
-        }
-        tasks.getByName(variant.taskName('javadoc')) {
-            dependsOn compileScala
-            source(generatedJavaDirectory)
-        }
+        // genjavadoc 0.18 generates Java stubs that are invalid under Java 17+ javadoc
+        // (abstract+static combination). Since Spark 4.0 requires Java 17+, we skip genjavadoc
+        // and rely on scaladoc alone for API documentation.
 
         scaladoc {
             title = "${rootProject.description} ${version} API"
@@ -175,34 +163,50 @@ sparkVariants {
     }
 }
 
-// Configure test JVM for Spark 4.0 - use Java 17
-project.tasks.withType(Test).configureEach { Test testTask ->
-    // Common JVM args for Java 9+
-    def openModuleArgs = [
-        "--add-opens=java.base/java.io=ALL-UNNAMED",
-        "--add-opens=java.base/java.nio=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-        "--add-opens=java.base/java.util=ALL-UNNAMED",
-        "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
-        "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
-        "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
-        "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
-    ]
-    testTask.jvmArgs(openModuleArgs)
+// Resolve the Java 17+ home to use for javadoc and tests. Prefer JAVA17_HOME if set;
+// otherwise fall back to the lowest discovered JVM >= 17.
+String java17Home = System.getenv("JAVA17_HOME") ?:
+        project.ext.javaVersions?.findAll { it.version >= 17 }?.min { it.version }?.javaHome?.get()?.absolutePath
 
-    // Use Java 17 from BuildParams.javaVersions for Spark 4.0 tests
-    def java17 = project.ext.javaVersions?.find { it.version == 17 }
-    if (java17 != null) {
-        testTask.executable = "${java17.javaHome.get()}/bin/java"
-    } else {
-        project.logger.warn("Spark 4.0 requires Java 17 but no JAVA17_HOME was discovered; " +
-                "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA17_HOME.")
+if (java17Home == null) {
+    project.logger.warn("Spark 4.0 requires Java 17+ but none was discovered via JAVA17_HOME; " +
+            "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA17_HOME.")
+}
+
+// Spark 4.0 class files are Java 17 bytecode; javadoc must use Java 17+ to read them.
+// BuildPlugin sets the javadoc executable to runtimeJavaHome (Java 8) globally, so override it here.
+tasks.withType(Javadoc).configureEach { Javadoc javadocTask ->
+    if (java17Home != null) {
+        javadocTask.executable = "${java17Home}/bin/javadoc"
     }
+    javadocTask.options.links(
+        "https://docs.oracle.com/en/java/javase/17/docs/api/",
+        "https://spark.apache.org/docs/${spark40Version}/api/java/"
+    )
+}
+
+// Configure test JVM for Spark 4.0 - requires Java 17+
+project.tasks.withType(Test).configureEach { Test testTask ->
+    if (java17Home != null) {
+        testTask.executable = "${java17Home}/bin/java"
+    }
+    // Spark 4.0 on Java 17+ requires the same --add-opens flags that spark-submit normally passes
+    // (see SPARK-29060 / spark-class script). Without them, Kryo's FieldSerializer cannot
+    // reflectively access sealed JDK internals and every Spark job fails at task broadcast time.
+    // securemock/CGLIB also needs java.lang to call ClassLoader.defineClass reflectively.
+    testTask.jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.net=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.security.action=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
 }
 
 // Embed the embedded dependencies in the final jar after all configuration is complete
@@ -230,4 +234,3 @@ tasks.register('copyPoms', Copy) {
 tasks.named('distribution').configure {
     dependsOn 'copyPoms'
 }
-

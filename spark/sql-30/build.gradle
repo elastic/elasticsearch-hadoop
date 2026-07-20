@@ -222,3 +222,10 @@ tasks.register('copyPoms', Copy) {
 tasks.named('distribution').configure {
     dependsOn 'copyPoms'
 }
+
+tasks.withType(Javadoc).configureEach { Javadoc javadocTask ->
+    javadocTask.options.links(
+        "https://docs.oracle.com/javase/8/docs/api/",
+        "https://spark.apache.org/docs/${spark30Version}/api/java/"
+    )
+}

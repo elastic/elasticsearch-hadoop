@@ -37,6 +37,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -82,7 +83,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	@BeforeClass
 	public static void setup() {
 		sc = new JavaSparkContext(conf);
-		sqc = new SQLContext(sc);
+		sqc = SparkSession.builder().config(sc.getConf()).getOrCreate().sqlContext();
 	}
 
 	@AfterClass
