@@ -439,12 +439,9 @@ class BuildPlugin implements Plugin<Project> {
                     'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
                     'Elasticsearch Spark' : ['org.elasticsearch.spark*']
             ]
-            javadocOptions.links = [ // External doc links
-                    "https://docs.oracle.com/javase/8/docs/api/",
+            javadocOptions.links = [ // External doc links shared across all modules
                     "https://commons.apache.org/proper/commons-logging/apidocs/",
                     "https://hadoop.apache.org/docs/stable2/api/",
-                    "https://hive.apache.org/javadocs/r1.2.2/api/",
-                    "https://spark.apache.org/docs/latest/api/java/"
             ]
         }
         // TODO: Remove when root project does not handle distribution

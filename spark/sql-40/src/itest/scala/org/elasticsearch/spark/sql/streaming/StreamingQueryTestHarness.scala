@@ -23,8 +23,7 @@ import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.StreamingQueryListener
 
-// Spark 3.5+: idle events are fired instead of zero-row progress events when the source has
-// no new data. Override onQueryIdle to count down the latch in that case.
+// Spark 4.0+: same idle-event behaviour as Spark 3.5+. See StreamingQueryTestHarnessBase for details.
 class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](sparkSession: SparkSession)
     extends StreamingQueryTestHarnessBase[S](sparkSession) {
 

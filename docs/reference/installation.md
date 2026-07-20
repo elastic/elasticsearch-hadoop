@@ -54,7 +54,7 @@ In addition to the *uber* jar, elasticsearch-hadoop provides minimalistic jars f
 </dependency>
 ```
 
-1. *spark* artifact. Notice the `-30` part of the suffix which indicates the Spark version compatible with the artifact. Use `30` for Spark 3.0+, `20` for Spark 2.0+, and `13` for Spark 1.3-1.6. Notice the `_2.12` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
+1. *spark* artifact. Notice the `-30` part of the suffix which indicates the Spark version compatible with the artifact. Use `40` for Spark 4.0+, `35` for Spark 3.5+, and `30` for Spark 3.0+. Notice the `_2.13` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
 
 
 The Spark connector framework is the most sensitive to version incompatibilities. For your convenience, a version compatibility matrix has been provided below:
@@ -69,6 +69,7 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | 3.2+          | 2.13 | elasticsearch-spark-30_2.13 |
 | 3.5+          | 2.12 | elasticsearch-spark-35_2.12 |
 | 3.5+          | 2.13 | elasticsearch-spark-35_2.13 |
+| 4.0+          | 2.13 | elasticsearch-spark-40_2.13 |
 
 
 ## Development Builds [download-dev]

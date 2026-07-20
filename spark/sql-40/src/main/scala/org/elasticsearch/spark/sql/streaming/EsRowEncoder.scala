@@ -19,21 +19,11 @@
 
 package org.elasticsearch.spark.sql.streaming
 
-import org.apache.spark.sql.Encoder
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.streaming.StreamingQueryListener
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
+import org.apache.spark.sql.types.StructType
 
-// Spark 3.5+: idle events are fired instead of zero-row progress events when the source has
-// no new data. Override onQueryIdle to count down the latch in that case.
-class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](sparkSession: SparkSession)
-    extends StreamingQueryTestHarnessBase[S](sparkSession) {
-
-  override protected def newListener(): LifecycleListener = new LifecycleListener {
-    override def onQueryIdle(event: StreamingQueryListener.QueryIdleEvent): Unit = {
-      captureQueryID(event.id)
-      if (inputsSeen == inputsRequired) {
-        latch.countDown()
-      }
-    }
-  }
+private[streaming] object EsRowEncoder {
+  def make(schema: StructType): ExpressionEncoder[Row] =
+    ExpressionEncoder(schema, false).resolveAndBind()
 }
