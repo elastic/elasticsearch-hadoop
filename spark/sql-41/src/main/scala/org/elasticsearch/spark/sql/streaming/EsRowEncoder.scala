@@ -19,21 +19,11 @@
 
 package org.elasticsearch.spark.sql.streaming
 
-/**
- * A null object style metadata log that discards incoming data, and otherwise
- * acts like an empty log.
- */
-class NullMetadataLog[T] extends MetadataLog[T] with Serializable {
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
+import org.apache.spark.sql.types.StructType
 
-  // Always return successful storage
-  override def add(batchId: Long, metadata: T): Boolean = true
-
-  override def get(batchId: Long): Option[T] = None
-
-  override def get(startId: Option[Long], endId: Option[Long]): Array[(Long, T)] = Array()
-
-  override def getLatest(): Option[(Long, T)] = None
-
-  override def purge(thresholdBatchId: Long): Unit = ()
-
+private[streaming] object EsRowEncoder {
+  def make(schema: StructType): ExpressionEncoder[Row] =
+    ExpressionEncoder(schema, false).resolveAndBind()
 }

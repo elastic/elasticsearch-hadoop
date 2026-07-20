@@ -17,23 +17,13 @@
  * under the License.
  */
 
-package org.elasticsearch.spark.sql.streaming
+package org.elasticsearch.spark.sql
 
-/**
- * A null object style metadata log that discards incoming data, and otherwise
- * acts like an empty log.
- */
-class NullMetadataLog[T] extends MetadataLog[T] with Serializable {
-
-  // Always return successful storage
-  override def add(batchId: Long, metadata: T): Boolean = true
-
-  override def get(batchId: Long): Option[T] = None
-
-  override def get(startId: Option[Long], endId: Option[Long]): Array[(Long, T)] = Array()
-
-  override def getLatest(): Option[(Long, T)] = None
-
-  override def purge(thresholdBatchId: Long): Unit = ()
-
+// Spark 4.1 moved MetadataLog from o.a.s.sql.execution.streaming to
+// o.a.s.sql.execution.streaming.checkpointing. This alias keeps the shared
+// streaming sources (NullMetadataLog, EsCommitProtocol, EsSparkSqlStreamingSink)
+// compiling without modification.
+package object streaming {
+  type MetadataLog[T] = org.apache.spark.sql.execution.streaming.checkpointing.MetadataLog[T]
+  type CompactibleFileStreamLog[T <: AnyRef] = org.apache.spark.sql.execution.streaming.runtime.CompactibleFileStreamLog[T]
 }

@@ -1120,7 +1120,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     // Spark 4+ defaults spark.sql.ansi.enabled=true, which rejects implicit casts of 'bar'/'foo'
     // to BIGINT and throws SparkNumberFormatException instead of returning 0 results.
     // The ANSI rejection is strictly correct behaviour, so skip rather than fail.
-    assumeTrue(!org.apache.spark.SPARK_VERSION.startsWith("4"))
+    assumeTrue(org.apache.spark.SPARK_VERSION.startsWith("3"))
     val df = esDataSource("pd_in_number")
     var filter = df.filter("participants IN (2, 'bar', 1, 'foo')")
 

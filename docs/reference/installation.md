@@ -54,7 +54,7 @@ In addition to the *uber* jar, elasticsearch-hadoop provides minimalistic jars f
 </dependency>
 ```
 
-1. *spark* artifact. Notice the `-30` part of the suffix which indicates the Spark version compatible with the artifact. Use `40` for Spark 4.0+, `35` for Spark 3.5+, and `30` for Spark 3.0+. Notice the `_2.13` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
+1. *spark* artifact. Notice the `-30` part of the suffix which indicates the Spark version compatible with the artifact. Use `41` for Spark 4.1+, `40` for Spark 4.0+, `35` for Spark 3.5+, and `30` for Spark 3.0+. Notice the `_2.13` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
 
 
 The Spark connector framework is the most sensitive to version incompatibilities. For your convenience, a version compatibility matrix has been provided below:
@@ -70,6 +70,7 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | 3.5+          | 2.12 | elasticsearch-spark-35_2.12 |
 | 3.5+          | 2.13 | elasticsearch-spark-35_2.13 |
 | 4.0+          | 2.13 | elasticsearch-spark-40_2.13 |
+| 4.1+          | 2.13 | elasticsearch-spark-41_2.13 |
 
 
 ## Development Builds [download-dev]
@@ -108,7 +109,7 @@ but also enable the dedicated snapshots repository :
 
 Elasticsearch for Apache Hadoop is a client library for {{es}}, albeit one with extended functionality for supporting operations on Hadoop/Spark. When upgrading Hadoop/Spark versions, it is best to check to make sure that your new versions are supported by the connector, upgrading your elasticsearch-hadoop version as appropriate.
 
-Elasticsearch for Apache Hadoop maintains backwards compatibility with the most recent minor version of {{es}}'s previous major release (5.X supports back to 2.4.X, 6.X supports back to 5.6.X, etc…​). When you are upgrading your version of {{es}}, it is best to upgrade elasticsearch-hadoop to the new version (or higher) first. The new elasticsearch-hadoop version should continue to work for your previous {{es}} version, allowing you to upgrade as normal.
+Elasticsearch for Apache Hadoop maintains backwards compatibility with the most recent minor version of {{es}}'s previous major release (5.X supports back to 2.4.X, 6.X supports back to 5.6.X, etc…). When you are upgrading your version of {{es}}, it is best to upgrade elasticsearch-hadoop to the new version (or higher) first. The new elasticsearch-hadoop version should continue to work for your previous {{es}} version, allowing you to upgrade as normal.
 
 ::::{note}
 Elasticsearch for Apache Hadoop does not support rolling upgrades well. During a rolling upgrade, nodes that elasticsearch-hadoop is communicating with will be regularly disappearing and coming back online. Due to the constant connection failures that elasticsearch-hadoop will experience during the time frame of a rolling upgrade there is high probability that your jobs will fail. Thus, it is recommended that you disable any elasticsearch-hadoop based write or read jobs against {{es}} during your rolling upgrade process.
