@@ -37,7 +37,7 @@ sparkVariants {
         // runtime.CompactibleFileStreamLog).
         project.sourceSets.getByName(variant.getSourceSetName("main")).scala.filter.exclude { fte ->
             String absPath = fte.file.absolutePath
-            absPath.contains('/sql-shared/') && absPath.endsWith('/streaming/package.scala')
+            absPath.contains('/sql-shared/') && absPath.endsWith('/sql/streaming/package.scala')
         }
         project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
             srcDir "${sharedSrcDir}/main/resources"
