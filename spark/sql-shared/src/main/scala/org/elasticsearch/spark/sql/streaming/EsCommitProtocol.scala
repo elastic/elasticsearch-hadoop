@@ -21,7 +21,6 @@ package org.elasticsearch.spark.sql.streaming
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.apache.spark.sql.execution.streaming.MetadataLog
 import org.elasticsearch.hadoop.util.Assert
 
 /**

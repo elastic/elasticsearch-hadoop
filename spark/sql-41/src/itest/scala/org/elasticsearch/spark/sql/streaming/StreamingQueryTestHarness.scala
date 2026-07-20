@@ -19,21 +19,20 @@
 
 package org.elasticsearch.spark.sql.streaming
 
-/**
- * A null object style metadata log that discards incoming data, and otherwise
- * acts like an empty log.
- */
-class NullMetadataLog[T] extends MetadataLog[T] with Serializable {
+import org.apache.spark.sql.Encoder
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.streaming.StreamingQueryListener
 
-  // Always return successful storage
-  override def add(batchId: Long, metadata: T): Boolean = true
+// Spark 4.1+: same idle-event behaviour as Spark 3.5+. See StreamingQueryTestHarnessBase for details.
+class StreamingQueryTestHarness[S <: java.io.Serializable : Encoder](sparkSession: SparkSession)
+    extends StreamingQueryTestHarnessBase[S](sparkSession) {
 
-  override def get(batchId: Long): Option[T] = None
-
-  override def get(startId: Option[Long], endId: Option[Long]): Array[(Long, T)] = Array()
-
-  override def getLatest(): Option[(Long, T)] = None
-
-  override def purge(thresholdBatchId: Long): Unit = ()
-
+  override protected def newListener(): LifecycleListener = new LifecycleListener {
+    override def onQueryIdle(event: StreamingQueryListener.QueryIdleEvent): Unit = {
+      captureQueryID(event.id)
+      if (inputsSeen == inputsRequired) {
+        latch.countDown()
+      }
+    }
+  }
 }

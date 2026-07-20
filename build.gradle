@@ -23,6 +23,7 @@ dependencies {
     nmcpAggregation(project(":elasticsearch-spark-30"))
     nmcpAggregation(project(":elasticsearch-spark-35"))
     nmcpAggregation(project(":elasticsearch-spark-40"))
+    nmcpAggregation(project(":elasticsearch-spark-41"))
 }
 
 tasks.named('zipAggregation').configure {
