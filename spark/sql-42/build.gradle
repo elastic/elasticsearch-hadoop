@@ -1,0 +1,235 @@
+import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
+
+description = "Elasticsearch Spark (for Spark 4.2)"
+
+apply plugin: 'java-library'
+apply plugin: 'scala'
+apply plugin: 'es.hadoop.build.integration'
+apply plugin: 'spark.variants'
+
+
+sparkVariants {
+    capabilityGroup 'org.elasticsearch.spark42.sql.variant'
+    setDefaultVariant "spark42scala213", spark42Version, scala213Version
+
+    all { SparkVariantPlugin.SparkVariant variant ->
+        String scalaCompileTaskName = project.sourceSets
+                .getByName(variant.getSourceSetName("main"))
+                .getCompileTaskName("scala")
+
+        project.configurations {
+            create(variant.configuration('embedded')) {
+                transitive = false
+                canBeResolved = true
+            }
+            getByName(variant.configuration('implementation')) {
+                extendsFrom project.configurations.getByName(variant.configuration('embedded'))
+            }
+        }
+
+        // Include shared source directory alongside this module's version-specific sources
+        def sharedSrcDir = "${rootProject.projectDir}/spark/sql-shared/src"
+        project.sourceSets.getByName(variant.getSourceSetName("main")).scala {
+            srcDir "${sharedSrcDir}/main/scala"
+        }
+        // The shared package object aliases Spark 4.0 streaming package paths; sql-42
+        // provides its own pointing at the 4.1+ paths (checkpointing.MetadataLog,
+        // runtime.CompactibleFileStreamLog).
+        project.sourceSets.getByName(variant.getSourceSetName("main")).scala.filter.exclude { fte ->
+            String absPath = fte.file.absolutePath
+            absPath.contains('/sql-shared/') && absPath.endsWith('/sql/streaming/package.scala')
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("main")).resources {
+            srcDir "${sharedSrcDir}/main/resources"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("test")).scala {
+            srcDir "${sharedSrcDir}/test/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).scala {
+            srcDir "${sharedSrcDir}/itest/scala"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).java {
+            srcDir "${sharedSrcDir}/itest/java"
+        }
+        project.sourceSets.getByName(variant.getSourceSetName("itest")).resources {
+            srcDir "${sharedSrcDir}/itest/resources"
+        }
+
+        // Configure main compile task
+        project.getTasks().getByName(scalaCompileTaskName) { ScalaCompile compileScala ->
+            configure(compileScala.scalaCompileOptions.forkOptions) {
+                memoryMaximumSize = '1g'
+            }
+            compileScala.scalaCompileOptions.additionalParameters = [
+                    "-feature",
+                    "-unchecked",
+                    "-deprecation",
+                    "-Ywarn-dead-code",
+                    "-Ywarn-numeric-widen",
+                    "-release", "17"
+            ]
+        }
+
+        dependencies {
+            add(variant.configuration('embedded'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('embedded'), project(":elasticsearch-spark")) {
+                capabilities {
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
+                }
+            }
+
+            add(variant.configuration('api'), "org.scala-lang:scala-library:$variant.scalaVersion")
+            add(variant.configuration('api'), "org.scala-lang:scala-reflect:$variant.scalaVersion")
+            add(variant.configuration('api'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'javax.servlet'
+                exclude group: 'org.apache.hadoop'
+            }
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils_${variant.scalaMajorVersion}:$variant.sparkVersion")
+            // Spark 4.1+ split LogKey/MDC into a separate Java-only artifact
+            add(variant.configuration('api'), "org.apache.spark:spark-common-utils-java_${variant.scalaMajorVersion}:$variant.sparkVersion")
+            add(variant.configuration('api'), "org.apache.spark:spark-sql-api_${variant.scalaMajorVersion}:$variant.sparkVersion")
+
+            add(variant.configuration('implementation'), "org.apache.spark:spark-sql_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+            add(variant.configuration('implementation'), "org.apache.spark:spark-streaming_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+            add(variant.configuration('implementation'), "org.slf4j:slf4j-api:${project.ext.slf4jVersion}") {
+                because 'spark exposes slf4j components in traits that we need to extend'
+            }
+            add(variant.configuration('implementation'), "commons-logging:commons-logging:1.1.1")
+            add(variant.configuration('implementation'), "javax.xml.bind:jaxb-api:2.3.1")
+            add(variant.configuration('implementation'), "org.apache.spark:spark-catalyst_${variant.scalaMajorVersion}:$variant.sparkVersion")
+            add(variant.configuration('implementation'), "org.apache.spark:spark-yarn_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+
+            add(variant.configuration('compileOnly'), "org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7:1.0.0")
+            add(variant.configuration('compileOnly'), "com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+            add(variant.configuration('compileOnly'), "org.json4s:json4s-jackson_${variant.scalaMajorVersion}:3.6.6")
+            add(variant.configuration('compileOnly'), "org.json4s:json4s-ast_${variant.scalaMajorVersion}:3.6.6")
+            add(variant.configuration('compileOnly'), "org.apache.spark:spark-tags_${variant.scalaMajorVersion}:$variant.sparkVersion")
+
+            add(variant.configuration('test', 'implementation'), project(":test:shared"))
+            add(variant.configuration('test', 'implementation'), "jakarta.servlet:jakarta.servlet-api:4.0.3")
+            add(variant.configuration('test', 'implementation'), "org.elasticsearch:securemock:1.2")
+            add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-core_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'javax.servlet'
+                exclude group: 'org.apache.hadoop'
+            }
+            add(variant.configuration('test', 'implementation'), "org.apache.spark:spark-sql_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+
+            add(variant.configuration('itest', 'implementation'), project(":test:shared"))
+            add(variant.configuration('itest', 'implementation'), "jakarta.servlet:jakarta.servlet-api:4.0.3")
+            add(variant.configuration('itest', 'implementation'), "org.apache.spark:spark-yarn_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+            add(variant.configuration('itest', 'implementation'), "org.apache.spark:spark-streaming_${variant.scalaMajorVersion}:$variant.sparkVersion") {
+                exclude group: 'org.apache.hadoop'
+            }
+
+            add(variant.configuration('additionalSources'), project(":elasticsearch-hadoop-mr"))
+            add(variant.configuration('javadocSources'), project(":elasticsearch-hadoop-mr"))
+
+            add(variant.configuration('additionalSources'), project(":elasticsearch-spark")) {
+                capabilities {
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
+                }
+            }
+            add(variant.configuration('javadocSources'), project(":elasticsearch-spark")) {
+                capabilities {
+                    requireCapability("org.elasticsearch.spark.variant:spark30scala213:$project.version")
+                }
+            }
+        }
+
+        def javaFilesOnly = { FileTreeElement spec ->
+            spec.file.name.endsWith('.java') || spec.isDirectory()
+        }
+
+        // Add java files from scala source set to javadocSourceElements.
+        for (def sourceDir in ["src/main/scala", "${rootProject.projectDir}/spark/sql-shared/src/main/scala"]) {
+            project.fileTree(sourceDir).include(javaFilesOnly).each {
+                project.artifacts.add(variant.configuration('javadocSourceElements'), it)
+            }
+        }
+
+        // genjavadoc 0.18 generates Java stubs that are invalid under Java 17+ javadoc
+        // (abstract+static combination). Since Spark 4.2 requires Java 17+, we skip genjavadoc
+        // and rely on scaladoc alone for API documentation.
+
+        scaladoc {
+            title = "${rootProject.description} ${version} API"
+        }
+    }
+}
+
+// Resolve the Java 17+ home to use for javadoc and tests. Prefer JAVA17_HOME if set;
+// otherwise fall back to the lowest discovered JVM >= 17.
+String java17Home = System.getenv("JAVA17_HOME") ?:
+        project.ext.javaVersions?.findAll { it.version >= 17 }?.min { it.version }?.javaHome?.get()?.absolutePath
+
+if (java17Home == null) {
+    project.logger.warn("Spark 4.2 requires Java 17+ but none was discovered via JAVA17_HOME; " +
+            "falling back to the Gradle JVM (${JavaVersion.current()}). Set JAVA17_HOME.")
+}
+
+// Spark 4.2 class files are Java 17 bytecode; javadoc must use Java 17+ to read them.
+tasks.withType(Javadoc).configureEach { Javadoc javadocTask ->
+    if (java17Home != null) {
+        javadocTask.executable = "${java17Home}/bin/javadoc"
+    }
+    javadocTask.options.links(
+        "https://docs.oracle.com/en/java/javase/17/docs/api/",
+        "https://spark.apache.org/docs/${spark42Version}/api/java/"
+    )
+}
+
+// Configure test JVM for Spark 4.2 - requires Java 17+
+project.tasks.withType(Test).configureEach { Test testTask ->
+    if (java17Home != null) {
+        testTask.executable = "${java17Home}/bin/java"
+    }
+    testTask.jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.io=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.net=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.security.action=ALL-UNNAMED"
+    testTask.jvmArgs "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+}
+
+// Embed the embedded dependencies in the final jar after all configuration is complete
+sparkVariants {
+    all { SparkVariantPlugin.SparkVariant variant ->
+        tasks.getByName(variant.taskName('jar')) {
+            dependsOn(project.configurations.getByName(variant.configuration('embedded')))
+            from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
+                include "org/elasticsearch/**"
+                include "esh-build.properties"
+                include "META-INF/services/*"
+            }
+        }
+    }
+}
+
+
+tasks.register('copyPoms', Copy) {
+    from(tasks.named('generatePomFileForMainPublication')) {
+        rename 'pom-default.xml', "elasticsearch-spark-42_2.13-${project.getVersion()}.pom"
+    }
+    into(new File(project.buildDir, 'distributions'))
+}
+
+tasks.named('distribution').configure {
+    dependsOn 'copyPoms'
+}
