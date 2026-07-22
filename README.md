@@ -51,7 +51,7 @@ For Scala 2.13 and Spark 4.0, use:
   <version>9.0.0</version>
 </dependency>
 ```
-For Scala 2.13 and Spark 4.1, use:
+For Scala 2.13 and Spark 4.1 or 4.2, use:
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
@@ -68,8 +68,9 @@ More information in this [section](http://www.elastic.co/guide/en/elasticsearch/
 
 ### Supported Spark Versions
 
-Spark 3.0 through 4.1 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
-are supported for Spark 3.2 through 3.5. Only Scala 2.13 is supported for Spark 4.0 and 4.1.
+Spark 3.0 through 4.2 are supported. Only Scala 2.12 is supported for Spark 3.0 and 3.1. Both Scala 2.12 and 2.13
+are supported for Spark 3.2 through 3.5. Only Scala 2.13 is supported for Spark 4.0+. Spark 4.2 users should use
+the `elasticsearch-spark-41` artifact.
 
 ## Feedback / Q&A
 We're interested in your feedback! You can find us on the [Elastic forum](https://discuss.elastic.co/).
