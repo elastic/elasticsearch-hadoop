@@ -67,10 +67,10 @@ The Spark connector framework is the most sensitive to version incompatibilities
 | 2.x           | 2.12 | <unsupported>               |
 | 3.0+          | 2.12 | elasticsearch-spark-30_2.12 |
 | 3.2+          | 2.13 | elasticsearch-spark-30_2.13 |
-| 3.5+          | 2.12 | elasticsearch-spark-35_2.12 |
-| 3.5+          | 2.13 | elasticsearch-spark-35_2.13 |
-| 4.0+          | 2.13 | elasticsearch-spark-40_2.13 |
-| 4.1 - 4.2     | 2.13 | elasticsearch-spark-41_2.13 |
+| 3.5           | 2.12 | elasticsearch-spark-35_2.12 |
+| 3.5           | 2.13 | elasticsearch-spark-35_2.13 |
+| 4.0           | 2.13 | elasticsearch-spark-40_2.13 |
+| 4.1+          | 2.13 | elasticsearch-spark-41_2.13 |
 
 
 ## Development Builds [download-dev]
