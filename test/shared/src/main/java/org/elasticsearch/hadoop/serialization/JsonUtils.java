@@ -24,10 +24,9 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.MapperFeature;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -42,8 +41,7 @@ public final class JsonUtils {
 
     static {
         MAPPER = new ObjectMapper();
-        MAPPER.configure(DeserializationConfig.Feature.USE_ANNOTATIONS, false);
-        MAPPER.configure(SerializationConfig.Feature.USE_ANNOTATIONS, false);
+        MAPPER.configure(MapperFeature.USE_ANNOTATIONS, false);
     }
 
     private JsonUtils() { }
@@ -60,7 +58,7 @@ public final class JsonUtils {
         Map<String, Object> map;
         try {
             // create parser manually to lower Jackson requirements
-            JsonParser jsonParser = MAPPER.getJsonFactory().createJsonParser(inputStream);
+            JsonParser jsonParser = MAPPER.getFactory().createParser(inputStream);
             map = MAPPER.readValue(jsonParser, Map.class);
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);

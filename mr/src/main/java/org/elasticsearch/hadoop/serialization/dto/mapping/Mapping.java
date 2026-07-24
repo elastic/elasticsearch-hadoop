@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.serialization.dto.mapping;
 
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonProperty;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.ArrayList;

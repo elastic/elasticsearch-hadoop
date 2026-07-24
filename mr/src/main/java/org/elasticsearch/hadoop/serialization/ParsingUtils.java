@@ -235,6 +235,16 @@ public abstract class ParsingUtils {
         return out.toString();
     }
 
+    /**
+     * Serialize the parser's current value token to JSON.
+     * <p>
+     * The parser must be positioned on a value token (START_OBJECT/START_ARRAY or scalar).
+     * This method advances the parser as it traverses the value.
+     */
+    public static String readCurrentValueAsString(Parser parser) {
+        return readValueAsString(parser);
+    }
+
     private static void traverse(Parser parser, Generator generator) {
         Token t = parser.currentToken();
         switch (t) {

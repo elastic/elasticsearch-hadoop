@@ -19,31 +19,36 @@
 package org.elasticsearch.hadoop.serialization.json;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonToken;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class JsonFactory {
 
-    private static final boolean HAS_OBJECT_READER = ObjectUtils.isClassPresent(
-            "org.codehaus.jackson.map.ObjectReader", JsonFactory.class.getClassLoader());
-
     public static <T> ObjectReader objectReader(ObjectMapper mapper, Class<T> clazz) {
-        return (HAS_OBJECT_READER ? JacksonObjectReader.reader(mapper, clazz) : BackportedObjectReader.create(mapper, clazz));
-    }
-
-    private static class JacksonObjectReader {
-        public static <E> ObjectReader reader(final ObjectMapper mapper, final Class<E> clazz) {
-            return new ObjectReader() {
-                private final org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectReader or = mapper.reader(clazz);
-
-                @Override
-                public <T> Iterator<T> readValues(JsonParser parser) throws IOException {
-                    return or.readValues(parser);
+        final org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectReader reader = mapper.readerFor(clazz);
+        return new ObjectReader() {
+            @Override
+            public <R> Iterator<R> readValues(JsonParser parser) throws IOException {
+                // Jackson 2's ObjectReader.readValues expects the parser to be positioned on the
+                // first value in the sequence (not START_ARRAY). Jackson 2 parsers also start with
+                // currentToken()==null until the first nextToken() call.
+                JsonToken token = parser.currentToken();
+                if (token == null) {
+                    token = parser.nextToken();
                 }
-            };
-        }
+                if (token == JsonToken.START_ARRAY) {
+                    token = parser.nextToken(); // move to first element (or END_ARRAY)
+                }
+                // If we were handed an empty array, there are no values to read.
+                if (token == JsonToken.END_ARRAY) {
+                    return Collections.emptyIterator();
+                }
+                return reader.readValues(parser);
+            }
+        };
     }
 }

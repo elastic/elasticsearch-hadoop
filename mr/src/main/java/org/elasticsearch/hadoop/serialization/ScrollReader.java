@@ -30,7 +30,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
@@ -41,7 +40,6 @@ import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
 import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
 import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
@@ -292,20 +290,20 @@ public class ScrollReader implements Closeable {
         List<Object[]> results = new ArrayList<Object[]>();
         int responseHits = 0;
         int skippedHits = 0;
-        int readHits = 0;
         for (token = parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
             responseHits++;
             Object[] hit = readHit(parser, input);
             if (hit != null) {
-                readHits++;
                 results.add(hit);
             } else {
                 skippedHits++;
             }
         }
 
-        // convert the char positions into actual content
-        if (returnRawJson) {
+        // convert the char positions into actual content (legacy path).
+        // Jackson 2 parsers don't provide stable "end offsets" for tokens, so the preferred
+        // raw-json path is to assemble JSON directly in readHitAsJson (result[1] is already a String/Text).
+        if (returnRawJson && !results.isEmpty() && results.get(0)[1] instanceof JsonResult) {
             // get all the longs
             int[] pos = new int[results.size() * 6];
             int offset = 0;
@@ -692,133 +690,106 @@ public class ScrollReader implements Closeable {
     }
 
     private Object[] readHitAsJson(Parser parser) {
-        // return results as raw json
+        // Return results as raw json. This implementation avoids relying on token offsets,
+        // which are not stable across Jackson versions.
 
         Object[] result = new Object[2];
+
         Object id = null;
+        String sourceRawJson = null; // full JSON for _source or fields (including outer braces if object)
+
+        // Collect metadata key/value json pairs to be emitted under "_metadata"
+        List<String> metaEntries = (readMetadata ? new ArrayList<String>(8) : Collections.<String>emptyList());
 
         Token t = parser.currentToken();
+        Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
 
-        JsonResult snippet = new JsonResult();
-
-        // read everything until SOURCE or FIELDS is encountered
-        if (readMetadata) {
-            result[1] = snippet;
-
-            String name;
-            String absoluteName;
-
-            t = parser.nextToken();
-            // move parser
-            int metadataStartChar = parser.tokenCharOffset();
-            int metadataStopChar = -1;
-            int endCharOfLastElement = -1;
-
-            while ((t = parser.currentToken()) != null) {
-                name = parser.currentName();
-                absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
-
-                if (t == Token.FIELD_NAME) {
-                    if (ID_FIELD.equals(name)) {
-
-                        reader.beginField(absoluteName);
-
-                        t = parser.nextToken();
-                        id = reader.wrapString(parser.text());
-                        endCharOfLastElement = parser.tokenCharOffset();
-
-                        reader.endField(absoluteName);
-                        t = parser.nextToken();
-                    }
-                    else if ("fields".equals(name) || "_source".equals(name)) {
-                        metadataStopChar = endCharOfLastElement;
-                        // break meta-parsing
-                        t = parser.nextToken();
-                        break;
-                    }
-                    else {
-                        parser.skipChildren();
-                        parser.nextToken();
-                        t = parser.nextToken();
-                        endCharOfLastElement = parser.tokenCharOffset();
-                    }
-                }
-                else {
-                    // no _source or field found
-                    metadataStopChar = endCharOfLastElement;
-                    //parser.nextToken();
-                    // indicate no data found
-                    t = null;
-                    break;
-                }
+        // Move into hit object
+        t = parser.nextToken();
+        while (t != null && t != Token.END_OBJECT) {
+            if (t != Token.FIELD_NAME) {
+                t = parser.nextToken();
+                continue;
             }
 
-            Assert.notNull(id, "no id found");
-            result[0] = id;
-
-            if (metadataStartChar >= 0 && metadataStopChar >= 0) {
-                snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
-            }
-        }
-        // no metadata is needed, fast fwd
-        else {
-            Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
-
+            String name = parser.currentName();
             String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
+
             reader.beginField(absoluteName);
-            result[0] = reader.wrapString(parser.text());
+            t = parser.nextToken(); // move to value
+
+            if (ID_FIELD.equals(name)) {
+                id = reader.wrapString(parser.text());
+                if (readMetadata) {
+                    metaEntries.add("\"" + StringUtils.jsonEncoding(name) + "\":" + ParsingUtils.readCurrentValueAsString(parser));
+                    // readCurrentValueAsString advanced; restore token
+                    t = parser.currentToken();
+                } else {
+                    // advance past scalar
+                    t = parser.nextToken();
+                }
+            } else if ("_source".equals(name) || "fields".equals(name)) {
+                // Capture the raw object/array value and continue scanning for trailing metadata (matched_queries, etc.)
+                sourceRawJson = ParsingUtils.readCurrentValueAsString(parser);
+                t = parser.currentToken();
+            } else {
+                if (readMetadata) {
+                    String valueJson = ParsingUtils.readCurrentValueAsString(parser);
+                    metaEntries.add("\"" + StringUtils.jsonEncoding(name) + "\":" + valueJson);
+                    t = parser.currentToken();
+                } else {
+                    parser.skipChildren();
+                    t = parser.nextToken();
+                }
+            }
+
             reader.endField(absoluteName);
 
-            t = ParsingUtils.seek(parser, SOURCE, FIELDS);
-        }
-
-        // no fields found
-        if (t != null) {
-            // move past _source or fields field name to get the accurate token location
-            t = parser.nextToken();
-            switch (t) {
-                case FIELD_NAME:
-                    int charStart = parser.tokenCharOffset();
-                    // can't use skipChildren as we are within the object
-                ParsingUtils.skipCurrentBlock(parser);
-                    // make sure to include the ending char
-                    int charStop = parser.tokenCharOffset();
-                    // move pass end of object
-                    t = parser.nextToken();
-                    snippet.addDoc(new JsonFragment(charStart, charStop));
-                    break;
-                case END_OBJECT:
-                    // move pass end of object
-                    t = parser.nextToken();
-                    snippet.addDoc(JsonFragment.EMPTY);
-                    break;
-                default:
-                    throw new EsHadoopIllegalArgumentException("unexpected token in _source: " + t);
+            // Ensure we advance when the helper left us on a value token
+            if (t == Token.VALUE_STRING || t == Token.VALUE_NUMBER || t == Token.VALUE_BOOLEAN || t == Token.VALUE_NULL
+                    || t == Token.START_OBJECT || t == Token.START_ARRAY) {
+                // readCurrentValueAsString generally advances, but be defensive
+                t = parser.nextToken();
             }
         }
 
-        // should include , plus whatever whitespace there is
-        int metadataSuffixStartCharPos = parser.tokenCharOffset();
-        int metadataSuffixStopCharPos = -1;
+        Assert.notNull(id, "no id found");
+        result[0] = id;
 
-        // in case of additional fields (matched_query), add them to the metadata
-        while ((t = parser.currentToken()) == Token.FIELD_NAME) {
-            t = parser.nextToken();
-            ParsingUtils.skipCurrentBlock(parser);
-            t = parser.nextToken();
+        // Assemble final JSON
+        StringBuilder sb = new StringBuilder(256);
+        sb.append('{');
 
-            if (readMetadata) {
-                metadataSuffixStopCharPos = parser.tokenCharOffset();
+        boolean wroteAny = false;
+
+        if (sourceRawJson != null) {
+            String src = sourceRawJson.trim();
+            if (src.startsWith("{") && src.endsWith("}") && src.length() >= 2) {
+                // Merge inner contents into top-level object
+                String inner = src.substring(1, src.length() - 1);
+                if (StringUtils.hasText(inner)) {
+                    sb.append(inner);
+                    wroteAny = true;
+                }
             }
         }
 
         if (readMetadata) {
-            if (metadataSuffixStartCharPos >= 0 && metadataSuffixStopCharPos >= 0) {
-                snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
+            if (wroteAny) {
+                sb.append(',');
             }
+            sb.append("\"").append(StringUtils.jsonEncoding(metadataField)).append("\":{");
+            for (int i = 0; i < metaEntries.size(); i++) {
+                if (i > 0) {
+                    sb.append(',');
+                }
+                sb.append(metaEntries.get(i));
+            }
+            sb.append('}');
         }
 
-        result[1] = snippet;
+        sb.append('}');
+        result[1] = reader.wrapString(sb.toString());
 
         if (trace) {
             log.trace(String.format("Read hit result [%s]", result));

@@ -24,8 +24,8 @@ import java.util.Collection;
 import java.util.Objects;
 
 import org.elasticsearch.hadoop.serialization.FieldType;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonCreator;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.annotate.JsonProperty;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.annotation.JsonCreator;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.annotation.JsonProperty;
 
 public class Field implements Serializable {
 

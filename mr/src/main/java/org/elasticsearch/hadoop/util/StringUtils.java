@@ -19,8 +19,7 @@
 package org.elasticsearch.hadoop.util;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.io.JsonStringEncoder;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.io.JsonStringEncoder;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -47,8 +46,6 @@ public abstract class StringUtils {
     public static final String SOURCE_ROOT = "hits.hits."+SOURCE_FIELD_NAME;
     public static final String FIELDS_ROOT = "hits.hits."+FIELD_FIELD_NAME;
     public static final String[] EMPTY_ARRAY = new String[0];
-
-    private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 
     public static class IpAndPort {
         public final String ip;
@@ -403,7 +400,7 @@ public abstract class StringUtils {
     }
 
     public static String jsonEncoding(String rawString) {
-        return new String(HAS_JACKSON_CLASS ? JacksonStringEncoder.jsonEncoding(rawString) : BackportedJsonStringEncoder.getInstance().quoteAsString(rawString));
+        return new String(JacksonStringEncoder.jsonEncoding(rawString));
     }
 
     // return the value in a JSON friendly way

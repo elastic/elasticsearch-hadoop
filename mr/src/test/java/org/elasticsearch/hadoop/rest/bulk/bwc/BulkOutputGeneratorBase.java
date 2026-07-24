@@ -35,10 +35,9 @@ import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.JsonParser;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.DeserializationConfig;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.thirdparty.codehaus.jackson.map.SerializationConfig;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.core.JsonParser;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.MapperFeature;
+import org.elasticsearch.hadoop.thirdparty.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
@@ -74,8 +73,7 @@ public abstract class BulkOutputGeneratorBase implements BulkOutputGenerator {
 
     public BulkOutputGeneratorBase() {
         mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.USE_ANNOTATIONS, false);
-        mapper.configure(SerializationConfig.Feature.USE_ANNOTATIONS, false);
+        mapper.configure(MapperFeature.USE_ANNOTATIONS, false);
     }
 
     protected String getHead() {
@@ -170,7 +168,7 @@ public abstract class BulkOutputGeneratorBase implements BulkOutputGenerator {
         Iterator<Map> entries;
 
         ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
-        JsonParser parser = mapper.getJsonFactory().createJsonParser(new FastByteArrayInputStream(bytes));
+        JsonParser parser = mapper.getFactory().createParser(new FastByteArrayInputStream(bytes));
         if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
             entries = Collections.<Map>emptyList().iterator();
         } else {
