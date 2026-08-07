@@ -7,7 +7,7 @@
   "labels": [
     ">non-issue",
     ":Delivery/Build",
-    "Team:Delivery"
+    "Team:Core/Infra"
   ],
   "baseBranches": [
     "main"
