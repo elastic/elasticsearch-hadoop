@@ -53,11 +53,10 @@ find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
 # Allow other users write access to create checksum files
 find "$WORKSPACE" -type d -path "*/build/distributions" -exec chmod a+w {} \;
 
-if [[ "${PUBLISH_MAVEN_TO_S3:-}" == "true" ]]; then
-  echo --- Publishing maven artifacts to S3
-  HADOOP_VERSION="$HADOOP_VERSION" VERSION_SUFFIX="$VERSION_SUFFIX" DRA_WORKFLOW="$DRA_WORKFLOW" \
-    .buildkite/dra-maven-publish.sh
-fi
+echo --- Publishing maven artifacts to S3
+
+HADOOP_VERSION="$HADOOP_VERSION" VERSION_SUFFIX="$VERSION_SUFFIX" DRA_WORKFLOW="$DRA_WORKFLOW" \
+  .buildkite/dra-maven-publish.sh
 
 echo --- Running release-manager
 
