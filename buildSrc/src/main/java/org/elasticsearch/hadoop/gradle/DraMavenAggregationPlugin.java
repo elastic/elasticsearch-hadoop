@@ -56,6 +56,9 @@ public class DraMavenAggregationPlugin implements Plugin<Project> {
                 task.getSourceZip().set(
                     project.getTasks().named("zipAggregation", Zip.class).flatMap(Zip::getArchiveFile)
                 );
+                // collectArtifacts (NMCP aggregation) produces the zip that zipAggregation
+                // packages; declare the dependency explicitly so Gradle 9+ validation passes.
+                task.dependsOn(project.getTasks().named("collectArtifacts"));
                 task.getVersion().set(version);
                 task.getOutputDir().set(project.getLayout().getBuildDirectory().dir("dra-maven-aggregation"));
             }
