@@ -45,13 +45,18 @@ mkdir localRepo
 wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
   -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
 
-./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation
+./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation zipDraSnapshotMavenAggregation
 
 # Allow other users access to read the artifacts so they are readable in the container
 find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
 
 # Allow other users write access to create checksum files
 find "$WORKSPACE" -type d -path "*/build/distributions" -exec chmod a+w {} \;
+
+echo --- Publishing maven artifacts to S3
+
+HADOOP_VERSION="$HADOOP_VERSION" VERSION_SUFFIX="$VERSION_SUFFIX" DRA_WORKFLOW="$DRA_WORKFLOW" \
+  .buildkite/dra-maven-publish.sh
 
 echo --- Running release-manager
 
