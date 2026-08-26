@@ -22,8 +22,10 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   BUILD_ARGS[0]="-Dbuild.snapshot=true"
 fi
 
-RM_BRANCH="$BUILDKITE_BRANCH"
-if [[ "$BUILDKITE_BRANCH" == "main" ]]; then
+# Allow RM_BRANCH override so feature branches can resolve real DRA manifests
+# by passing RM_BRANCH=main (or a release branch) when testing.
+RM_BRANCH="${RM_BRANCH:-$BUILDKITE_BRANCH}"
+if [[ "$RM_BRANCH" == "main" ]]; then
   RM_BRANCH=master
 fi
 
