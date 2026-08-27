@@ -166,6 +166,7 @@ distribution {
 publishing {
     publications {
         main {
+            artifactId = 'elasticsearch-hadoop'
             artifact tasks.named('distZip')
             getPom().withXml { XmlProvider xml ->
                 Node root = xml.asNode()
