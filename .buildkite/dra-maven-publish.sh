@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Publishes the maven aggregation zip produced by :zipDraSnapshotMavenAggregation
+# Publishes the exploded maven tree produced by :prepareDraSnapshotMavenAggregation
 # straight into the consumer-facing root prefixes on snapshots.elastic.co
 # (snapshot workflow) or artifacts.elastic.co (staging workflow):
 #
@@ -10,18 +10,18 @@
 # For each `*-javadoc.jar` in the maven tree we also unpack the browsable HTML
 # tree under `javadoc/<groupPath>/<artifact>/<version>/`.
 #
+# The version is already encoded in the exploded maven tree's directory layout
+# and the S3 target is the root `maven/` prefix, so no version env var is needed.
+# `MAVEN_AGGREGATION_DIR` overrides the source location for standalone use.
+#
 # Required environment:
 #   DRA_WORKFLOW           snapshot|staging (default: snapshot)
-#   HADOOP_VERSION         version incl. optional -<qualifier>, e.g. 9.6.0
-#   VERSION_SUFFIX         "-SNAPSHOT" for snapshots, empty for staging
 #   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY [/ AWS_SESSION_TOKEN]
 #                          exported via USE_MAVEN_S3_CREDENTIALS in pre-command
 
 set -euo pipefail
 
 DRA_WORKFLOW="${DRA_WORKFLOW:-snapshot}"
-: "${HADOOP_VERSION:?HADOOP_VERSION must be set}"
-VERSION_SUFFIX="${VERSION_SUFFIX-}"
 
 case "$DRA_WORKFLOW" in
   snapshot) BUCKET="snapshots.elastic.co" ;;
@@ -29,21 +29,18 @@ case "$DRA_WORKFLOW" in
   *) echo "unsupported DRA_WORKFLOW='$DRA_WORKFLOW'" >&2; exit 2 ;;
 esac
 
-ZIP="${MAVEN_AGGREGATION_ZIP:-build/distributions/elasticsearch-hadoop-dra-maven-aggregation-${HADOOP_VERSION}${VERSION_SUFFIX}.zip}"
-if [[ ! -f "$ZIP" ]]; then
-  echo "DRA aggregation zip not found: $ZIP" >&2
+MAVEN_DIR="${MAVEN_AGGREGATION_DIR:-build/dra-maven-aggregation}"
+if [[ ! -d "$MAVEN_DIR" ]]; then
+  echo "DRA maven aggregation tree not found: $MAVEN_DIR" >&2
+  echo "  (produced by :prepareDraSnapshotMavenAggregation)" >&2
   exit 1
 fi
 
 WORK_DIR="$(mktemp -d -t esh-maven-publish.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-MAVEN_DIR="$WORK_DIR/maven"
 JAVADOC_DIR="$WORK_DIR/javadoc"
-mkdir -p "$MAVEN_DIR" "$JAVADOC_DIR"
-
-echo "--- Unpacking $ZIP"
-unzip -q "$ZIP" -d "$MAVEN_DIR"
+mkdir -p "$JAVADOC_DIR"
 
 echo "--- Expanding javadoc jars"
 find "$MAVEN_DIR" -type f -name '*-javadoc.jar' -print0 | while IFS= read -r -d '' jar; do

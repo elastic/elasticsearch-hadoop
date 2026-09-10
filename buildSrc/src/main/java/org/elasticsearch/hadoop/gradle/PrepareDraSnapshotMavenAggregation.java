@@ -20,14 +20,16 @@
 package org.elasticsearch.hadoop.gradle;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.file.ArchiveOperations;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileSystemOperations;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.IgnoreEmptyDirectories;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -42,6 +44,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 
@@ -52,9 +55,15 @@ import javax.inject.Inject;
  * {@code com.gradleup.nmcp.aggregation} into the layout the DRA snapshot repo
  * ({@code snapshots.elastic.co/maven/}) expects.
  *
+ * <p>Rather than depend on the {@code aggregation.zip} archive and unpack it,
+ * this task reuses {@code zipAggregation}'s copy-spec source directly (the
+ * already-extracted per-project publications). That avoids materializing the
+ * DRA-side zip only to unzip it again in the publish step — nothing is zipped
+ * on the DRA path at all.
+ *
  * <p>For snapshot versions this task:
  * <ol>
- *   <li>Sync-extracts the aggregation zip into an output directory, renaming
+ *   <li>Sync-copies the aggregation source into an output directory, renaming
  *       {@code -<yyyyMMdd.HHmmss>-<n>} segments to {@code -SNAPSHOT}.
  *       Per-file checksum sidecars (.md5/.sha1/.sha*) hash the file bytes so
  *       renaming them alongside their jar/pom is byte-safe.</li>
@@ -73,20 +82,26 @@ import javax.inject.Inject;
 public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
 
     // Match the timestamp + build-number segment that maven-publish emits for
-    // snapshot deploys, e.g. `-20260824.075015-1`.
+    // snapshot deploys, e.g. `-20260824.075015-1`. The trailing `\d+` is
+    // digit-only so classifier suffixes like `-sources` / `-javadoc` are
+    // preserved by the rename.
     private static final String TIMESTAMP_REGEX = "-\\d{8}\\.\\d{6}-\\d+";
 
-    @InputFile
-    public abstract RegularFileProperty getSourceZip();
+    /**
+     * The already-extracted maven aggregation content, wired from
+     * {@code zipAggregation}'s copy-spec source so the DRA path never builds
+     * (or unpacks) the aggregation zip.
+     */
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    @IgnoreEmptyDirectories
+    public abstract ConfigurableFileCollection getSource();
 
     @Input
     public abstract Property<String> getVersion();
 
     @OutputDirectory
     public abstract DirectoryProperty getOutputDir();
-
-    @Inject
-    protected abstract ArchiveOperations getArchiveOperations();
 
     @Inject
     protected abstract FileSystemOperations getFileSystemOperations();
@@ -98,7 +113,7 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
         File outDir = getOutputDir().get().getAsFile();
 
         getFileSystemOperations().sync(spec -> {
-            spec.from(getArchiveOperations().zipTree(getSourceZip()));
+            spec.from(getSource());
             spec.into(outDir);
             if (snapshot) {
                 spec.rename(TIMESTAMP_REGEX, "-SNAPSHOT");
@@ -112,14 +127,22 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
         String lastUpdated = ZonedDateTime.now(ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         Path root = outDir.toPath();
+        // Collect the version directories eagerly before writing anything: we
+        // mutate each directory (adding maven-metadata.xml + sidecars) and must
+        // not do so while the lazy Files.walk directory stream is still open.
+        List<Path> versionDirs;
         try (Stream<Path> stream = Files.walk(root)) {
-            stream.filter(Files::isDirectory)
+            versionDirs = stream.filter(Files::isDirectory)
                 .filter(PrepareDraSnapshotMavenAggregation::isVersionDirectory)
-                .forEach(versionDir -> writeSnapshotMetadata(root, versionDir, lastUpdated));
+                .toList();
         }
+        versionDirs.forEach(versionDir -> writeSnapshotMetadata(root, versionDir, lastUpdated));
     }
 
     private static boolean isVersionDirectory(Path dir) {
+        // A version directory is `<groupPath>/<artifactId>/<version>/` and by
+        // convention contains at least one `.pom`. Using the pom presence as
+        // the marker avoids parsing filenames.
         try (Stream<Path> s = Files.list(dir)) {
             return s.anyMatch(p -> p.getFileName().toString().endsWith(".pom"));
         } catch (IOException e) {
@@ -169,6 +192,8 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
 
     private static void writeChecksumSidecars(Path file) throws IOException {
         byte[] bytes = Files.readAllBytes(file);
+        // Match the sidecar set nmcp already emits for the other artifacts in
+        // the zip; keeping them symmetric avoids surprise on the S3 side.
         for (String algorithm : new String[] { "MD5", "SHA-1", "SHA-256", "SHA-512" }) {
             try {
                 MessageDigest digest = MessageDigest.getInstance(algorithm);
