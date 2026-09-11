@@ -30,6 +30,13 @@ case "$DRA_WORKFLOW" in
 esac
 
 MAVEN_DIR="${MAVEN_AGGREGATION_DIR:-build/dra-maven-aggregation}"
+
+# Sanity guard: snapshot-versioned artifacts must not land in the staging bucket.
+if [[ "$DRA_WORKFLOW" == "staging" ]] && find "$MAVEN_DIR" -name '*-SNAPSHOT*' -maxdepth 4 -print -quit 2>/dev/null | grep -q .; then
+  echo "ERROR: staging workflow but SNAPSHOT artifacts found in $MAVEN_DIR — aborting." >&2
+  exit 2
+fi
+
 if [[ ! -d "$MAVEN_DIR" ]]; then
   echo "DRA maven aggregation tree not found: $MAVEN_DIR" >&2
   echo "  (produced by :prepareDraSnapshotMavenAggregation)" >&2

@@ -57,8 +57,7 @@ find "$WORKSPACE" -type d -path "*/build/distributions" -exec chmod a+w {} \;
 
 echo --- Publishing maven artifacts to S3
 
-DRA_WORKFLOW="$DRA_WORKFLOW" \
-  .buildkite/dra-maven-publish.sh
+.buildkite/dra-maven-publish.sh
 
 echo --- Running release-manager
 

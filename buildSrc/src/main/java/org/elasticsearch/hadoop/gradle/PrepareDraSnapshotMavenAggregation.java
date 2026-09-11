@@ -121,6 +121,10 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
         });
 
         if (snapshot == false) {
+            // Release (staging) path: plain sync with no rename or metadata.
+            // Artifact-level maven-metadata.xml is intentionally omitted: DRA
+            // consumers always resolve pinned coordinates and never need version
+            // discovery from the repo index.
             return;
         }
 
@@ -166,6 +170,10 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
         }
         String groupId = groupBuilder.toString();
 
+        // <localCopy>true</localCopy> tells Maven/Gradle to resolve the literal
+        // "-SNAPSHOT" filename rather than looking for a timestamped version.
+        // This is correct here because dra-maven-publish.sh uploads files
+        // with the -SNAPSHOT suffix (not -yyyyMMdd.HHmmss-N).
         String xml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <metadata>
