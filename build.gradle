@@ -13,6 +13,7 @@ description = 'Elasticsearch for Apache Hadoop'
 
 apply plugin: 'es.hadoop.build.root'
 apply plugin: 'com.gradleup.nmcp.aggregation'
+apply plugin: 'es.hadoop.dra-maven-aggregation'
 
 defaultTasks 'build'
 
