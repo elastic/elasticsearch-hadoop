@@ -145,7 +145,7 @@ if (!job.waitForCompletion(true)) { <3>
 ```
 
 1. Creating a new job instance
-2. EsMapReduceUtil obtains job delegation tokens for {es}
+2. EsMapReduceUtil obtains job delegation tokens for {{es}}
 3. Submit the job to the cluster
 
 
