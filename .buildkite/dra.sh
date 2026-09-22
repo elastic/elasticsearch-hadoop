@@ -11,7 +11,9 @@ fi
 echo --- Creating distribution
 
 rm -Rfv ~/.gradle/init.d
-HADOOP_VERSION=$(grep eshadoop buildSrc/esh-version.properties | sed "s/eshadoop *= *//g")
+HADOOP_VERSION=$(grep '^eshadoop' buildSrc/esh-version.properties | sed 's/.*= *//')
+ELASTICSEARCH_VERSION=$(grep '^elasticsearch' buildSrc/esh-version.properties | sed 's/.*= *//')
+BUILD_TOOLS_VERSION=$(grep '^build-tools' buildSrc/esh-version.properties | sed 's/.*= *//')
 BASE_VERSION="$HADOOP_VERSION"
 
 VERSION_SUFFIX=""
@@ -22,8 +24,8 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   BUILD_ARGS[0]="-Dbuild.snapshot=true"
 fi
 
-# Allow RM_BRANCH override so feature branches can resolve real DRA manifests
-# by passing RM_BRANCH=main (or a release branch) when testing.
+# Allow RM_BRANCH override so feature branches can point release-manager at a
+# real branch manifest by passing RM_BRANCH=main (or a release branch) when testing.
 RM_BRANCH="${RM_BRANCH:-$BUILDKITE_BRANCH}"
 if [[ "$RM_BRANCH" == "main" ]]; then
   RM_BRANCH=master
@@ -32,20 +34,27 @@ fi
 if [[ -n "${VERSION_QUALIFIER:-}" ]]; then
   BUILD_ARGS+=("-Dbuild.version_qualifier=$VERSION_QUALIFIER")
   HADOOP_VERSION="${HADOOP_VERSION}-${VERSION_QUALIFIER}"
+  ELASTICSEARCH_VERSION="${ELASTICSEARCH_VERSION}-${VERSION_QUALIFIER}"
+  BUILD_TOOLS_VERSION="${BUILD_TOOLS_VERSION}-${VERSION_QUALIFIER}"
 fi
+
+ELASTICSEARCH_ARTIFACTS_VERSION="${ELASTICSEARCH_VERSION}${VERSION_SUFFIX}"
+BUILD_TOOLS_COORD_VERSION="${BUILD_TOOLS_VERSION}${VERSION_SUFFIX}"
 
 echo "DRA_WORKFLOW=$DRA_WORKFLOW"
 echo "HADOOP_VERSION=$HADOOP_VERSION"
+echo "ELASTICSEARCH_ARTIFACTS_VERSION=$ELASTICSEARCH_ARTIFACTS_VERSION"
+echo "BUILD_TOOLS_COORD_VERSION=$BUILD_TOOLS_COORD_VERSION"
 echo "RM_BRANCH=$RM_BRANCH"
 echo "VERSION_SUFFIX=$VERSION_SUFFIX"
 echo "BUILD_ARGS=${BUILD_ARGS[@]}"
 
-ES_BUILD_ID=$(curl -sS "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${RM_BRANCH}.json" | jq -r '.build_id')
+ES_BUILD_ID=$(curl -sS "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${ELASTICSEARCH_ARTIFACTS_VERSION}.json" | jq -r '.build_id')
 echo "ES_BUILD_ID=$ES_BUILD_ID"
 
-mkdir localRepo
-wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
-  -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
+mkdir -p localRepo
+wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${BUILD_TOOLS_COORD_VERSION}/build-tools-${BUILD_TOOLS_COORD_VERSION}.jar" \
+  -O "localRepo/build-tools-${BUILD_TOOLS_COORD_VERSION}.jar"
 
 ./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation prepareDraSnapshotMavenAggregation
 
