@@ -98,7 +98,7 @@ spec:
     spec:
       repository: elastic/elasticsearch-hadoop
       clone_method: https
-      pipeline_file: .buildkite/dra-workflow.yml
+      pipeline_file: .buildkite/dra-workflow.sh
       env:
         ENABLE_DRA_WORKFLOW: "true"
       default_branch: main

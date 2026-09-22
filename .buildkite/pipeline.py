@@ -87,22 +87,71 @@ for sparkVersion, variants in groupingsBySparkVersion.items():
         )
 
 if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
+    with open("buildSrc/esh-version.properties") as _vf:
+        stack_version = next(
+            line.split("=", 1)[1].strip()
+            for line in _vf
+            if line.startswith("eshadoop")
+        )
+    DRA_PREP_VERSION = "v0.1.6"
+
+    pipeline["steps"].append({"wait": None})
+
     pipeline["steps"].append(
         {
-            "wait": None,
+            "label": ":gradle: DRA Build",
+            "key": "dra-build",
+            "command": ".buildkite/dra.sh",
+            "timeout_in_minutes": 60,
+            "agents": {"useVault": "true"},
+            "env": {
+                "USE_MAVEN_GPG": "true",
+                "USE_MAVEN_S3_CREDENTIALS": "true",
+                "DRA_WORKFLOW": "snapshot",
+            },
+            "artifact_paths": [
+                "dist/build/distributions/elasticsearch-hadoop-*.zip",
+                "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip",
+                "build/distributions/dependencies-*.csv",
+            ],
+        }
+    )
+
+    pipeline["steps"].append({"wait": None})
+
+    pipeline["steps"].append(
+        {
+            "label": ":package: DRA Prep",
+            "key": "dra-prep",
+            "command": ".buildkite/stage_artifacts.sh",
+            "agents": {"image": "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"},
+            "env": {"DRA_WORKFLOW": "snapshot"},
+            "plugins": [
+                {
+                    f"elastic/dra-prep#{DRA_PREP_VERSION}": {
+                        "product_id": "elasticsearch-hadoop",
+                        "stack_version": stack_version,
+                        "workflow": "snapshot",
+                    }
+                }
+            ],
         }
     )
 
     pipeline["steps"].append(
         {
-            "label": "DRA Snapshot Workflow",
-            "command": ".buildkite/dra.sh",
-            "timeout_in_minutes": 60,
-            "agents": {"useVault": "true"},
-            "env": {
-                "USE_DRA_CREDENTIALS": "true",
+            "label": f":pipeline: DRA processing for elasticsearch-hadoop / {stack_version} / snapshot",
+            "trigger": "unified-release-dra-processing",
+            "async": True,
+            "depends_on": "dra-prep",
+            "build": {
+                "env": {
+                    "DRA_PRODUCT_ID": "elasticsearch-hadoop",
+                    "DRA_STACK_VERSION": stack_version,
+                    "DRA_WORKFLOW": "snapshot",
+                }
             },
-        },
+        }
     )
 
 print(json.dumps(pipeline, indent=2))
