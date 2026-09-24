@@ -11,11 +11,10 @@ fi
 
 DRA_PREP_VERSION="v0.1.6"
 
-export STACK_VERSION DRA_PREP_VERSION
-
-# envsubst replaces only $STACK_VERSION and $DRA_PREP_VERSION; all other $
-# references (build.env(), $DRA_WORKFLOW) are left for Buildkite to resolve.
-envsubst '$STACK_VERSION $DRA_PREP_VERSION' <<'PIPELINE'
+# Use a regular heredoc so bash substitutes $STACK_VERSION and $DRA_PREP_VERSION.
+# Buildkite runtime variables ($DRA_WORKFLOW) are escaped with \$ so bash leaves
+# them as literal $ for Buildkite to resolve at build time.
+cat <<PIPELINE
 steps:
   - label: ":gradle: DRA Build"
     key: dra-build
@@ -44,12 +43,12 @@ steps:
     agents:
       image: "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"
     plugins:
-      - elastic/dra-prep#$DRA_PREP_VERSION:
+      - elastic/dra-prep#${DRA_PREP_VERSION}:
           product_id: "elasticsearch-hadoop"
-          stack_version: "$STACK_VERSION"
-          workflow: "$DRA_WORKFLOW"
+          stack_version: "${STACK_VERSION}"
+          workflow: "\${DRA_WORKFLOW}"
 
-  - label: ":pipeline: DRA processing for elasticsearch-hadoop / $STACK_VERSION / $DRA_WORKFLOW"
+  - label: ":pipeline: DRA processing for elasticsearch-hadoop / ${STACK_VERSION} / \${DRA_WORKFLOW}"
     trigger: "unified-release-dra-processing"
     async: true
     depends_on: "dra-prep"
@@ -57,6 +56,6 @@ steps:
     build:
       env:
         DRA_PRODUCT_ID: "elasticsearch-hadoop"
-        DRA_STACK_VERSION: "$STACK_VERSION"
-        DRA_WORKFLOW: "$DRA_WORKFLOW"
+        DRA_STACK_VERSION: "${STACK_VERSION}"
+        DRA_WORKFLOW: "\${DRA_WORKFLOW}"
 PIPELINE
