@@ -21,10 +21,12 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   BUILD_ARGS[0]="-Dbuild.snapshot=true"
 fi
 
-# DRA_BRANCH is used to resolve the correct ES artifacts for this branch.
-# Override DRA_BRANCH to test against a different branch's artifacts.
+# DRA_BRANCH maps the current branch to an ES artifacts branch.
+# Release branches (e.g. 9.6, 8.17) map to themselves; main maps to master;
+# feature branches have no corresponding ES artifacts and fall back to master.
+# Override DRA_BRANCH explicitly when testing against a specific ES branch.
 DRA_BRANCH="${DRA_BRANCH:-$BUILDKITE_BRANCH}"
-if [[ "$DRA_BRANCH" == "main" ]]; then
+if [[ "$DRA_BRANCH" == "main" || ! "$DRA_BRANCH" =~ ^([0-9]+\.[0-9]+|[0-9]+\.x)$ ]]; then
   DRA_BRANCH=master
 fi
 
@@ -39,7 +41,12 @@ echo "DRA_BRANCH=$DRA_BRANCH"
 echo "VERSION_SUFFIX=$VERSION_SUFFIX"
 echo "BUILD_ARGS=${BUILD_ARGS[@]}"
 
-ES_BUILD_ID=$(curl -sS "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${DRA_BRANCH}.json" | jq -r '.build_id')
+ES_LATEST_URL="https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${DRA_BRANCH}.json"
+ES_LATEST_JSON=$(curl -sS --fail "$ES_LATEST_URL") || {
+  echo "ERROR: failed to fetch ES artifact manifest for branch '${DRA_BRANCH}': $ES_LATEST_URL" >&2
+  exit 1
+}
+ES_BUILD_ID=$(echo "$ES_LATEST_JSON" | jq -r '.build_id')
 echo "ES_BUILD_ID=$ES_BUILD_ID"
 
 mkdir localRepo
