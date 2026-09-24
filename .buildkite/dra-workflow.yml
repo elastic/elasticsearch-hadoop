@@ -1,0 +1,9 @@
+# Bootstrap shim: the Buildkite pipeline's "Commands to run" still points to this
+# file (set by Terrazzo from the previous catalog-info.yaml). Once catalog-info.yaml
+# is synced by Terrazzo after this PR merges, the pipeline will execute
+# dra-workflow.sh directly and this file can be removed.
+steps:
+  - label: ":pipeline: Upload DRA pipeline"
+    command: "bash .buildkite/dra-workflow.sh | buildkite-agent pipeline upload"
+    agents:
+      image: "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"
