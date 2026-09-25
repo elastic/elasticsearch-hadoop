@@ -31,7 +31,6 @@ steps:
       USE_MAVEN_S3_CREDENTIALS: "true"
     artifact_paths:
       - "dist/build/distributions/elasticsearch-hadoop-*.zip"
-      - "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip"
       - "build/distributions/dependencies-*.csv"
 
   - wait: ~

@@ -6,14 +6,12 @@ WORKFLOW="${DRA_WORKFLOW:-snapshot}"
 echo "--- :compression: Downloading ${WORKFLOW} build artifacts"
 
 buildkite-agent artifact download "dist/build/distributions/elasticsearch-hadoop-*.zip" .
-buildkite-agent artifact download "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip" .
 buildkite-agent artifact download "build/distributions/dependencies-*.csv" .
 
 echo "--- :package: Staging ${WORKFLOW} artifacts"
 mkdir -p artifacts
 
 cp dist/build/distributions/elasticsearch-hadoop-*.zip artifacts/
-cp build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip artifacts/
 cp build/distributions/dependencies-*.csv artifacts/
 
 if ! ls artifacts/* 1>/dev/null 2>&1; then
