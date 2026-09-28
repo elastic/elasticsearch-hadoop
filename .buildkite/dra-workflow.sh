@@ -38,7 +38,7 @@ steps:
   - label: ":package: DRA Prep"
     key: dra-prep
     command: ".buildkite/stage_artifacts.sh"
-    if: 'build.env("DRA_WORKFLOW") == "snapshot" || (build.branch !~ /^main$/ && build.branch !~ /^[0-9]+\.x$/)'
+    if: 'build.env("DRA_WORKFLOW") == "snapshot" || build.branch =~ /^[0-9]+\.[0-9]+$/'
     agents:
       image: "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"
     plugins:
@@ -51,7 +51,7 @@ steps:
     trigger: "unified-release-dra-processing"
     async: true
     depends_on: "dra-prep"
-    if: 'build.env("DRA_WORKFLOW") == "snapshot" || (build.branch !~ /^main$/ && build.branch !~ /^[0-9]+\.x$/)'
+    if: 'build.env("DRA_WORKFLOW") == "snapshot" || build.branch =~ /^[0-9]+\.[0-9]+$/'
     build:
       env:
         DRA_PRODUCT_ID: "elasticsearch-hadoop"

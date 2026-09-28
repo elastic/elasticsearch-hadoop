@@ -22,11 +22,10 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
 fi
 
 # DRA_BRANCH maps the current branch to an ES artifacts branch.
-# Release branches (e.g. 9.6, 8.17) map to themselves; main maps to master;
-# feature branches have no corresponding ES artifacts and fall back to master.
-# Override DRA_BRANCH explicitly when testing against a specific ES branch.
+# Release branches (e.g. 9.6, 8.17) and rolling branches (N.x) map to themselves;
+# main maps to master. Override DRA_BRANCH explicitly to test against a specific ES branch.
 DRA_BRANCH="${DRA_BRANCH:-$BUILDKITE_BRANCH}"
-if [[ "$DRA_BRANCH" == "main" || ! "$DRA_BRANCH" =~ ^([0-9]+\.[0-9]+|[0-9]+\.x)$ ]]; then
+if [[ "$DRA_BRANCH" == "main" ]]; then
   DRA_BRANCH=master
 fi
 
