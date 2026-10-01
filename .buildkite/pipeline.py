@@ -86,6 +86,7 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
             "agents": {"useVault": "true"},
             "env": {
                 "USE_DRA_CREDENTIALS": "true",
+                "USE_MAVEN_S3_CREDENTIALS": "true",
             },
         },
     )
