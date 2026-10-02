@@ -111,6 +111,7 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
             },
             "artifact_paths": [
                 "dist/build/distributions/elasticsearch-hadoop-*.zip",
+                "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip",
                 "build/distributions/dependencies-*.csv",
             ],
         }
