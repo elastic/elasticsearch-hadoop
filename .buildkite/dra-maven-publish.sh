@@ -2,7 +2,7 @@
 
 # Publishes the exploded maven tree produced by :prepareDraSnapshotMavenAggregation
 # straight into the consumer-facing root prefixes on snapshots.elastic.co
-# (snapshot workflow) or artifacts.elastic.co (staging workflow):
+# (snapshot workflow) or staging.elastic.co (staging workflow):
 #
 #   s3://<bucket>/maven/<groupPath>/<artifact>/<version>/<file>
 #   s3://<bucket>/javadoc/<groupPath>/<artifact>/<version>/<html-tree>
@@ -25,7 +25,7 @@ DRA_WORKFLOW="${DRA_WORKFLOW:-snapshot}"
 
 case "$DRA_WORKFLOW" in
   snapshot) BUCKET="snapshots.elastic.co" ;;
-  staging)  BUCKET="artifacts.elastic.co" ;;
+  staging)  BUCKET="staging.elastic.co" ;;
   *) echo "unsupported DRA_WORKFLOW='$DRA_WORKFLOW'" >&2; exit 2 ;;
 esac
 
