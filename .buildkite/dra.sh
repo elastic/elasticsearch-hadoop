@@ -21,36 +21,39 @@ if [[ "$DRA_WORKFLOW" == "snapshot" ]]; then
   BUILD_ARGS[0]="-Dbuild.snapshot=true"
 fi
 
-# DRA_BRANCH maps the current branch to an ES artifacts branch.
-# Release branches (e.g. 9.6, 8.17) and rolling branches (N.x) map to themselves;
-# main maps to master. Override DRA_BRANCH explicitly to test against a specific ES branch.
-DRA_BRANCH="${DRA_BRANCH:-$BUILDKITE_BRANCH}"
-if [[ "$DRA_BRANCH" == "main" ]]; then
-  DRA_BRANCH=master
-fi
-
 if [[ -n "${VERSION_QUALIFIER:-}" ]]; then
   BUILD_ARGS+=("-Dbuild.version_qualifier=$VERSION_QUALIFIER")
   HADOOP_VERSION="${HADOOP_VERSION}-${VERSION_QUALIFIER}"
 fi
 
+BUILD_TOOLS_VERSION="${HADOOP_VERSION}${VERSION_SUFFIX}"
+case "$DRA_WORKFLOW" in
+  snapshot)
+    BUILD_TOOLS_MAVEN_REPO="https://snapshots.elastic.co/maven"
+    ;;
+  staging)
+    BUILD_TOOLS_MAVEN_REPO="https://staging.elastic.co/maven"
+    ;;
+  *)
+    echo "ERROR: unsupported DRA_WORKFLOW='$DRA_WORKFLOW'" >&2
+    exit 2
+    ;;
+esac
+BUILD_TOOLS_JAR_URL="$BUILD_TOOLS_MAVEN_REPO/org/elasticsearch/gradle/build-tools/${BUILD_TOOLS_VERSION}/build-tools-${BUILD_TOOLS_VERSION}.jar"
+
 echo "DRA_WORKFLOW=$DRA_WORKFLOW"
 echo "HADOOP_VERSION=$HADOOP_VERSION"
-echo "DRA_BRANCH=$DRA_BRANCH"
 echo "VERSION_SUFFIX=$VERSION_SUFFIX"
 echo "BUILD_ARGS=${BUILD_ARGS[@]}"
+echo "BUILD_TOOLS_MAVEN_REPO=$BUILD_TOOLS_MAVEN_REPO"
+echo "BUILD_TOOLS_JAR_URL=$BUILD_TOOLS_JAR_URL"
 
-ES_LATEST_URL="https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/latest/${DRA_BRANCH}.json"
-ES_LATEST_JSON=$(curl -sS --fail "$ES_LATEST_URL") || {
-  echo "ERROR: failed to fetch ES artifact manifest for branch '${DRA_BRANCH}': $ES_LATEST_URL" >&2
+mkdir -p localRepo
+curl -sS --fail "$BUILD_TOOLS_JAR_URL" \
+  -o "localRepo/build-tools-${BUILD_TOOLS_VERSION}.jar" || {
+  echo "ERROR: failed to download ES build-tools jar: $BUILD_TOOLS_JAR_URL" >&2
   exit 1
 }
-ES_BUILD_ID=$(echo "$ES_LATEST_JSON" | jq -r '.build_id')
-echo "ES_BUILD_ID=$ES_BUILD_ID"
-
-mkdir localRepo
-wget --quiet "https://artifacts-$DRA_WORKFLOW.elastic.co/elasticsearch/${ES_BUILD_ID}/maven/org/elasticsearch/gradle/build-tools/${HADOOP_VERSION}${VERSION_SUFFIX}/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar" \
-  -O "localRepo/build-tools-${HADOOP_VERSION}${VERSION_SUFFIX}.jar"
 
 ./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation prepareDraSnapshotMavenAggregation
 
