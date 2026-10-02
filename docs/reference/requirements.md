@@ -82,14 +82,14 @@ Hive version 2.3.8
 
 ## Apache Spark [requirements-spark]
 
-::::{admonition} Deprecated in 9.0.
+::::{admonition} Removed in 9.0.0.
 :class: warning
 
-Support for Spark 2.x in elasticsearch-hadoop is deprecated.
+Support for Spark 2.x was deprecated in 8.18.0 and removed in 9.0.0. Upgrading to elasticsearch-hadoop 9.0 requires upgrading Spark. See the [9.0.0 breaking changes](../release-notes/breaking-changes.md#elasticsearch-hadoop-900-breaking-changes).
 ::::
 
 
-Spark 2.0 or higher. We recommend using the latest release of Spark (currently 3.2.0). As elasticsearch-hadoop provides native integration (which is recommended) with Apache Spark, it does not matter what binary one is using. The same applies when using the Hadoop layer to integrate the two as elasticsearch-hadoop supports the majority of Hadoop distributions out there.
+Spark 3.0 is the minimum supported version for elasticsearch-hadoop 9.0 and later. As elasticsearch-hadoop provides native integration (which is recommended) with Apache Spark, it does not matter what binary one is using. The same applies when using the Hadoop layer to integrate the two as elasticsearch-hadoop supports the majority of Hadoop distributions out there.
 
 The Spark version can be typically discovered by looking at its folder name:
 
@@ -116,7 +116,7 @@ Welcome to
 
 If planning on using Spark SQL make sure to add the appropriate Spark SQL jar as a dependency. While it is part of the Spark distribution, it is *not* part of the Spark core jar but rather has its own jar. Thus, when constructing the classpath make sure to include `spark-sql-<scala-version>.jar` or the Spark *assembly* : `spark-assembly-3.2.0-<distro>.jar`
 
-elasticsearch-hadoop supports Spark SQL 2.x and Spark SQL 3.x. elasticsearch-hadoop supports Spark SQL 2.x on Scala 2.11 through its main jar. Since Spark 2.x and 3.x are not compatible with each other, and Scala versions are not compatible, multiple different artifacts are provided by elasticsearch-hadoop. Choose the jar appropriate for your Spark and Scala version. See the Spark chapter for more information.
+Since Spark major versions are not compatible with each other, and Scala versions are not compatible, multiple different artifacts are provided by elasticsearch-hadoop. Choose the jar appropriate for your Spark and Scala version. See the Spark chapter for more information.
 
 
 
