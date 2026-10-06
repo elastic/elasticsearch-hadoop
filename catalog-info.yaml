@@ -227,5 +227,5 @@ spec:
         elasticsearch-team: {}
         everyone:
           access_level: READ_ONLY
-        release-eng:
+        artifact-management:
           access_level: BUILD_AND_READ
