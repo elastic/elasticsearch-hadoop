@@ -635,7 +635,7 @@ class BuildPlugin implements Plugin<Project> {
                             from variantComponent
                             suppressAllPomMetadataWarnings() // We get it. Gradle metadata is better than Maven Poms
                         }
-                        configurePom(project, variantPublication)
+                        configurePom(project, variantPublication, variant.configuration('embedded'))
                         updateVariantArtifactId(project, variantPublication, variant)
                     }
                 }
@@ -651,6 +651,22 @@ class BuildPlugin implements Plugin<Project> {
         project.tasks.withType(GenerateMavenPom).all { GenerateMavenPom pom ->
             project.getTasks().getByName('distribution').dependsOn(pom)
         }
+
+        // Expose the poms of all publications so the root project can verify them (PublishedPomVerificationPlugin)
+        // without reaching into this project's model and without building any jars.
+        Configuration publishedPomsElements = project.configurations.create(PublishedPomVerificationPlugin.PUBLISHED_POMS_ELEMENTS) {
+            canBeConsumed = true
+            canBeResolved = false
+            description = 'Generated poms of all maven publications of this project'
+            PublishedPomVerificationPlugin.configureAttributes(project, attributes)
+        }
+        project.publishing.publications.withType(MavenPublication).all { MavenPublication publication ->
+            String pomTaskName = "generatePomFileFor${publication.name.capitalize()}Publication"
+            publishedPomsElements.outgoing.artifact(project.tasks.named(pomTaskName, GenerateMavenPom).map { it.destination }) {
+                type = 'pom'
+                builtBy(pomTaskName)
+            }
+        }
     }
 
     private void filterNonJarArtifacts(ConfigurationVariantDetails details) {
@@ -660,7 +676,7 @@ class BuildPlugin implements Plugin<Project> {
         }
     }
 
-    private static void configurePom(Project project, MavenPublication publication) {
+    private static void configurePom(Project project, MavenPublication publication, String embeddedConfigurationName = 'embedded') {
         // add all items necessary for publication
         Provider<String> descriptionProvider = project.provider({ project.getDescription() })
         MavenPom pom = publication.getPom()
@@ -690,29 +706,30 @@ class BuildPlugin implements Plugin<Project> {
             }
         }
 
-        // Capture embedded dependency names eagerly as plain strings to avoid referencing
-        // Project or Configuration objects inside the withXml closure (configuration cache compatibility).
-        Configuration embedded = project.getConfigurations().findByName('embedded')
-        List<String> embeddedDepNames = embedded != null
-            ? embedded.getAllDependencies().collect { it.getName() }
-            : []
+        // Embedded dependencies are shaded into the published jar and must not be listed in the pom.
+        // This must be resolved lazily: configurePom() runs when the plugin is applied, which is before the
+        // build script (or the sparkVariants block) has created and populated the embedded configuration.
+        // Reading it eagerly yields an empty list and leaks unpublished artifacts (thirdparty,
+        // elasticsearch-spark_2.x, ...) into the pom. See elastic/elasticsearch-hadoop#2519.
+        // The provider is evaluated (and its value serialized) when the configuration cache entry is stored,
+        // so no Project/Configuration reference is captured by the withXml action.
+        Provider<List<String>> embeddedDepNames = project.provider {
+            Configuration embedded = project.getConfigurations().findByName(embeddedConfigurationName)
+            embedded != null ? embedded.getAllDependencies().collect { it.getName() } : []
+        }
         publication.getPom().withXml { XmlProvider xml ->
-            // add all items necessary for publication
             Node root = xml.asNode()
-
-            // If we have embedded configuration on the project, remove its dependencies from the dependency nodes
-            NodeList dependenciesNode = root.get("dependencies") as NodeList
-            embeddedDepNames.each { String depName ->
-                Iterator<Node> dependenciesIterator = dependenciesNode.get(0).children().iterator()
-                while (dependenciesIterator.hasNext()) {
-                    Node dependencyNode = dependenciesIterator.next()
-                    String artifact = dependencyNode.get("artifactId").text()
-                    // handle scala variants by splitting via "_" and checking the first part
-                    if (artifact =~ depName.split('_')[0]) {
-                        dependenciesIterator.remove()
-                        break
-                    }
-                }
+            NodeList dependenciesNodes = root.get("dependencies") as NodeList
+            if (dependenciesNodes.isEmpty()) {
+                return
+            }
+            Node dependenciesNode = dependenciesNodes.get(0) as Node
+            List<String> embeddedNames = embeddedDepNames.get().collect { it.split('_')[0] }
+            dependenciesNode.children().removeAll { Node dependencyNode ->
+                String group = dependencyNode.get("groupId").text()
+                String artifact = dependencyNode.get("artifactId").text()
+                // Scala variants publish as <name>_<scalaMajorVersion>, so match the base name exactly or with a '_' suffix
+                group == 'org.elasticsearch' && embeddedNames.any { artifact == it || artifact.startsWith(it + '_') }
             }
         }
     }
