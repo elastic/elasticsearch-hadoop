@@ -1116,6 +1116,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testDataSourcePushDown08NotInWithNumber() {
+    val df = esDataSource("pd_in_number")
+    val filter = df.filter("participants NOT IN (1, 2)")
+
+    assertEquals(2, filter.count())
+    assertEquals("long", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
   def testDataSourcePushDown08InWithNumberAndStrings() {
     // Spark 4+ defaults spark.sql.ansi.enabled=true, which rejects implicit casts of 'bar'/'foo'
     // to BIGINT and throws SparkNumberFormatException instead of returning 0 results.
