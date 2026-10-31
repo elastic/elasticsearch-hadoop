@@ -51,6 +51,7 @@ import org.apache.spark.sql.sources.SchemaRelationProvider
 import org.apache.spark.sql.sources.StreamSinkProvider
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.DateType
+import org.apache.spark.sql.types.NumericType
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.DataFrame
@@ -346,7 +347,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   }
 
   // string interpolation FTW
-  private def translateFilter(filter: Filter, strictPushDown: Boolean, isES50: Boolean):String = {
+  private def translateFilter(filter: Filter, strictPushDown: Boolean, isES50: Boolean, negated: Boolean = false):String = {
     // the pushdown can be strict - i.e. use only filters and thus match the value exactly (works with non-analyzed)
     // or non-strict meaning queries will be used instead that is the filters will be analyzed as well
     filter match {
@@ -398,7 +399,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
           }
         }
 
-        if (strictPushDown || isStrictType) s"""{"terms":{"$attribute":${extractAsJsonArray(filtered)}}}"""
+        // PySpark can represent values in a negated numeric In as strings; use terms to preserve their numeric semantics.
+        if (strictPushDown || isStrictType || (negated && attrType.isInstanceOf[NumericType])) {
+          s"""{"terms":{"$attribute":${extractAsJsonArray(filtered)}}}"""
+        }
         else {
           if (isES50) {
             s"""{"bool":{"should":[${extractMatchArray(attribute, filtered)}]}}"""
@@ -419,26 +423,26 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case IsNotNull(attribute)                 => s"""{"exists":{"field":"$attribute"}}"""
       case And(left, right)                     => {
         if (isES50) {
-          s"""{"bool":{"filter":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""
+          s"""{"bool":{"filter":[${translateFilter(left, strictPushDown, isES50, negated)}, ${translateFilter(right, strictPushDown, isES50, negated)}]}}"""
         }
         else {
-          s"""{"and":{"filters":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""  
+          s"""{"and":{"filters":[${translateFilter(left, strictPushDown, isES50, negated)}, ${translateFilter(right, strictPushDown, isES50, negated)}]}}"""
         }
       }
       case Or(left, right)                      => {
         if (isES50) {
-          s"""{"bool":{"should":[{"bool":{"filter":${translateFilter(left, strictPushDown, isES50)}}}, {"bool":{"filter":${translateFilter(right, strictPushDown, isES50)}}}]}}"""
+          s"""{"bool":{"should":[{"bool":{"filter":${translateFilter(left, strictPushDown, isES50, negated)}}}, {"bool":{"filter":${translateFilter(right, strictPushDown, isES50, negated)}}}]}}"""
         }
         else {
-          s"""{"or":{"filters":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""
+          s"""{"or":{"filters":[${translateFilter(left, strictPushDown, isES50, negated)}, ${translateFilter(right, strictPushDown, isES50, negated)}]}}"""
         }
       }
       case Not(filterToNeg)                     => {
         if (isES50) {
-          s"""{"bool":{"must_not":${translateFilter(filterToNeg, strictPushDown, isES50)}}}"""
+          s"""{"bool":{"must_not":${translateFilter(filterToNeg, strictPushDown, isES50, negated = true)}}}"""
         }
         else {        
-          s"""{"not":{"filter":${translateFilter(filterToNeg, strictPushDown, isES50)}}}"""
+          s"""{"not":{"filter":${translateFilter(filterToNeg, strictPushDown, isES50, negated = true)}}}"""
         }
       }
 
