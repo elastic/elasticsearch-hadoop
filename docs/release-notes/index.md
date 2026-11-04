@@ -20,8 +20,16 @@ To check for security updates, go to [Security announcements for the Elastic sta
 % ### Fixes [elasticsearch-apache-hadoop-next-fixes]
 % * 
 
-## 9.2.0 [elasticsearch-apache-hadoop-900-release-notes]
+## 9.6.0 [elasticsearch-apache-hadoop-960-release-notes]
 
-### Features and enhancements [elasticsearch-apache-hadoop-900-features-enhancements]
+### Features and enhancements [elasticsearch-apache-hadoop-960-features-enhancements]
 
-### Fixes [elasticsearch-apache-hadoop-900-fixes]
+* Add support for Spark 3.5 ([PR #2544](https://github.com/elastic/elasticsearch-hadoop/pull/2544))
+* Add support for Spark 4.0 ([PR #2546](https://github.com/elastic/elasticsearch-hadoop/pull/2546))
+* Add support for Spark 4.1 ([PR #2547](https://github.com/elastic/elasticsearch-hadoop/pull/2547))
+* Add support for Spark 4.2 ([PR #2548](https://github.com/elastic/elasticsearch-hadoop/pull/2548))
+
+### Fixes [elasticsearch-apache-hadoop-960-fixes]
+
+* Avoid Hive storage handler initialization failure when running on Tez ([PR #2537](https://github.com/elastic/elasticsearch-hadoop/pull/2537))
+
