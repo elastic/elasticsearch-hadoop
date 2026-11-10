@@ -61,7 +61,7 @@ repositories {
         flatDir { dirs new File(project.rootDir, "../localRepo") }
     } else {
         maven { url = "https://oss.sonatype.org/content/repositories/snapshots" }
-        maven { url = "https://artifacts-snapshot.elastic.co/elasticsearch/${esVersion}/maven" }
+        maven { url = "https://snapshots.elastic.co/maven" }
     }
 }
 
@@ -75,7 +75,7 @@ dependencies {
     implementation 'com.gradleup.nmcp:nmcp:0.1.5'
 
     if (localRepo) {
-        implementation name: "build-tools-${buildToolsVersion}"
+        implementation ":build-tools:${buildToolsVersion}"
     } else {
         implementation "org.elasticsearch.gradle:build-tools:$buildToolsVersion"
     }

@@ -40,12 +40,12 @@ subprojects {
                 flatDir { dirs new File(project.rootProject.rootDir, "localRepo") }
             } else {
                 maven { url = "https://oss.sonatype.org/content/repositories/snapshots" }
-                maven { url = "https://artifacts-snapshot.elastic.co/elasticsearch/${version}/maven" }
+                maven { url = "https://snapshots.elastic.co/maven" }
             }
         }
         dependencies {
             if (localRepo) {
-                classpath name: "build-tools-${version}"
+                classpath ":build-tools:${buildToolsVersion}"
             } else {
                 classpath "org.elasticsearch.gradle:build-tools:${project.ext.buildToolsVersion}"
             }
