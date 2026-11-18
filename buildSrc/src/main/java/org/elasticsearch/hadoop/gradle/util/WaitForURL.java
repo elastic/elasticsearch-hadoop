@@ -40,13 +40,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.gradle.api.GradleException;
-import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
 
 /**
- * A hacked together HTTPS based Ant Condition that allows for reading HTTPS data without
+ * A hacked together HTTPS based wait condition that allows for reading HTTPS data without
  * needing to trust the certificate of the server. Enabling security on hadoop means that
  * all HTTP traffic MUST be served over HTTPS, and the certificates that we use for testing
- * are not trusted by the default ant conditions because they are not in the truststore.
+ * are not trusted by the default JDK HTTP client because they are not in the truststore.
  */
 public class WaitForURL {
 
@@ -125,32 +125,32 @@ public class WaitForURL {
         return this;
     }
 
-    public boolean checkAvailability(Project project) throws GradleException {
+    public boolean checkAvailability(Logger logger) throws GradleException {
         try {
             long start = System.currentTimeMillis();
             long end = start + totalWaitTimeMillis;
 
             while(System.currentTimeMillis() < end) {
-                if (doCheckAvailability(project)) {
-                    project.getLogger().debug("Got successful response from " + url);
+                if (doCheckAvailability(logger)) {
+                    logger.debug("Got successful response from " + url);
                     return true;
                 }
 
                 Thread.sleep(checkEveryMillis);
             }
         } catch (InterruptedException var10) {
-            project.getLogger().debug(", treating as timed out.");
+            logger.debug(", treating as timed out.");
         }
 
-        project.getLogger().debug("Timed out waiting for successful response from " + url);
+        logger.debug("Timed out waiting for successful response from " + url);
         return false;
     }
 
-    private boolean doCheckAvailability(Project project) throws GradleException {
+    private boolean doCheckAvailability(Logger logger) throws GradleException {
         if (url == null) {
             throw new GradleException("No url specified");
         }
-        project.getLogger().debug("Https Condition checking " + url);
+        logger.debug("Https Condition checking " + url);
         try {
             URL url = new URL(this.url);
             try {
@@ -169,7 +169,7 @@ public class WaitForURL {
                         }
                     }
                     int code = http.getResponseCode();
-                    project.getLogger().debug("Result code for " + this.url + " was " + code);
+                    logger.debug("Result code for " + this.url + " was " + code);
                     return code > 0 && code < 400;
                 } else {
                     throw new GradleException("Provided URL was not HTTP or HTTPS: " + url);
@@ -177,7 +177,7 @@ public class WaitForURL {
             } catch (ProtocolException e) {
                 throw new GradleException("Could not perform GET", e);
             } catch (IOException e) {
-                project.getLogger().debug("Could not retrieve URL: " + e.getMessage());
+                logger.debug("Could not retrieve URL: " + e.getMessage());
                 return false;
             }
         } catch (MalformedURLException e) {

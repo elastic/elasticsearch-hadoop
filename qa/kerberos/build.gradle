@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import org.elasticsearch.hadoop.gradle.buildtools.AntFixture
+import org.elasticsearch.hadoop.gradle.buildtools.ProcessFixture
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopFixturePlugin
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
@@ -146,13 +146,13 @@ if (disableTests) {
     keytabUsers.put(hivePrincipalName, hiveKeytabName)
     
     // Configure MiniKDC
-    AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
+    ProcessFixture kdcFixture = project.tasks.create('kdcFixture', ProcessFixture) {
         dependsOn project.configurations.kdcFixture
-        executable = new File(project.runtimeJavaHome, 'bin/java')
+        executable = new File(project.runtimeJavaHome, 'bin/java').absolutePath
 
         def fixturefileCollection = project.configurations.kdcFixture
         env 'CLASSPATH', "${ -> fixturefileCollection.asPath }"
-        waitCondition = { fixture, ant ->
+        waitCondition = { ProcessFixture fixture ->
             // the kdc wrapper writes the ports file when
             // it's ready, so we can just wait for the file to exist
             return fixture.portsFile.exists()
