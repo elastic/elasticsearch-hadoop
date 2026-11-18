@@ -65,8 +65,9 @@ tasks.named("test").configure {
 }
 
 jar {
-    dependsOn(project.configurations.embedded)
-    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    def embedded = project.configurations.embedded
+    dependsOn(embedded)
+    from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
@@ -81,8 +82,9 @@ processItestResources {
 }
 
 itestJar {
-    dependsOn(project.configurations.embedded)
-    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    def embedded = project.configurations.embedded
+    dependsOn(embedded)
+    from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
