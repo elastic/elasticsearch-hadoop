@@ -19,12 +19,13 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.OS
 import org.elasticsearch.gradle.testclusters.ElasticsearchCluster
 import org.elasticsearch.hadoop.gradle.util.WaitForURL
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
-import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -82,9 +83,6 @@ class InstanceInfo {
     /** working directory for the service process */
     File cwd
 
-    /** file that if it exists, indicates the node failed to start */
-    File failedMarker
-
     /** stdout/stderr log of the service process for this instance */
     File startLog
 
@@ -97,36 +95,24 @@ class InstanceInfo {
     /** arguments to start the node with */
     List<String> args
 
-    /** Executable to run the service start up script with, either cmd or sh */
+    /** Executable to run the service start up script with, either cmd or bash */
     String executable
-
-    /** Path to the service start script */
-    private Object startScript
-
-    /** script to run when running in the background */
-    private File backgroundScript
-
-    /** script that wraps the regular start command to get the PID */
-    private File pidWrapperScript
-
-    /** buffer for ant output when starting this node */
-    ByteArrayOutputStream buffer = new ByteArrayOutputStream()
 
     /** Elasticsearch cluster dependency for tasks **/
     ElasticsearchCluster elasticsearchCluster
 
+    private static final Logger LOGGER = Logging.getLogger(InstanceInfo)
+
     /**
-     * A closure to call before the cluster is considered ready. The closure is passed the node info,
-     * as well as a groovy AntBuilder, to enable running ant condition checks. The default wait
-     * condition is for http on the http port.
+     * A closure to call before the cluster is considered ready. The closure is passed the node info.
+     * The default wait condition is for http on the http port.
      */
-    Closure waitCondition = { InstanceInfo instanceInfo, groovy.ant.AntBuilder ant ->
+    Closure<Boolean> waitCondition = { InstanceInfo instanceInfo ->
         String waitUrl = instanceInfo.httpUri()
         if (waitUrl == null) {
             return true
         } else {
-            ant.echo(message: "==> [${new Date()}] checking health: ${waitUrl}",
-                    level: 'info')
+            LOGGER.info("==> [${new Date()}] checking health: ${waitUrl}")
             // TODO make maxwait configurable
             return new WaitForURL()
                     .setUrl(waitUrl)
@@ -134,7 +120,7 @@ class InstanceInfo {
                     .setTrustAllHostnames(true)
                     .setTotalWaitTime(30, TimeUnit.SECONDS)
                     .setCheckEvery(500, TimeUnit.MILLISECONDS)
-                    .checkAvailability(project)
+                    .checkAvailability(LOGGER)
         }
     }
 
@@ -159,7 +145,6 @@ class InstanceInfo {
         configContents = config.getServiceDescriptor().collectConfigFilesContents(config)
         configFileFormatter = config.getServiceDescriptor().configFormat(config)
         cwd = new File(baseDir, "cwd")
-        failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
 
         // We just default to the current runtime at this time
@@ -176,33 +161,18 @@ class InstanceInfo {
         // Prepare startup command and arguments
         args = []
         List<String> startCommandLine = config.getServiceDescriptor().startCommand(config)
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        if (OS.current() == OS.WINDOWS) {
             // TODO: Test on windows to see if this actually works
             executable = 'cmd'
             args.add('/C')
-            args.add('"') // quote the entire command
-            backgroundScript = new File(cwd, "run.bat")
-            pidWrapperScript = new File(cwd, "start.bat")
             /*
              * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
              * getting the short name requiring the path to already exist.
              */
-            startScript = "${-> binPath().resolve(startCommandLine.first()).toString()}"
+            args.add("${-> binPath().resolve(startCommandLine.first()).toString()}")
         } else {
             executable = 'bash'
-            backgroundScript = new File(cwd, "run")
-            pidWrapperScript = new File(cwd, "start")
-            startScript = binPath().resolve(startCommandLine.first())
-        }
-
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            /*
-             * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
-             * getting the short name requiring the path to already exist.
-             */
-            args.add("${-> getShortPathName(backgroundScript.toString())}")
-        } else {
-            args.add("${backgroundScript}")
+            args.add(binPath().resolve(startCommandLine.first()).toString())
         }
 
         // Add tail of arguments to the command to run
@@ -210,16 +180,12 @@ class InstanceInfo {
             args.addAll(startCommandLine.tail())
         }
 
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            args.add('"') // end the entire command, quoted
-        }
-
         this.elasticsearchCluster = config.getElasticsearchCluster()
     }
 
     Path binPath() {
         String dir = config.getServiceDescriptor().scriptDir(config)
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        if (OS.current() == OS.WINDOWS) {
             return Paths.get(getShortPathName(new File(homeDir, dir).toString()))
         } else {
             return Paths.get(new File(homeDir, dir).toURI())
@@ -231,7 +197,7 @@ class InstanceInfo {
      * C:\Program Files ---> C:\PROGRA~1\
      */
     static String getShortPathName(String path) {
-//        assert Os.isFamily(Os.FAMILY_WINDOWS)
+//        assert OS.current() == OS.WINDOWS
 //        final WString longPath = new WString("\\\\?\\" + path)
 //        // first we get the length of the buffer needed
 //        final int length = JNAKernel32Library.getInstance().GetShortPathNameW(longPath, null, 0)
@@ -256,10 +222,6 @@ class InstanceInfo {
         commandString += "|  command: ${executable} ${args.join(' ')}\n"
         commandString += '|  environment:\n'
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
-        commandString += "|\n|  [${backgroundScript.name}]\n"
-        backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
-        commandString += "|\n|  [${pidWrapperScript.name}]\n"
-        pidWrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
         configFiles.forEach { configFile ->
             commandString += "|\n|  [${configFile.name}]\n"
             configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
@@ -268,17 +230,9 @@ class InstanceInfo {
         return commandString
     }
 
-    void writeWrapperScripts() {
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            // TODO Eventually support Windows
-            throw new GradleException('Full test fixtures on Windows are currently unsupported')
-        }
-        String pidWrapperScriptContents = "echo \$\$> ${pidFile}; exec \"${startScript}\" \"\$@\" > run.log 2>&1;"
-        pidWrapperScript.setText(pidWrapperScriptContents, 'UTF-8')
-        pidWrapperScript.setExecutable(true)
-        String backgroundScriptContents = "\"${pidWrapperScript}\" \"\$@\"; if [ \\\$? != 0 ]; then touch ${failedMarker}; rm -f ${pidFile}; fi"
-        backgroundScript.setText(backgroundScriptContents, 'UTF-8')
-        backgroundScript.setExecutable(true)
+    /** The full command line used to start this instance */
+    List<String> getCommandLine() {
+        return [executable] + args.collect { it.toString() }
     }
 
     String httpUri() {
