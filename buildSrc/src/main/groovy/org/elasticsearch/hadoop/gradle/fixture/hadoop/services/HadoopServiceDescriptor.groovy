@@ -19,7 +19,7 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.services
 
-import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.OS
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
@@ -273,19 +273,19 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     List<String> startCommand(InstanceConfiguration configuration) {
         RoleDescriptor role = configuration.roleDescriptor
         if (NAMENODE.equals(role) || DATANODE.equals(role)) {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            if (OS.current() == OS.WINDOWS) {
                 return ['hdfs.cmd', role.roleName()]
             } else {
                 return ['hdfs', role.roleName()]
             }
         } else if (RESOURCEMANAGER.equals(role) || NODEMANAGER.equals(role)) {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            if (OS.current() == OS.WINDOWS) {
                 return ['yarn.cmd', role.roleName()]
             } else {
                 return ['yarn', role.roleName()]
             }
         } else if (HISTORYSERVER.equals(role)) {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            if (OS.current() == OS.WINDOWS) {
                 return ['mapred.cmd', role.roleName()]
             } else {
                 return ['mapred', role.roleName()]
