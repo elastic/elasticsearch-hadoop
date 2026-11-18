@@ -433,8 +433,7 @@ class HadoopClusterFormationTasks {
             node.getCommandString().eachLine { line -> project.logger.info(line) }
 
             // The service runs in the background, with its output captured in the start log
-            Process process = FixtureProcesses.start(node.commandLine, node.cwd, node.env.collectEntries { k, v -> [(k): v.toString()] }, node.startLog)
-            FixtureProcesses.writePidFile(process, node.pidFile)
+            FixtureProcesses.start(node.commandLine, node.cwd, node.env.collectEntries { k, v -> [(k): v.toString()] }, node.startLog, node.pidFile)
         }
         return start
     }

@@ -74,8 +74,23 @@ public final class FixtureProcesses {
         }
     }
 
+    /**
+     * Starts the given command in the background and records its pid in the given file before returning.
+     *
+     * @param command     the executable followed by its arguments
+     * @param workingDir  the working directory of the process
+     * @param environment additional environment variables, added on top of the inherited environment
+     * @param logFile     file that receives both stdout and stderr of the process
+     * @param pidFile     file the pid of the started process is written to
+     */
+    public static Process start(List<String> command, File workingDir, Map<String, String> environment, File logFile, File pidFile) {
+        Process process = start(command, workingDir, environment, logFile);
+        writePidFile(process, pidFile);
+        return process;
+    }
+
     /** Writes the pid of the given process to the given file. */
-    public static void writePidFile(Process process, File pidFile) {
+    private static void writePidFile(Process process, File pidFile) {
         try {
             Files.writeString(pidFile.toPath(), Long.toString(process.pid()), StandardCharsets.UTF_8);
         } catch (IOException e) {
