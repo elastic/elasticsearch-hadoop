@@ -101,8 +101,9 @@ task generateGitHash {
 }
 
 jar {
-    dependsOn(project.configurations.embedded)
-    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    def embedded = project.configurations.embedded
+    dependsOn(embedded)
+    from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
@@ -110,14 +111,16 @@ jar {
 }
 
 itestJar {
-    dependsOn(project.configurations.embedded)
-    dependsOn(project.configurations.itestEmbedded)
-    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    def embedded = project.configurations.embedded
+    dependsOn(embedded)
+    def itestEmbedded = project.configurations.itestEmbedded
+    dependsOn(itestEmbedded)
+    from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"
     }
-    from(project.configurations.itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    from({ itestEmbedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
         include "META-INF/services/*"

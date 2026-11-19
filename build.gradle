@@ -28,7 +28,12 @@ dependencies {
     nmcpAggregation(project(":elasticsearch-spark-41"))
 }
 
-tasks.named('zipAggregation').configure {
+nmcpAggregation {
+    // nmcp 1.6+ drops .sha256 and signature checksums by default; keep the full set
+    publishAllChecksums.set(true)
+}
+
+tasks.named('nmcpZipAggregation').configure {
     archiveFileName.unset();
     archiveBaseName.set("elasticsearch-hadoop-maven-aggregation")
     destinationDirectory.set(layout.buildDirectory.dir("distributions"));
