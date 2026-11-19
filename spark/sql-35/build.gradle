@@ -201,8 +201,9 @@ project.tasks.withType(Test).configureEach { Test testTask ->
 sparkVariants {
     all { SparkVariantPlugin.SparkVariant variant ->
         tasks.getByName(variant.taskName('jar')) {
-            dependsOn(project.configurations.getByName(variant.configuration('embedded')))
-            from(project.configurations.getByName(variant.configuration('embedded')).collect { it.isDirectory() ? it : zipTree(it)}) {
+            def embedded = project.configurations.getByName(variant.configuration('embedded'))
+            dependsOn(embedded)
+            from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
                 include "org/elasticsearch/**"
                 include "esh-build.properties"
                 include "META-INF/services/*"

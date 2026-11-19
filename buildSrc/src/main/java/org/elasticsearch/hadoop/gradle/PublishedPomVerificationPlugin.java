@@ -37,7 +37,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
  * consumers, which request different usages. Resolving only poms keeps the check cheap enough for
  * {@code check}: no jars, javadoc or distribution zips are built.
  *
- * <p>The verification runs as part of {@code check} (PR CI), before {@code zipAggregation}
+ * <p>The verification runs as part of {@code check} (PR CI), before {@code nmcpZipAggregation}
  * (Maven Central) and before {@code prepareDraSnapshotMavenAggregation} (DRA).
  */
 public class PublishedPomVerificationPlugin implements Plugin<Project> {
@@ -77,9 +77,9 @@ public class PublishedPomVerificationPlugin implements Plugin<Project> {
         // Reuse the nmcp aggregation dependencies so the verified set can never drift from what is published.
         project.getPluginManager().withPlugin(NMCP_AGGREGATION_PLUGIN, p -> {
             publishedPoms.extendsFrom(project.getConfigurations().getByName(NMCP_AGGREGATION_CONFIGURATION));
-            project.getTasks().named("zipAggregation").configure(t -> t.dependsOn(verify));
+            project.getTasks().named("nmcpZipAggregation").configure(t -> t.dependsOn(verify));
         });
-        // The DRA path reads zipAggregation's sources directly and never runs zipAggregation itself.
+        // The DRA path reads nmcpZipAggregation's sources directly and never runs nmcpZipAggregation itself.
         project.getPluginManager().withPlugin(DRA_MAVEN_AGGREGATION_PLUGIN, p ->
             project.getTasks().named("prepareDraSnapshotMavenAggregation").configure(t -> t.dependsOn(verify))
         );
