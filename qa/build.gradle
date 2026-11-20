@@ -45,7 +45,7 @@ subprojects {
         }
         dependencies {
             if (localRepo) {
-                classpath name: "build-tools-${version}"
+                classpath ":build-tools:${buildToolsVersion}"
             } else {
                 classpath "org.elasticsearch.gradle:build-tools:${project.ext.buildToolsVersion}"
             }
