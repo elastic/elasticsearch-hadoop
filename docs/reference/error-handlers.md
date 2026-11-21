@@ -28,7 +28,7 @@ Elasticsearch for Apache Hadoop provides an API to handle document level errors 
 * The raw JSON bulk entry that was tried
 * Error message
 * HTTP status code for the document
-* Number of times that the current document has been sent to {es}
+* Number of times that the current document has been sent to {{es}}
 
 There are a few default error handlers provided by the connector:
 
@@ -622,7 +622,9 @@ Elasticsearch for Apache Hadoop provides an API to handle document level deseria
 * The raw JSON search result that was tried
 * Exception encountered
 
-Note: Deserialization Error Handlers only allow handling of errors that occur when parsing documents from scroll responses. It may be possible that a search result can be successfully read, but is still malformed, thus causing an exception when it is used in a completely different part of the framework. This Error Handler is called from the top of the most reasonable place to handle exceptions in the scroll reading process, but this does not encapsulate all logic for each integration.
+::::{note}
+Deserialization Error Handlers only allow handling of errors that occur when parsing documents from scroll responses. It may be possible that a search result can be successfully read, but is still malformed, thus causing an exception when it is used in a completely different part of the framework. This Error Handler is called from the top of the most reasonable place to handle exceptions in the scroll reading process, but this does not encapsulate all logic for each integration.
+::::
 
 There are a few default error handlers provided by the connector:
 
