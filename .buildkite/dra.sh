@@ -4,10 +4,6 @@ set -euo pipefail
 
 DRA_WORKFLOW=${DRA_WORKFLOW:-snapshot}
 
-if [[ ("$BUILDKITE_BRANCH" == "main" || "$BUILDKITE_BRANCH" == *.x) && "$DRA_WORKFLOW" == "staging" ]]; then
-  exit 0
-fi
-
 echo --- Creating distribution
 
 rm -Rfv ~/.gradle/init.d
@@ -62,3 +58,14 @@ find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
 echo --- Publishing maven artifacts to S3
 
 .buildkite/dra-maven-publish.sh
+
+# The dra-prep plugin publishes the artifacts/ directory in this step's post-command hook.
+echo --- Staging artifacts
+
+mkdir -p artifacts
+cp dist/build/distributions/elasticsearch-hadoop-*.zip artifacts/
+cp build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip artifacts/
+cp build/distributions/dependencies-*.csv artifacts/
+
+echo "Staged artifacts:"
+ls -1 artifacts/

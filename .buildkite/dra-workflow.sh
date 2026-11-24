@@ -2,7 +2,24 @@
 # Generates the DRA workflow pipeline YAML, injecting the version from
 # buildSrc/esh-version.properties so it is always current for the branch
 # being built.
+#
+# The dra-prep plugin is attached to the build step itself (its config needs
+# literal values, which are known here), so the artifacts are published to GCS
+# from the build agent without going through the Buildkite artifact store.
 set -euo pipefail
+
+WORKFLOW="${DRA_WORKFLOW:-snapshot}"
+BRANCH="${BUILDKITE_BRANCH:-}"
+
+# Don't publish main and *.x branches to staging
+if [[ ("$BRANCH" == "main" || "$BRANCH" == *.x) && "$WORKFLOW" == "staging" ]]; then
+  cat <<PIPELINE
+steps:
+  - label: ":no_entry: Skip DRA staging for $BRANCH"
+    command: echo "DRA staging is not published for $BRANCH"
+PIPELINE
+  exit 0
+fi
 
 STACK_VERSION=$(grep '^eshadoop' buildSrc/esh-version.properties | sed 's/eshadoop *= *//')
 if [[ -n "${VERSION_QUALIFIER:-}" ]]; then
@@ -11,9 +28,6 @@ fi
 
 DRA_PREP_VERSION="v0.1.6"
 
-# Use a regular heredoc so bash substitutes $STACK_VERSION and $DRA_PREP_VERSION.
-# Buildkite runtime variables ($DRA_WORKFLOW) are escaped with \$ so bash leaves
-# them as literal $ for Buildkite to resolve at build time.
 cat <<PIPELINE
 steps:
   - label: ":gradle: DRA Build"
@@ -29,33 +43,26 @@ steps:
     env:
       USE_MAVEN_GPG: "true"
       USE_MAVEN_S3_CREDENTIALS: "true"
-    artifact_paths:
-      - "dist/build/distributions/elasticsearch-hadoop-*.zip"
-      - "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip"
-      - "build/distributions/dependencies-*.csv"
+PIPELINE
 
-  - wait: ~
-
-  - label: ":package: DRA Prep"
-    key: dra-prep
-    command: ".buildkite/stage_artifacts.sh"
-    if: 'build.env("DRA_WORKFLOW") == "snapshot" || build.branch =~ /^[0-9]+\.[0-9]+$/'
-    agents:
-      image: "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"
+# Only publish snapshots, or builds of a version branch (keeps manual
+# feature-branch staging runs from publishing).
+if [[ "$WORKFLOW" == "snapshot" || "$BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  cat <<PIPELINE
     plugins:
       - elastic/dra-prep#${DRA_PREP_VERSION}:
           product_id: "elasticsearch-hadoop"
           stack_version: "${STACK_VERSION}"
-          workflow: "\${DRA_WORKFLOW}"
+          workflow: "${WORKFLOW}"
 
-  - label: ":pipeline: DRA processing for elasticsearch-hadoop / ${STACK_VERSION} / \${DRA_WORKFLOW}"
+  - label: ":pipeline: DRA processing for elasticsearch-hadoop / ${STACK_VERSION} / ${WORKFLOW}"
     trigger: "unified-release-dra-processing"
     async: true
-    depends_on: "dra-prep"
-    if: 'build.env("DRA_WORKFLOW") == "snapshot" || build.branch =~ /^[0-9]+\.[0-9]+$/'
+    depends_on: "dra-build"
     build:
       env:
         DRA_PRODUCT_ID: "elasticsearch-hadoop"
         DRA_STACK_VERSION: "${STACK_VERSION}"
-        DRA_WORKFLOW: "\${DRA_WORKFLOW}"
+        DRA_WORKFLOW: "${WORKFLOW}"
 PIPELINE
+fi
