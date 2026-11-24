@@ -93,7 +93,7 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
             for line in _vf
             if line.startswith("eshadoop")
         )
-    DRA_PREP_VERSION = "v0.1.6"
+    DRA_PREP_VERSION = "v0.1.8"
 
     pipeline["steps"].append({"wait": None})
 
