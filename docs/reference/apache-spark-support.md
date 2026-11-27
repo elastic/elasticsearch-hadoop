@@ -1316,10 +1316,11 @@ Operators those have been optimized as pushdown filters:
 | in (not strict) | or.filters | bool.should |
 | and | and.filters | bool.filter |
 | or | or.filters | bool.should [bool.filter] |
-| not | not.filter | bool.must_not |
-| StringStartsWith | wildcard(arg*) | wildcard(arg*) |
-| StringEndsWith | wildcard(*arg) | wildcard(*arg) |
-| StringContains | wildcard(*arg*) | wildcard(*arg*) |
+| not | not.filter | bool.must_not (not strict: left to Spark over a string filter) |
+| StringStartsWith (strict) | wildcard(arg*) | wildcard(arg*) |
+| StringEndsWith (strict) | wildcard(*arg) | wildcard(*arg) |
+| StringContains (strict) | wildcard(*arg*) | wildcard(*arg*) |
+| StringStartsWith, StringEndsWith, StringContains (not strict) | left to Spark | left to Spark |
 | EqualNullSafe (strict) | term | term |
 | EqualNullSafe (not strict) | match | match |
 

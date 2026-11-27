@@ -20,7 +20,6 @@ package org.elasticsearch.spark.sql
 
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import javax.xml.bind.DatatypeConverter
 import org.apache.commons.logging.LogFactory
@@ -305,6 +304,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     if (Utils.isKeepHandledFilters(cfg) || filters == null || filters.size == 0) {
       filters
     } else {
+      val strictPushDown = Utils.isPushDownStrict(cfg)
       // walk the filters (things like And / Or) and see whether we recognize all of them
       // if we do, skip the filter, otherwise let it in there even though we might push some of it
       def unhandled(filter: Filter): Boolean = {
@@ -320,11 +320,11 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
           case IsNotNull(_)                                                             => false
           case And(left, right)                                                         => unhandled(left) || unhandled(right)
           case Or(left, right)                                                          => unhandled(left) || unhandled(right)
-          case Not(pred)                                                                => unhandled(pred)
-          // Spark 1.3.1+
-          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => false
-          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => false
-          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => false
+          case Not(pred)                                                                => unhandled(pred) || (!strictPushDown && isAnalyzedStringFilter(pred))
+          // Spark 1.3.1+; not pushed down unless strict, see translateFilter
+          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => !strictPushDown
+          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => !strictPushDown
+          case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => !strictPushDown
           // Spark 1.5+
           case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")    => false
 
@@ -418,27 +418,38 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
       case IsNotNull(attribute)                 => s"""{"exists":{"field":"$attribute"}}"""
       case And(left, right)                     => {
-        if (isES50) {
-          s"""{"bool":{"filter":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""
+        val l = translateFilter(left, strictPushDown, isES50)
+        val r = translateFilter(right, strictPushDown, isES50)
+        // a side not pushed down is left to Spark: the other side alone still selects a superset
+        if (!StringUtils.hasText(l)) r
+        else if (!StringUtils.hasText(r)) l
+        else if (isES50) {
+          s"""{"bool":{"filter":[$l, $r]}}"""
         }
         else {
-          s"""{"and":{"filters":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""  
+          s"""{"and":{"filters":[$l, $r]}}"""
         }
       }
       case Or(left, right)                      => {
-        if (isES50) {
-          s"""{"bool":{"should":[{"bool":{"filter":${translateFilter(left, strictPushDown, isES50)}}}, {"bool":{"filter":${translateFilter(right, strictPushDown, isES50)}}}]}}"""
+        val l = translateFilter(left, strictPushDown, isES50)
+        val r = translateFilter(right, strictPushDown, isES50)
+        if (!StringUtils.hasText(l) || !StringUtils.hasText(r)) ""
+        else if (isES50) {
+          s"""{"bool":{"should":[{"bool":{"filter":$l}}, {"bool":{"filter":$r}}]}}"""
         }
         else {
-          s"""{"or":{"filters":[${translateFilter(left, strictPushDown, isES50)}, ${translateFilter(right, strictPushDown, isES50)}]}}"""
+          s"""{"or":{"filters":[$l, $r]}}"""
         }
       }
       case Not(filterToNeg)                     => {
-        if (isES50) {
-          s"""{"bool":{"must_not":${translateFilter(filterToNeg, strictPushDown, isES50)}}}"""
+        // non-strict string queries match a superset of the rows, so their negation would drop rows
+        val negated = if (!strictPushDown && isAnalyzedStringFilter(filterToNeg)) "" else translateFilter(filterToNeg, strictPushDown, isES50)
+        if (!StringUtils.hasText(negated)) ""
+        else if (isES50) {
+          s"""{"bool":{"must_not":$negated}}"""
         }
-        else {        
-          s"""{"not":{"filter":${translateFilter(filterToNeg, strictPushDown, isES50)}}}"""
+        else {
+          s"""{"not":{"filter":$negated}}"""
         }
       }
 
@@ -452,14 +463,13 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // s"""{"regexp":{"$attribute":"$value.*"}}"""
       // as an alternative we could use a query string but still, the analyzed / non-analyzed is there as the DSL is slightly more complicated
       // s"""{"query":{"query_string":{"default_field":"$attribute","query":"$value*"}}}"""
-      // instead wildcard query is used, with the value lowercased (to match analyzed fields)
+      // instead wildcard query is used, in strict mode only: lowercasing the value for analyzed fields missed
+      // non-analyzed values with capitals and values spanning several tokens, so non-strict leaves them to Spark
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => {
-        val arg = {
-          val x = f.productElement(1).toString()
-          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
-        }
-        if (isES50) {
+        val arg = f.productElement(1).toString()
+        if (!strictPushDown) ""
+        else if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"$arg*"}}"""
         }
         else {
@@ -468,11 +478,9 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => {
-        val arg = {
-          val x = f.productElement(1).toString()
-          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
-        }
-        if (isES50) {
+        val arg = f.productElement(1).toString()
+        if (!strictPushDown) ""
+        else if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"*$arg"}}"""
         }
         else {
@@ -481,11 +489,9 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => {
-        val arg = {
-          val x = f.productElement(1).toString()
-          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
-        }
-        if (isES50) {
+        val arg = f.productElement(1).toString()
+        if (!strictPushDown) ""
+        else if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"*$arg*"}}"""
         }
         else {
@@ -537,31 +543,29 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case _        => strings += extract(i, false, false)
     }
 
-    if (numbers.isEmpty) {
-     if (strings.isEmpty) {
-        StringUtils.EMPTY
-     } else {
-       if (isEs50(cfg)) {
-         s"""{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
-       }
-       else {
-         s"""{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""  
-       }
-     }
-    } else {
-      // translate the numbers into a terms query
-      val str = s"""{"terms":{"$attribute":${numbers.mkString("[", ",", "]")}}}"""
-      if (strings.isEmpty){
-        str
-      // if needed, add the strings as a match query
-      } else str + {
-        if (isEs50(cfg)) {
-          s""",{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
-        }
-        else {
-          s""",{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""
-        }
-      }
+    // translate the numbers into a terms query, and each string into its own match query:
+    // one match of the values joined by spaces finds nothing on a non-analyzed field
+    val terms = if (numbers.isEmpty) Seq.empty else Seq(s"""{"terms":{"$attribute":${numbers.mkString("[", ",", "]")}}}""")
+    val matches = strings.toSeq.map { value =>
+      if (isEs50(cfg)) s"""{"match":{"$attribute":"$value"}}"""
+      else s"""{"query":{"match":{"$attribute":"$value"}}}"""
+    }
+    (terms ++ matches).mkString(",")
+  }
+
+  // non-strict pushdown sends these as analyzed queries (match), which select a superset of the rows
+  private def isAnalyzedStringFilter(filter: Filter): Boolean = {
+    filter match {
+      case EqualTo(_, value)                                                        => value.isInstanceOf[String]
+      case In(_, values)                                                            => values.exists(_.isInstanceOf[String])
+      case And(left, right)                                                         => isAnalyzedStringFilter(left) || isAnalyzedStringFilter(right)
+      case Or(left, right)                                                          => isAnalyzedStringFilter(left) || isAnalyzedStringFilter(right)
+      case Not(pred)                                                                => isAnalyzedStringFilter(pred)
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")    => f.productElement(1).isInstanceOf[String]
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => true
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => true
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => true
+      case _                                                                        => false
     }
   }
 
