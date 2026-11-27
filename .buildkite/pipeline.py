@@ -93,7 +93,7 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
             for line in _vf
             if line.startswith("eshadoop")
         )
-    DRA_PREP_VERSION = "v0.1.6"
+    DRA_PREP_VERSION = "v0.1.8"
 
     pipeline["steps"].append({"wait": None})
 
@@ -109,23 +109,6 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
                 "USE_MAVEN_S3_CREDENTIALS": "true",
                 "DRA_WORKFLOW": "snapshot",
             },
-            "artifact_paths": [
-                "dist/build/distributions/elasticsearch-hadoop-*.zip",
-                "build/distributions/elasticsearch-hadoop-maven-aggregation-*.zip",
-                "build/distributions/dependencies-*.csv",
-            ],
-        }
-    )
-
-    pipeline["steps"].append({"wait": None})
-
-    pipeline["steps"].append(
-        {
-            "label": ":package: DRA Prep",
-            "key": "dra-prep",
-            "command": ".buildkite/stage_artifacts.sh",
-            "agents": {"image": "docker.elastic.co/ci-agent-images/ubuntu-build-essential:latest"},
-            "env": {"DRA_WORKFLOW": "snapshot"},
             "plugins": [
                 {
                     f"elastic/dra-prep#{DRA_PREP_VERSION}": {
@@ -143,7 +126,7 @@ if os.environ.get("ENABLE_DRA_WORKFLOW") == "true":
             "label": f":pipeline: DRA processing for elasticsearch-hadoop / {stack_version} / snapshot",
             "trigger": "unified-release-dra-processing",
             "async": True,
-            "depends_on": "dra-prep",
+            "depends_on": "dra-build",
             "build": {
                 "env": {
                     "DRA_PRODUCT_ID": "elasticsearch-hadoop",
