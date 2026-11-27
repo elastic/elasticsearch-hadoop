@@ -19,16 +19,17 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-import org.apache.tools.ant.DefaultLogger
+import org.elasticsearch.gradle.OS
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.buildtools.Fixture
+import org.elasticsearch.hadoop.gradle.buildtools.FixtureProcesses
 import org.elasticsearch.hadoop.gradle.buildtools.LoggedExec
+import org.elasticsearch.hadoop.gradle.buildtools.StopFixtureProcess
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -38,9 +39,9 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
-import org.apache.tools.ant.taskdefs.condition.Os
 
 import java.nio.file.Paths
+import java.time.Duration
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
@@ -265,7 +266,7 @@ class HadoopClusterFormationTasks {
                 throw new GradleException("Empty command line for setup command [$command.key]")
             }
             final Object commandPath
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            if (OS.current() == OS.WINDOWS) {
                 /*
                  * We have to delay building the string as the path will not exist during configuration which will fail on
                  * Windows due to getting the short name requiring the path to already exist. Note that we have to capture the
@@ -385,7 +386,7 @@ class HadoopClusterFormationTasks {
                 exec.environment javaOptsEnvKey, javaOpts.join(" ")
             }
 
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            if (OS.current() == OS.WINDOWS) {
                 // TODO Test on Windows
                 exec.executable 'cmd'
                 exec.args '/C', 'call'
@@ -425,106 +426,46 @@ class HadoopClusterFormationTasks {
             project.logger.info("Starting ${node.config.roleDescriptor.roleName()} in ${node.clusterName}")
         }
         start.doLast {
-            // Due to how ant exec works with the spawn option, we lose all stdout/stderr from the
-            // process executed. To work around this, when spawning, we wrap the service start
-            // command inside another shell script, which simply internally redirects the output
-            // of the real start script. This allows ant to keep the streams open with the
-            // dummy process, but us to have the output available if there is an error in the
-            // services start script
-            node.writeWrapperScripts()
-
+            if (OS.current() == OS.WINDOWS) {
+                // TODO Eventually support Windows
+                throw new GradleException('Full test fixtures on Windows are currently unsupported')
+            }
             node.getCommandString().eachLine { line -> project.logger.info(line) }
 
-            // this closure is the ant command to be wrapped in our stream redirection and then executed
-            Closure antRunner = { AntBuilder ant ->
-                ant.exec(executable: node.executable, spawn: true, dir: node.cwd, taskName: node.config.roleDescriptor.roleName()) {
-                    node.env.each { key, value -> env(key: key, value: value) }
-                    node.args.each { arg(value: it) }
-                }
-            }
-
-            // buffer the output, we may not need to print it
-            PrintStream captureStream = new PrintStream(node.buffer, true, "UTF-8")
-            runAntCommand(project, antRunner, captureStream, captureStream)
+            // The service runs in the background, with its output captured in the start log
+            Process process = FixtureProcesses.start(node.commandLine, node.cwd, node.env.collectEntries { k, v -> [(k): v.toString()] }, node.startLog)
+            FixtureProcesses.writePidFile(process, node.pidFile)
         }
         return start
     }
 
     static Task configureStopTask(String name, Project project, Object depends, InstanceInfo node) {
-        return project.tasks.create(name: name, type: LoggedExec, dependsOn: depends) {
-            group = 'hadoopFixture'
-            onlyIf { node.pidFile.exists() }
-            // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString
-            ext.pid = "${ -> node.pidFile.getText('UTF-8').trim()}"
-            doFirst {
-                project.logger.info("Shutting down external service with pid ${pid}")
-            }
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                executable 'Taskkill'
-                args '/PID', pid, '/F'
-            } else {
-                executable 'kill'
-                args '-9', pid
-            }
-            doLast {
-                project.delete(node.pidFile)
-            }
+        return project.tasks.create(name: name, type: StopFixtureProcess, dependsOn: depends) { StopFixtureProcess stop ->
+            stop.group = 'hadoopFixture'
+            stop.pidFile.set(node.pidFile)
         }
     }
 
     static Task configureWaitTask(String name, Project project, InstanceInfo instance, Task startTasks, int waitSeconds) {
         Task wait = project.tasks.create(name: name, dependsOn: startTasks)
         wait.doLast {
-            // wait until either any failed marker shows up or all pidFiles are present
-            project.ant.waitfor(maxwait: "${waitSeconds}", maxwaitunit: 'second', checkevery: '500', checkeveryunit: 'millisecond', timeoutproperty: "failed${name}") {
-                or {
-                    resourceexists {
-                        file(file: instance.failedMarker.toString())
-                    }
-                    and {
-                        resourceexists {
-                            file(file: instance.pidFile.toString())
-                        }
-                        or {
-                            instance.readinessCheckSocketAddress == null
-                            socket(server: instance.readinessCheckSocketAddress.hostName, port: instance.readinessCheckSocketAddress.port)
-                        }
-                    }
-                }
+            long pid = FixtureProcesses.readPidFile(instance.pidFile)
+            InetSocketAddress readinessAddress = instance.readinessCheckSocketAddress
+
+            // wait until either the process died or it accepts connections on its readiness address
+            boolean ready = FixtureProcesses.waitFor(Duration.ofSeconds(waitSeconds), Duration.ofMillis(500)) {
+                FixtureProcesses.isAlive(pid) == false || readinessAddress == null || FixtureProcesses.isListening(readinessAddress)
             }
-            // Timed out waiting for pidfiles or failures
-            if (project.ant.properties.containsKey("failed${name}".toString())) {
+
+            if (FixtureProcesses.isAlive(pid) == false) {
+                waitFailed(project, instance, project.logger, "Failed to start ${instance.config.roleDescriptor.roleName()}: process exited")
+            }
+            if (ready == false) {
                 waitFailed(project, instance, project.logger, "Failed to start ${instance.config.roleDescriptor.roleName()}: timed out " +
                         "after ${waitSeconds} seconds")
             }
 
-            // Check to see if there were any failed markers
-            boolean anyNodeFailed = false
-            if (instance.failedMarker.exists()) {
-                project.logger.error("Failed to start hadoop cluster: ${instance.failedMarker.toString()} exists")
-                anyNodeFailed = true
-            }
-            if (anyNodeFailed) {
-                waitFailed(project, instance, project.logger, 'Failed to start hadoop cluster')
-            }
-
-            // make sure all the pidfiles exist otherwise we haven't fully started up
-            boolean pidFileExists = instance.pidFile.exists()
-            if (pidFileExists == false) {
-                waitFailed(project, instance, project.logger, 'Hadoop cluster did not complete startup in time allotted')
-            }
-
-            // first bind node info to the closure, then pass to the ant runner so we can get good logging
-            Closure antRunner = instance.waitCondition.curry(instance)
-
-            boolean success
-            if (project.logger.isInfoEnabled()) {
-                success = runAntCommand(project, antRunner, System.out, System.err)
-            } else {
-                PrintStream captureStream = new PrintStream(instance.buffer, true, "UTF-8")
-                success = runAntCommand(project, antRunner, captureStream, captureStream)
-            }
-
+            boolean success = instance.waitCondition.call(instance)
             if (success == false) {
                 waitFailed(project, instance, project.logger, 'Hadoop cluster failed to pass wait condition')
             }
@@ -539,33 +480,14 @@ class HadoopClusterFormationTasks {
         }
         logger.error("Node ${instance.config.roleDescriptor.roleName()} ${instance.instance} output:")
         logger.error("|-----------------------------------------")
-        logger.error("|  failure marker exists: ${instance.failedMarker.exists()}")
         logger.error("|  pid file exists: ${instance.pidFile.exists()}")
-        // the waitfor failed, so dump any output we got (if info logging this goes directly to stdout)
-        logger.error("|\n|  [ant output]")
-        instance.buffer.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
-        // also dump the log file for the startup script (which will include ES logging output to stdout)
+        // dump the log file for the startup script (which includes the service output to stdout/stderr)
         if (instance.startLog.exists()) {
             logger.error("|\n|  [log]")
             instance.startLog.eachLine { line -> logger.error("|    ${line}") }
         }
         logger.error("|-----------------------------------------")
         throw new GradleException(msg)
-    }
-
-    /**
-     * Runs an ant command, sending output to the given out and error streams
-     */
-    static Object runAntCommand(Project project, Closure command, PrintStream outputStream, PrintStream errorStream) {
-        DefaultLogger listener = new DefaultLogger(
-                errorPrintStream: errorStream,
-                outputPrintStream: outputStream,
-                messageOutputLevel: org.apache.tools.ant.Project.MSG_INFO)
-
-        project.ant.project.addBuildListener(listener)
-        Object retVal = command(project.ant)
-        project.ant.project.removeBuildListener(listener)
-        return retVal
     }
 
     /**
