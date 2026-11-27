@@ -967,6 +967,22 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val trip3 = Map("participants" -> 3, "airport" -> "MUC OTP SFO JFK", "tag" -> "long", "date" -> "2012-12-28T20:03:10Z")
 
     sc.makeRDD(Seq(trip1, trip2, trip3)).saveToEs(target)
+
+    // explicit keyword and text fields: dynamic mapping makes every string a text field
+    val strIndex = wrapIndex("spark-test-scala-sql-strings")
+    val (_, strDocPath) = makeTargets(strIndex, "data")
+    val mapping = wrapMapping("data", s"""{"properties":{"k":{"type":"$keyword"},"t":{"type":"$text"}}}""")
+    RestUtils.touch(strIndex)
+    RestUtils.putMapping(strIndex, "data", mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.postData(strDocPath, """{"k":"Foo","t":"quick brown fox"}""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(strDocPath, """{"k":"bar","t":"lazy dog"}""".getBytes(StringUtils.UTF_8))
+    RestUtils.refresh(strIndex)
+  }
+
+  private def esStringDataSource() = {
+    val (target, _) = makeTargets(wrapIndex("spark-test-scala-sql-strings"), "data")
+    val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+    sqc.read.format("org.elasticsearch.spark.sql").options(dsCfg.toMap).load
   }
 
   private def esDataSource(table: String) = {
@@ -2695,6 +2711,33 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   def makeTargets(index: String, typeName: String): (String, String) = {
     (resource(index, typeName, version), docEndpoint(index, typeName, version))
+  }
+
+  @Test
+  def testDataSourcePushDown16InOnKeyword() {
+    val df = esStringDataSource()
+    assertEquals(2, df.filter(df("k").isin("Foo", "bar")).count())
+  }
+
+  @Test
+  def testDataSourcePushDown17StartsWithOnKeyword() {
+    val df = esStringDataSource()
+    assertEquals(1, df.filter(df("k").startsWith("Fo")).count())
+  }
+
+  @Test
+  def testDataSourcePushDown18ContainsSeveralTokensOnText() {
+    // strict pushdown targets non-analyzed fields
+    assumeFalse(strictPushDown)
+    val df = esStringDataSource()
+    assertEquals(1, df.filter(df("t").contains("brown fox")).count())
+  }
+
+  @Test
+  def testDataSourcePushDown19NotEqualToOnText() {
+    assumeFalse(strictPushDown)
+    val df = esStringDataSource()
+    assertEquals(2, df.filter(!df("t").equalTo("brown")).count())
   }
 
   /**
