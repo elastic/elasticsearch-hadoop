@@ -9,9 +9,6 @@
     ":Delivery/Build",
     "Team:Core/Infra"
   ],
-  "baseBranches": [
-    "main"
-  ],
   "packageRules": [
     {
       "description": "Don't manage dependencies by default",
@@ -21,17 +18,32 @@
       "enabled": false
     },
     {
-      "description": "Gradle wrapper: one rolling PR per release train (e.g. 9.5.x patch lane and 9.6.x minor/RC lane), lockstep across all wrapper.properties files; manual fix commits preserved",
-      "matchManagers": ["gradle-wrapper"],
-      "matchBaseBranches": ["main"],
+      "description": "Gradle wrapper: one rolling PR per release train (e.g. 9.5.x patch lane and 9.6.x minor/RC lane). respectLatest: false lets the same PR keep rolling forward through Gradle RCs/milestones until GA.",
+      "matchManagers": [
+        "gradle-wrapper"
+      ],
+      "matchBaseBranches": [
+        "main"
+      ],
       "enabled": true,
       "ignoreUnstable": false,
+      "respectLatest": false,
       "separateMinorPatch": true,
       "automerge": false,
       "rebaseWhen": "behind-base-branch",
-      "branchTopic": "gradle-wrapper-{{{newMajor}}}.{{{newMinor}}}.x",
-      "commitMessageTopic": "Gradle wrapper {{{newMajor}}}.{{{newMinor}}}.x",
-      "labels": [":Delivery/Build", ">non-issue", "auto-backport"]
+      "branchTopic": "gradle-wrapper-{{{newMajor}}}.{{{newMinor}}}.{{{newPatch}}}",
+      "commitMessageTopic": "Gradle wrapper {{{newMajor}}}.{{{newMinor}}}.{{{newPatch}}}",
+      "schedule": [
+        "at any time"
+      ],
+      "labels": [
+        ":Delivery/Build",
+        ">non-issue",
+        "auto-backport"
+      ]
     }
+  ],
+  "baseBranchPatterns": [
+    "main"
   ]
 }
