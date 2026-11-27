@@ -56,7 +56,7 @@ import javax.inject.Inject;
  * ({@code snapshots.elastic.co/maven/}) expects.
  *
  * <p>Rather than depend on the {@code aggregation.zip} archive and unpack it,
- * this task reuses {@code zipAggregation}'s copy-spec source directly (the
+ * this task reuses {@code nmcpZipAggregation}'s copy-spec source directly (the
  * already-extracted per-project publications). That avoids materializing the
  * DRA-side zip only to unzip it again in the publish step — nothing is zipped
  * on the DRA path at all.
@@ -89,7 +89,7 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
 
     /**
      * The already-extracted maven aggregation content, wired from
-     * {@code zipAggregation}'s copy-spec source so the DRA path never builds
+     * {@code nmcpZipAggregation}'s copy-spec source so the DRA path never builds
      * (or unpacks) the aggregation zip.
      */
     @InputFiles
@@ -115,6 +115,10 @@ public abstract class PrepareDraSnapshotMavenAggregation extends DefaultTask {
         getFileSystemOperations().sync(spec -> {
             spec.from(getSource());
             spec.into(outDir);
+            // The source is the raw maven-publish repository, which carries
+            // maven-publish's own maven-metadata.xml files. Drop them like the
+            // Central Portal zip does; snapshot metadata is generated below.
+            spec.exclude("**/maven-metadata.xml", "**/maven-metadata.xml.*");
             if (snapshot) {
                 spec.rename(TIMESTAMP_REGEX, "-SNAPSHOT");
             }

@@ -110,13 +110,14 @@ dependencies {
 
 // Configure uber jar
 jar {
-    dependsOn(project.configurations.embedded)
+    def embedded = project.configurations.embedded
+    dependsOn(embedded)
 
     manifest {
         attributes['Implementation-Title'] = 'elasticsearch-hadoop'
     }
 
-    from(project.configurations.embedded.collect { it.isDirectory() ? it : zipTree(it)}) {
+    from({ embedded.collect { it.isDirectory() ? it : zipTree(it)} }) {
         include "org/elasticsearch/**"
         include "esh-build.properties"
         include "META-INF/services/*"
@@ -208,10 +209,10 @@ tasks.register('copyPoms', Copy) {
 }
 
 tasks.named('collectArtifacts') {
-    mustRunAfter 'publishMainPublicationToNmcpMainRepository'
+    mustRunAfter 'publishMainPublicationToNmcpRepository'
 }
 
-tasks.named('publishMainPublicationToNmcpMainRepository') {
+tasks.named('publishMainPublicationToNmcpRepository') {
     mustRunAfter 'copyPoms'
 }
 

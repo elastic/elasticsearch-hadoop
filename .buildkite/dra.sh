@@ -55,7 +55,7 @@ curl -sS --fail "$BUILD_TOOLS_JAR_URL" \
   exit 1
 }
 
-./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution zipAggregation prepareDraSnapshotMavenAggregation
+./gradlew -S -PlocalRepo=true "${BUILD_ARGS[@]}" -Dorg.gradle.warning.mode=summary -Dcsv="$WORKSPACE/build/distributions/dependencies-${HADOOP_VERSION}${VERSION_SUFFIX}.csv" :dist:generateDependenciesReport distribution nmcpZipAggregation prepareDraSnapshotMavenAggregation
 
 find "$WORKSPACE" -type f -path "*/build/distributions/*" -exec chmod a+r {} \;
 
