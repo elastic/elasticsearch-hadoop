@@ -1148,12 +1148,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = esDataSource("pd_starts_with")
     var filter = df.filter(df("airport").startsWith("O"))
 
-    if (!keepHandledFilters && !strictPushDown) {
-      // term query pick field with multi values
-      assertEquals(2, filter.count())
-      return
-    }
-
     filter.show
     if (strictPushDown) {
       assertEquals(0, filter.count()) // Strict means specific terms matching, and the terms are lowercased
@@ -1167,12 +1161,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown10EndsWith() {
     val df = esDataSource("pd_ends_with")
     var filter = df.filter(df("airport").endsWith("O"))
-
-    if (!keepHandledFilters && !strictPushDown) {
-      // term query pick field with multi values
-      assertEquals(2, filter.count())
-      return
-    }
 
     filter.show
     if (strictPushDown) {
@@ -1217,12 +1205,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     if (strictPushDown) {
       // OTP fails due to strict matching/analyzed
       assertEquals(1, filter.count())
-      return
-    }
-
-    if (!keepHandledFilters) {
-      // term query pick field with multi values
-      assertEquals(3, filter.count())
       return
     }
 
